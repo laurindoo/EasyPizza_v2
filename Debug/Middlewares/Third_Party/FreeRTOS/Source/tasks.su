@@ -3,6 +3,7 @@
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:817:13:prvInitialiseNewTask	40	static,ignoring_inline_asm
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:1021:13:prvAddNewTaskToReadyList	16	static,ignoring_inline_asm
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:1106:7:vTaskDelete	24	static,ignoring_inline_asm
+../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:1198:7:vTaskDelayUntil	48	static,ignoring_inline_asm
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:1282:7:vTaskDelay	24	static,ignoring_inline_asm
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:1398:14:uxTaskPriorityGet	24	static
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:1420:14:uxTaskPriorityGetFromISR	40	static,ignoring_inline_asm

@@ -6,15 +6,18 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Core/Tasks/Src/TaskBuzzer.c \
-../Core/Tasks/Src/TaskTemperatura.c 
+../Core/Tasks/Src/TaskTemperatura.c \
+../Core/Tasks/Src/TaskTimer.c 
 
 OBJS += \
 ./Core/Tasks/Src/TaskBuzzer.o \
-./Core/Tasks/Src/TaskTemperatura.o 
+./Core/Tasks/Src/TaskTemperatura.o \
+./Core/Tasks/Src/TaskTimer.o 
 
 C_DEPS += \
 ./Core/Tasks/Src/TaskBuzzer.d \
-./Core/Tasks/Src/TaskTemperatura.d 
+./Core/Tasks/Src/TaskTemperatura.d \
+./Core/Tasks/Src/TaskTimer.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -24,7 +27,7 @@ Core/Tasks/Src/%.o Core/Tasks/Src/%.su Core/Tasks/Src/%.cyclo: ../Core/Tasks/Src
 clean: clean-Core-2f-Tasks-2f-Src
 
 clean-Core-2f-Tasks-2f-Src:
-	-$(RM) ./Core/Tasks/Src/TaskBuzzer.cyclo ./Core/Tasks/Src/TaskBuzzer.d ./Core/Tasks/Src/TaskBuzzer.o ./Core/Tasks/Src/TaskBuzzer.su ./Core/Tasks/Src/TaskTemperatura.cyclo ./Core/Tasks/Src/TaskTemperatura.d ./Core/Tasks/Src/TaskTemperatura.o ./Core/Tasks/Src/TaskTemperatura.su
+	-$(RM) ./Core/Tasks/Src/TaskBuzzer.cyclo ./Core/Tasks/Src/TaskBuzzer.d ./Core/Tasks/Src/TaskBuzzer.o ./Core/Tasks/Src/TaskBuzzer.su ./Core/Tasks/Src/TaskTemperatura.cyclo ./Core/Tasks/Src/TaskTemperatura.d ./Core/Tasks/Src/TaskTemperatura.o ./Core/Tasks/Src/TaskTemperatura.su ./Core/Tasks/Src/TaskTimer.cyclo ./Core/Tasks/Src/TaskTimer.d ./Core/Tasks/Src/TaskTimer.o ./Core/Tasks/Src/TaskTimer.su
 
 .PHONY: clean-Core-2f-Tasks-2f-Src
 

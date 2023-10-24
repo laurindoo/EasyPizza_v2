@@ -1,2 +1,2 @@
-../Core/Tasks/Src/TaskBuzzer.c:14:6:StartBuzzer	16	static
-../Core/Tasks/Src/TaskBuzzer.c:30:6:sequencia1Buzzer	8	static
+../Core/Tasks/Src/TaskBuzzer.c:13:6:StartBuzzer	16	static
+../Core/Tasks/Src/TaskBuzzer.c:29:6:sequencia1Buzzer	8	static

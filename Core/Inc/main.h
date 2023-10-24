@@ -97,6 +97,42 @@ typedef struct
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 
+#define RELE_1_ON 	HAL_GPIO_WritePin		(RELE_1_GPIO_Port,	RELE_1_Pin	,GPIO_PIN_SET);
+#define RELE_1_OFF 	HAL_GPIO_WritePin		(RELE_1_GPIO_Port,	RELE_1_Pin	,GPIO_PIN_RESET);
+#define TESTE_RELE_1	  RELE_1_ON \
+HAL_Delay(100);\
+RELE_1_OFF
+
+#define RELE_2_ON 	HAL_GPIO_WritePin		(RELE_2_GPIO_Port,	RELE_2_Pin	,GPIO_PIN_SET);
+#define RELE_2_OFF 	HAL_GPIO_WritePin		(RELE_2_GPIO_Port,	RELE_2_Pin	,GPIO_PIN_RESET);
+#define TESTE_RELE_2	  RELE_2_ON \
+HAL_Delay(100);\
+RELE_2_OFF
+
+#define RELE_3_ON 	HAL_GPIO_WritePin		(RELE_3_GPIO_Port,	RELE_3_Pin	,GPIO_PIN_SET);
+#define RELE_3_OFF 	HAL_GPIO_WritePin		(RELE_3_GPIO_Port,	RELE_3_Pin	,GPIO_PIN_RESET);
+#define TESTE_RELE_3	  RELE_3_ON \
+HAL_Delay(100);\
+RELE_3_OFF
+
+#define RELE_4_ON 	HAL_GPIO_WritePin		(RELE_4_GPIO_Port,	RELE_4_Pin	,GPIO_PIN_SET);
+#define RELE_4_OFF 	HAL_GPIO_WritePin		(RELE_4_GPIO_Port,	RELE_4_Pin	,GPIO_PIN_RESET);
+#define TESTE_RELE_4	  RELE_4_ON \
+HAL_Delay(100);\
+RELE_4_OFF
+
+#define RELE_5_ON 	HAL_GPIO_WritePin		(RELE_5_GPIO_Port,	RELE_5_Pin	,GPIO_PIN_SET);
+#define RELE_5_OFF 	HAL_GPIO_WritePin		(RELE_5_GPIO_Port,	RELE_5_Pin	,GPIO_PIN_RESET);
+#define TESTE_RELE_5	  RELE_5_ON \
+HAL_Delay(100);\
+RELE_5_OFF
+
+#define LAMPADA_ON RELE_5_ON\
+		PrimitiveStates.Lampada = true;
+#define LAMPADA_OFF RELE_5_OFF\
+		PrimitiveStates.SegundosLampada = 0;\
+		PrimitiveStates.Lampada = false;
+
 /* USER CODE END EM */
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -121,8 +157,11 @@ void Error_Handler(void);
 #define RELE_5_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-extern TIM_HandleTypeDef htim3;
+
+extern TIM_HandleTypeDef htim3,htim2;
 extern GlobalPrimitiveIOStates PrimitiveStates;
+
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

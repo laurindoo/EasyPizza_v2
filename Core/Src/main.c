@@ -54,6 +54,9 @@ osThreadId TaskTemperaturaHandle;
 osThreadId TaskBuzzerHandle;
 uint32_t TaskBuzzerBuffer[ 128 ];
 osStaticThreadDef_t TaskBuzzerControlBlock;
+osThreadId TaskTimerHandle;
+uint32_t TaskTimerBuffer[ 128 ];
+osStaticThreadDef_t TaskTimerControlBlock;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -69,6 +72,7 @@ static void MX_TIM2_Init(void);
 void StartDefaultTask(void const * argument);
 void StartTemperatura(void const * argument);
 void StartBuzzer(void const * argument);
+void StartTimer(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -154,6 +158,10 @@ int main(void)
   /* definition and creation of TaskBuzzer */
   osThreadStaticDef(TaskBuzzer, StartBuzzer, osPriorityIdle, 0, 128, TaskBuzzerBuffer, &TaskBuzzerControlBlock);
   TaskBuzzerHandle = osThreadCreate(osThread(TaskBuzzer), NULL);
+
+  /* definition and creation of TaskTimer */
+  osThreadStaticDef(TaskTimer, StartTimer, osPriorityNormal, 0, 128, TaskTimerBuffer, &TaskTimerControlBlock);
+  TaskTimerHandle = osThreadCreate(osThread(TaskTimer), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -344,7 +352,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 50;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
@@ -586,6 +594,24 @@ __weak void StartBuzzer(void const * argument)
     osDelay(1);
   }
   /* USER CODE END StartBuzzer */
+}
+
+/* USER CODE BEGIN Header_StartTimer */
+/**
+* @brief Function implementing the TaskTimer thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTimer */
+__weak void StartTimer(void const * argument)
+{
+  /* USER CODE BEGIN StartTimer */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartTimer */
 }
 
 /**

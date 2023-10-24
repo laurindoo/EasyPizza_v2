@@ -9,7 +9,6 @@
 void sequencia1Buzzer(void);
 
 extern osThreadId TaskBuzzerHandle;
-extern TIM_HandleTypeDef htim2;
 
 void StartBuzzer(void const * argument)
 {
