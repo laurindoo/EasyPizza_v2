@@ -58,6 +58,7 @@ void processaEeprom(void){
 		switch ((unsigned int)evt.value.p) {
 
 		case CEepromShifiting:
+			__NOP();
 			//usar um semaphore para evitar de shiffiting em duplicidade
 			break;
 		case CEepromHorimetro:
@@ -70,7 +71,7 @@ void processaEeprom(void){
 		case CEepromSoftReset:
 			break;
 		case CEepromAtualizaHora:
-
+//
 			//				if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK){
 			//					Error_Handler();
 			//				}
