@@ -472,7 +472,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(RELE_1_GPIO_Port, RELE_1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, RELE_2_Pin|RELE_3_Pin|RELE_4_Pin|RELE_5_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, RELE_2_Pin|RELE_3_Pin|RELE_4_Pin|RELE_5_Pin
+                          |EEPROM_EN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : RELE_1_Pin */
   GPIO_InitStruct.Pin = RELE_1_Pin;
@@ -481,8 +482,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(RELE_1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RELE_2_Pin RELE_3_Pin RELE_4_Pin RELE_5_Pin */
-  GPIO_InitStruct.Pin = RELE_2_Pin|RELE_3_Pin|RELE_4_Pin|RELE_5_Pin;
+  /*Configure GPIO pins : RELE_2_Pin RELE_3_Pin RELE_4_Pin RELE_5_Pin
+                           EEPROM_EN_Pin */
+  GPIO_InitStruct.Pin = RELE_2_Pin|RELE_3_Pin|RELE_4_Pin|RELE_5_Pin
+                          |EEPROM_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

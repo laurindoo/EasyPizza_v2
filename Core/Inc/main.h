@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.h
-  * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.h
+ * @brief          : Header for main.c file.
+ *                   This file contains the common defines of the application.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2023 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -41,6 +41,16 @@ extern "C" {
 
 #define ERRO_CRITICO 0x0f
 #define PISCADA_LAMPADA 0x1f
+
+//---ESTRUTURA VARIAVEIS Calendario ------------------------------------
+typedef struct TYPE_CALENDARIO{
+
+	//	RTC_DateTypeDef 		Data_instalacao;
+	uint16_t				Horimetro_horas;		//total de horas da maquina
+	uint8_t					Horimetro_parcial_min; 	//a cada minuto eu incremento, comparo com o gravado, e hora++ se for o caso
+
+}
+TYPE_CALENDARIO;//
 
 //---Comandos Eeprom
 typedef enum
@@ -100,32 +110,32 @@ typedef struct
 #define RELE_1_ON 	HAL_GPIO_WritePin		(RELE_1_GPIO_Port,	RELE_1_Pin	,GPIO_PIN_SET);
 #define RELE_1_OFF 	HAL_GPIO_WritePin		(RELE_1_GPIO_Port,	RELE_1_Pin	,GPIO_PIN_RESET);
 #define TESTE_RELE_1	  RELE_1_ON \
-HAL_Delay(100);\
-RELE_1_OFF
+		HAL_Delay(100);\
+		RELE_1_OFF
 
 #define RELE_2_ON 	HAL_GPIO_WritePin		(RELE_2_GPIO_Port,	RELE_2_Pin	,GPIO_PIN_SET);
 #define RELE_2_OFF 	HAL_GPIO_WritePin		(RELE_2_GPIO_Port,	RELE_2_Pin	,GPIO_PIN_RESET);
 #define TESTE_RELE_2	  RELE_2_ON \
-HAL_Delay(100);\
-RELE_2_OFF
+		HAL_Delay(100);\
+		RELE_2_OFF
 
 #define RELE_3_ON 	HAL_GPIO_WritePin		(RELE_3_GPIO_Port,	RELE_3_Pin	,GPIO_PIN_SET);
 #define RELE_3_OFF 	HAL_GPIO_WritePin		(RELE_3_GPIO_Port,	RELE_3_Pin	,GPIO_PIN_RESET);
 #define TESTE_RELE_3	  RELE_3_ON \
-HAL_Delay(100);\
-RELE_3_OFF
+		HAL_Delay(100);\
+		RELE_3_OFF
 
 #define RELE_4_ON 	HAL_GPIO_WritePin		(RELE_4_GPIO_Port,	RELE_4_Pin	,GPIO_PIN_SET);
 #define RELE_4_OFF 	HAL_GPIO_WritePin		(RELE_4_GPIO_Port,	RELE_4_Pin	,GPIO_PIN_RESET);
 #define TESTE_RELE_4	  RELE_4_ON \
-HAL_Delay(100);\
-RELE_4_OFF
+		HAL_Delay(100);\
+		RELE_4_OFF
 
 #define RELE_5_ON 	HAL_GPIO_WritePin		(RELE_5_GPIO_Port,	RELE_5_Pin	,GPIO_PIN_SET);
 #define RELE_5_OFF 	HAL_GPIO_WritePin		(RELE_5_GPIO_Port,	RELE_5_Pin	,GPIO_PIN_RESET);
 #define TESTE_RELE_5	  RELE_5_ON \
-HAL_Delay(100);\
-RELE_5_OFF
+		HAL_Delay(100);\
+		RELE_5_OFF
 
 #define LAMPADA_ON RELE_5_ON\
 		PrimitiveStates.Lampada = true;
@@ -155,11 +165,14 @@ void Error_Handler(void);
 #define RELE_4_GPIO_Port GPIOB
 #define RELE_5_Pin GPIO_PIN_6
 #define RELE_5_GPIO_Port GPIOB
+#define EEPROM_EN_Pin GPIO_PIN_7
+#define EEPROM_EN_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
 extern TIM_HandleTypeDef htim3,htim2;
 extern GlobalPrimitiveIOStates PrimitiveStates;
+extern I2C_HandleTypeDef hi2c1;
 
 
 /* USER CODE END Private defines */
