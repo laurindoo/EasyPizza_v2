@@ -18,4 +18,8 @@
 #include "Eeprom.h"
 //#include "Bluetooth.h"
 
+extern osThreadId TaskEepromHandle,TaskComandoHandle,TaskBluetoothHandle;
+extern TYPE_CALENDARIO			Calendario;
+extern osMessageQId FilaEepromHandle;
+
 #endif /* INC_TASKEEPROM_H_ */

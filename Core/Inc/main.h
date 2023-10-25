@@ -205,11 +205,14 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 
 extern TIM_HandleTypeDef htim3,htim2;
-extern GlobalPrimitiveIOStates PrimitiveStates;
 extern I2C_HandleTypeDef hi2c1;
-//extern UART_HandleTypeDef huart1;
-//extern DMA_HandleTypeDef hdma_usart1_rx;
+extern UART_HandleTypeDef huart1;
+extern DMA_HandleTypeDef hdma_usart1_rx;
+extern GlobalPrimitiveIOStates PrimitiveStates;
 
+
+extern BIT_TO_BYTE_ERROS		Erro;
+extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro, TempSPTeto, TempSPLastro; //todo pensar uma forma melhor de enviar
 
 /* USER CODE END Private defines */
 

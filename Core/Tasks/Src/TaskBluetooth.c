@@ -11,21 +11,6 @@ void txBluetooth(void);
 void rxBluetooth(void);
 
 extern int recorrencia;
-//variaveis globais
-extern GlobalPrimitiveIOStates PrimitiveStates;
-extern UART_HandleTypeDef huart1;
-extern DMA_HandleTypeDef hdma_usart1_rx;
-//extern TYPE_CALENDARIO			Calendario;
-
-//---MAQUINA E VARS DERIVADAS
-extern BIT_TO_BYTE_ERROS		Erro; //todo onde esta declarado?
-//extern TYPE_CALENDARIO			Calendario; //todo onde esta declarado
-
-
-extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro, TempSPTeto, TempSPLastro; //todo pensar uma forma melhor de enviar
-
-//FILAS
-extern osMessageQId FilaRXBluetoothHandle,FilaTXBluetoothHandle,FilaEepromHandle;
 
 //---CLASSE BLUETOOTH-----------------------------------------------------------------
 extern Bluetooth bluetooth;
@@ -33,43 +18,15 @@ BleComando BLEAtualizaRealtime;
 BleComando BLESolicitaSincronia;
 BleComando BLEAtualizaDataHora,BLEAlteraLimiteTemp,BLERestaura,BLESPTeto,BLESPLastro,BLESPtempo,BLEToggleTempo,BLEReceita,BLESPTempo,BLELightOn,BLELightOff;
 BleComando BLEPedeSenha,BLERecebeuSenha;
-unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];//todo cogitar colocar na classe
 
-extern I2C_HandleTypeDef hi2c1;
 
-//Callback da TaskAplicacao
 void StartBluetooth(void const * argument)
 {
-	//	initBluetooth(); // cpf ana laurindo 3713 45 31 015
+	initBluetooth();
 
-	//inicializacao do bluetooth
-	BluetoothInit(&bluetooth, &huart1, &hdma_usart1_rx, &FilaRXBluetoothHandle,FilaTXBluetoothHandle);
-
-	//inicializacao do hardware
-	//	Inicia_HM10(&bluetooth);
-	iniciaBleHm10(&bluetooth);
-
-	//possiveis comandos a serem recebidos pelo bluetooth
-	BluetoothAddComp(&bluetooth, &BLEAtualizaRealtime, 	"RX_SOLICITA_REALTIME", 	RX_SOLICITA_REALTIME, 		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLESolicitaSincronia,	"RX_SOLICITA_SINCRONIA", 	RX_SOLICITA_SINCRONIA, 		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEAlteraLimiteTemp, 	"RX_ALTERA_VALOR_LIMITE", 	RX_LIMITE_TEMPERATURA,		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEAtualizaDataHora, 	"RX_ATUALIZA_HORA", 		RX_ATUALIZA_HORA,			ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLERestaura, 			"RX_RESTAURA", 				RX_RESTAURA,				ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEPedeSenha,   		"RX_PEDE_SENHA",  			RX_PEDE_SENHA,   			ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLERecebeuSenha,     	"RX_RECEBEU_SENHA",        	RX_RECEBEU_SENHA,          	ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLESPTeto,     		"RX_SP_TEMP_TETO",        	RX_SP_TEMP_TETO,          	ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLESPLastro,     		"RX_SP_TEMP_LASTRO",       	RX_SP_TEMP_LASTRO,          ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLESPTempo,     		"RX_SP_TEMPO",       		RX_SP_TEMPO,        		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEToggleTempo,     	"RX_TOGGLE_TEMPO",       	RX_TOGGLE_TEMPO,        	ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEReceita,     		"RX_RECEITA",     		  	RX_RECEITA,        			ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLELightOn,     		"RX_LIGA_LAMPADA",     	  	RX_LIGA_LAMPADA,     		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLELightOff,     		"RX_DESLIGA_LAMPADA",    	RX_DESLIGA_LAMPADA,  		ComandoBasico);//identifica criticidade do comando no DMA_UART
-
-
-	/* Infinite loop */
 	for(;;)
 	{
-		//----------------bluetooth----RX------------//            .S.Tem de ser aqui, pois ProcessaComando fica bloqueada em caso de erro
+		//----------------bluetooth----RX------------//
 		rxBluetooth();
 
 		//----------------bluetooth----TX------------//
@@ -106,6 +63,7 @@ void initBluetooth(void){
 }
 
 void txBluetooth(void){
+	unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];//todo cogitar colocar na classe
 	osEvent  evttx;
 	evttx = osMessageGet(FilaTXBluetoothHandle, 0);
 	if (evttx.status == osEventMessage) {
@@ -150,8 +108,8 @@ void txBluetooth(void){
 			Buffer[1] 	= 0x51;									// FUNÇÃO -
 			Buffer[2] 	= 0x51;									// FUNÇÃO -
 			Buffer[3] 	= 0x01;
-			Buffer[4] 	= 0x01;//todo implementar - salvar ela na eeprom quando ble iniciado
-			Buffer[5] 	= 0x01;//todo implementar - salvar ela na eeprom quando ble iniciado
+			Buffer[4] 	= bluetooth.chave >> 8 		;
+			Buffer[5] 	= bluetooth.chave & 0x00ff	;
 			BluetoothEnviaComando(Buffer, 5);
 			break;
 		case TX_CHAVE_ERRO:
@@ -163,7 +121,6 @@ void txBluetooth(void){
 			Buffer[5] 	= 0x00;
 			BluetoothEnviaComando(Buffer, 5);
 
-			//todo criar funcao disconect
 			HAL_Delay(30);
 			Envia_texto_UART("AT",50);//DESCONECTA
 			break;
@@ -181,7 +138,6 @@ void txBluetooth(void){
 			Buffer[3] 	= 0x00;									//resultado ok
 			BluetoothEnviaComando(Buffer, 3);
 
-			//todo criar funcao disconect
 			HAL_Delay(30);
 			Envia_texto_UART("AT",50);//DESCONECTA
 			break;
@@ -278,12 +234,11 @@ void rxBluetooth(void){
 			if(bluetooth.JanelaConexao > 0)
 				osMessagePut(FilaTXBluetoothHandle, TX_CHAVE, 0);
 			else
-				__NOP();//envia erro crc
+				osMessagePut(FilaTXBluetoothHandle, TX_CHAVE_ERRO, 0);
 			break;
 		case RX_RECEBEU_SENHA:
-			if(		bluetooth._RxDataArr[3] == 0x01 &&
-					bluetooth._RxDataArr[4] == 0x01){
-				//todo eu usei chave emulada acima
+			if(		bluetooth._RxDataArr[3] == (bluetooth.chave >> 8) &&
+					bluetooth._RxDataArr[4] == (bluetooth.chave & 0x00ff) ){
 				//--->	CHAVE CORRETA
 				bluetooth.MaquinaConexao	= RX_VALIDADO;
 				osMessagePut(FilaTXBluetoothHandle, TX_RESULTADO_CHAVE_OK, 0);

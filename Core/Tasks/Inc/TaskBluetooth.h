@@ -21,4 +21,7 @@
 
 #define VERSAO 	1// versao salva no dia 31/05/2023 -
 
+
+extern osMessageQId FilaRXBluetoothHandle,FilaTXBluetoothHandle,FilaEepromHandle;
+
 #endif /* INC_APLICACAO_H_ */

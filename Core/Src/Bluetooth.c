@@ -430,10 +430,10 @@ void iniciaBleHm10(Bluetooth* ble){
 				ble->ss = strstr(ble->StringRecebida, "NAME");
 
 				if (ble->ss != NULL){
-					ble->ss = strstr(ble->StringRecebida, "Smartt");
+					ble->ss = strstr(ble->StringRecebida, "EasyPizza");
 					if (ble->ss != NULL){
-						//			sequenciaBLE = capturaAddr;
-						sequenciaBLE = final;
+									sequenciaBLE = capturaAddr;
+//						sequenciaBLE = final;
 						break;
 					} else {
 						sequenciaBLE = redefineBle;
@@ -481,11 +481,11 @@ void iniciaBleHm10(Bluetooth* ble){
 			Envia_texto_UART("AT+PIO11",300);	//1 - CONECT = 1  \  DISC = 0
 			M_BLE_RESET
 
-			Envia_texto_UART("AT+NAMESmartt",400);		//NOME
+			Envia_texto_UART("AT+NAMEEasyPizza",400);		//NOME
 			Envia_texto_UART("AT+ADTY0",300);				//DESBLOQUEIA CONEXA
 			M_BLE_RESET
-			//			sequenciaBLE = capturaAddr;
-			sequenciaBLE = final;
+						sequenciaBLE = capturaAddr;
+//			sequenciaBLE = final;
 			break;
 		case capturaAddr:
 			static uint8_t tryingAddr=0;
