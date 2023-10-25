@@ -40,7 +40,7 @@ void initEeprom(void){
 	EepromAddVar(&eeprom, &totalCiclos, 			"addrTOTAL_GERAL", 		addrTOTAL_GERAL,	DATA16BITS,	0,		0,		0		,0);
 	EepromAddVar(&eeprom, &LimiteTemperatura, 		"addrLIMITE_TEMP", 		addrLIMITE_TEMP,	DATA16BITS,	0,		0,		0		,0);
 
-	//	RestauraPadraoTudo(&eeprom);
+		RestauraPadraoTudo(&eeprom);
 	//faz o download dos objetos
 	//	EepromDownloadValores(&eeprom);
 

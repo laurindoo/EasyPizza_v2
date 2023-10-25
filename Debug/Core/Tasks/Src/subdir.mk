@@ -5,18 +5,21 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Core/Tasks/Src/TaskBluetooth.c \
 ../Core/Tasks/Src/TaskBuzzer.c \
 ../Core/Tasks/Src/TaskEeprom.c \
 ../Core/Tasks/Src/TaskTemperatura.c \
 ../Core/Tasks/Src/TaskTimer.c 
 
 OBJS += \
+./Core/Tasks/Src/TaskBluetooth.o \
 ./Core/Tasks/Src/TaskBuzzer.o \
 ./Core/Tasks/Src/TaskEeprom.o \
 ./Core/Tasks/Src/TaskTemperatura.o \
 ./Core/Tasks/Src/TaskTimer.o 
 
 C_DEPS += \
+./Core/Tasks/Src/TaskBluetooth.d \
 ./Core/Tasks/Src/TaskBuzzer.d \
 ./Core/Tasks/Src/TaskEeprom.d \
 ./Core/Tasks/Src/TaskTemperatura.d \
@@ -30,7 +33,7 @@ Core/Tasks/Src/%.o Core/Tasks/Src/%.su Core/Tasks/Src/%.cyclo: ../Core/Tasks/Src
 clean: clean-Core-2f-Tasks-2f-Src
 
 clean-Core-2f-Tasks-2f-Src:
-	-$(RM) ./Core/Tasks/Src/TaskBuzzer.cyclo ./Core/Tasks/Src/TaskBuzzer.d ./Core/Tasks/Src/TaskBuzzer.o ./Core/Tasks/Src/TaskBuzzer.su ./Core/Tasks/Src/TaskEeprom.cyclo ./Core/Tasks/Src/TaskEeprom.d ./Core/Tasks/Src/TaskEeprom.o ./Core/Tasks/Src/TaskEeprom.su ./Core/Tasks/Src/TaskTemperatura.cyclo ./Core/Tasks/Src/TaskTemperatura.d ./Core/Tasks/Src/TaskTemperatura.o ./Core/Tasks/Src/TaskTemperatura.su ./Core/Tasks/Src/TaskTimer.cyclo ./Core/Tasks/Src/TaskTimer.d ./Core/Tasks/Src/TaskTimer.o ./Core/Tasks/Src/TaskTimer.su
+	-$(RM) ./Core/Tasks/Src/TaskBluetooth.cyclo ./Core/Tasks/Src/TaskBluetooth.d ./Core/Tasks/Src/TaskBluetooth.o ./Core/Tasks/Src/TaskBluetooth.su ./Core/Tasks/Src/TaskBuzzer.cyclo ./Core/Tasks/Src/TaskBuzzer.d ./Core/Tasks/Src/TaskBuzzer.o ./Core/Tasks/Src/TaskBuzzer.su ./Core/Tasks/Src/TaskEeprom.cyclo ./Core/Tasks/Src/TaskEeprom.d ./Core/Tasks/Src/TaskEeprom.o ./Core/Tasks/Src/TaskEeprom.su ./Core/Tasks/Src/TaskTemperatura.cyclo ./Core/Tasks/Src/TaskTemperatura.d ./Core/Tasks/Src/TaskTemperatura.o ./Core/Tasks/Src/TaskTemperatura.su ./Core/Tasks/Src/TaskTimer.cyclo ./Core/Tasks/Src/TaskTimer.d ./Core/Tasks/Src/TaskTimer.o ./Core/Tasks/Src/TaskTimer.su
 
 .PHONY: clean-Core-2f-Tasks-2f-Src
 

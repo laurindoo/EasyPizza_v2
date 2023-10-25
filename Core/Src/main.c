@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <time.h>
+#include "Bluetooth.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,7 +50,12 @@ I2C_HandleTypeDef hi2c1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
-osThreadId defaultTaskHandle;
+UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart3_rx;
+
+osThreadId TaskBluetoothHandle;
 osThreadId TaskTemperaturaHandle;
 osThreadId TaskBuzzerHandle;
 uint32_t TaskBuzzerBuffer[ 128 ];
@@ -57,6 +63,12 @@ osStaticThreadDef_t TaskBuzzerControlBlock;
 osThreadId TaskTimerHandle;
 uint32_t TaskTimerBuffer[ 128 ];
 osStaticThreadDef_t TaskTimerControlBlock;
+osThreadId TaskEepromHandle;
+osMessageQId FilaComandoHandle;
+osMessageQId FilaTXBluetoothHandle;
+osMessageQId FilaRXBluetoothHandle;
+osMessageQId FilaEepromHandle;
+osSemaphoreId BinSemUartTxHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -69,10 +81,13 @@ static void MX_ADC1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
-void StartDefaultTask(void const * argument);
+static void MX_USART1_UART_Init(void);
+static void MX_USART3_UART_Init(void);
+void StartBluetooth(void const * argument);
 void StartTemperatura(void const * argument);
 void StartBuzzer(void const * argument);
 void StartTimer(void const * argument);
+void StartEeprom(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -81,11 +96,16 @@ void StartTimer(void const * argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+Bluetooth bluetooth;
+
 //---ARRAY DE LEITURA DO AD
 uint32_t 	buffer_ADC[3];
 
 //---VARIAVEIS PRIMITIVAS
 GlobalPrimitiveIOStates PrimitiveStates;
+
+//---MAQUINA E VARS DERIVADAS
+BIT_TO_BYTE_ERROS		Erro;
 
 /* USER CODE END 0 */
 
@@ -122,6 +142,8 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM3_Init();
   MX_TIM2_Init();
+  MX_USART1_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_ADC_Start_DMA		(&hadc1	,(uint32_t*)&buffer_ADC, 2);// ADC_DMA
 
@@ -134,6 +156,11 @@ int main(void)
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
+  /* Create the semaphores(s) */
+  /* definition and creation of BinSemUartTx */
+  osSemaphoreDef(BinSemUartTx);
+  BinSemUartTxHandle = osSemaphoreCreate(osSemaphore(BinSemUartTx), 1);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -142,14 +169,31 @@ int main(void)
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* definition and creation of FilaComando */
+  osMessageQDef(FilaComando, 10, uint16_t);
+  FilaComandoHandle = osMessageCreate(osMessageQ(FilaComando), NULL);
+
+  /* definition and creation of FilaTXBluetooth */
+  osMessageQDef(FilaTXBluetooth, 16, uint32_t);
+  FilaTXBluetoothHandle = osMessageCreate(osMessageQ(FilaTXBluetooth), NULL);
+
+  /* definition and creation of FilaRXBluetooth */
+  osMessageQDef(FilaRXBluetooth, 10, uint8_t);
+  FilaRXBluetoothHandle = osMessageCreate(osMessageQ(FilaRXBluetooth), NULL);
+
+  /* definition and creation of FilaEeprom */
+  osMessageQDef(FilaEeprom, 10, uint16_t);
+  FilaEepromHandle = osMessageCreate(osMessageQ(FilaEeprom), NULL);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  /* definition and creation of TaskBluetooth */
+  osThreadDef(TaskBluetooth, StartBluetooth, osPriorityHigh, 0, 128);
+  TaskBluetoothHandle = osThreadCreate(osThread(TaskBluetooth), NULL);
 
   /* definition and creation of TaskTemperatura */
   osThreadDef(TaskTemperatura, StartTemperatura, osPriorityAboveNormal, 0, 128);
@@ -162,6 +206,10 @@ int main(void)
   /* definition and creation of TaskTimer */
   osThreadStaticDef(TaskTimer, StartTimer, osPriorityNormal, 0, 128, TaskTimerBuffer, &TaskTimerControlBlock);
   TaskTimerHandle = osThreadCreate(osThread(TaskTimer), NULL);
+
+  /* definition and creation of TaskEeprom */
+  osThreadDef(TaskEeprom, StartEeprom, osPriorityNormal, 0, 128);
+  TaskEepromHandle = osThreadCreate(osThread(TaskEeprom), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -329,6 +377,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -341,6 +390,15 @@ static void MX_TIM2_Init(void)
   htim2.Init.Period = 100-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
     Error_Handler();
@@ -438,6 +496,72 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 115200;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
   * Enable DMA controller clock
   */
 static void MX_DMA_Init(void)
@@ -450,6 +574,12 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  /* DMA1_Channel3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
 
 }
 
@@ -469,11 +599,35 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, BLE_EN_Pin|BLE_RESET_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(RELE_1_GPIO_Port, RELE_1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, RELE_2_Pin|RELE_3_Pin|RELE_4_Pin|RELE_5_Pin
                           |EEPROM_EN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : BLE_EN_Pin BLE_RESET_Pin RELE_2_Pin RELE_3_Pin
+                           RELE_4_Pin RELE_5_Pin */
+  GPIO_InitStruct.Pin = BLE_EN_Pin|BLE_RESET_Pin|RELE_2_Pin|RELE_3_Pin
+                          |RELE_4_Pin|RELE_5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BLE_STATUS_Pin */
+  GPIO_InitStruct.Pin = BLE_STATUS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(BLE_STATUS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BOTAO_BLE_Pin */
+  GPIO_InitStruct.Pin = BOTAO_BLE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(BOTAO_BLE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : RELE_1_Pin */
   GPIO_InitStruct.Pin = RELE_1_Pin;
@@ -482,14 +636,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(RELE_1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RELE_2_Pin RELE_3_Pin RELE_4_Pin RELE_5_Pin
-                           EEPROM_EN_Pin */
-  GPIO_InitStruct.Pin = RELE_2_Pin|RELE_3_Pin|RELE_4_Pin|RELE_5_Pin
-                          |EEPROM_EN_Pin;
+  /*Configure GPIO pin : EEPROM_EN_Pin */
+  GPIO_InitStruct.Pin = EEPROM_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(EEPROM_EN_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -545,14 +697,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartBluetooth */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Function implementing the TaskBluetooth thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
+/* USER CODE END Header_StartBluetooth */
+__weak void StartBluetooth(void const * argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
@@ -615,6 +767,24 @@ __weak void StartTimer(void const * argument)
     osDelay(1);
   }
   /* USER CODE END StartTimer */
+}
+
+/* USER CODE BEGIN Header_StartEeprom */
+/**
+* @brief Function implementing the TaskEeprom thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartEeprom */
+__weak void StartEeprom(void const * argument)
+{
+  /* USER CODE BEGIN StartEeprom */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartEeprom */
 }
 
 /**
