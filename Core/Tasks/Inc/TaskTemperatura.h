@@ -15,7 +15,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
-void Temperatura1sec(void);
+void taskTemperatura1sec(void);
 
 #include <stdio.h>
 //#include "pid.h"

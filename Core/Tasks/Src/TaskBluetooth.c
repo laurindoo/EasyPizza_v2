@@ -9,11 +9,12 @@
 void initBluetooth(void);
 void txBluetooth(void);
 void rxBluetooth(void);
+void taskBluetooth1sec(void);
 
 BleComando BLEAtualizaRealtime;
 BleComando BLESolicitaSincronia;
 BleComando BLEAtualizaDataHora,BLEAlteraLimiteTemp,BLERestaura,BLESPTeto,BLESPLastro,BLESPtempo,BLEToggleTempo,BLEReceita,BLESPTempo,BLELightOn,BLELightOff;
-BleComando BLEPedeSenha,BLERecebeuSenha;
+BleComando BLEPedeSenha,BLERecebeuSenha,BLESetaLampada,BLECancelaProcesso;
 
 
 void StartBluetooth(void const * argument)
@@ -31,6 +32,15 @@ void StartBluetooth(void const * argument)
 	}
 }
 
+static uint16_t tempoSemAtividade;
+#define MACRO_ANULA_INATIVIDADE tempoSemAtividade = 0;
+void taskBluetooth1sec(void){
+	if(tempoSemAtividade>=TIME_INATIVO_SETUP){
+		desligaForno();
+	}else
+		tempoSemAtividade++;
+}
+
 void initBluetooth(void){
 	//inicializacao do bluetooth
 	BluetoothInit(&bluetooth, &huart1, &hdma_usart1_rx, &FilaRXBluetoothHandle,FilaTXBluetoothHandle);
@@ -39,21 +49,24 @@ void initBluetooth(void){
 	iniciaBleHm10(&bluetooth);
 
 	//possiveis comandos a serem recebidos pelo bluetooth
-	BluetoothAddComp(&bluetooth, &BLEAtualizaRealtime, 	"RX_SOLICITA_REALTIME", 	RX_SOLICITA_REALTIME, 		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLESolicitaSincronia,	"RX_SOLICITA_SINCRONIA", 	RX_SOLICITA_SINCRONIA, 		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEAlteraLimiteTemp, 	"RX_ALTERA_VALOR_LIMITE", 	RX_LIMITE_TEMPERATURA,		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEAtualizaDataHora, 	"RX_ATUALIZA_HORA", 		RX_ATUALIZA_HORA,			ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLERestaura, 			"RX_RESTAURA", 				RX_RESTAURA,				ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEPedeSenha,   		"RX_PEDE_SENHA",  			RX_PEDE_SENHA,   			ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLERecebeuSenha,     	"RX_RECEBEU_SENHA",        	RX_RECEBEU_SENHA,          	ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLESPTeto,     		"RX_SP_TEMP_TETO",        	RX_SP_TEMP_TETO,          	ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLESPLastro,     		"RX_SP_TEMP_LASTRO",       	RX_SP_TEMP_LASTRO,          ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLESPTempo,     		"RX_SP_TEMPO",       		RX_SP_TEMPO,        		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEToggleTempo,     	"RX_TOGGLE_TEMPO",       	RX_TOGGLE_TEMPO,        	ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLEReceita,     		"RX_RECEITA",     		  	RX_RECEITA,        			ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLELightOn,     		"RX_LIGA_LAMPADA",     	  	RX_LIGA_LAMPADA,     		ComandoBasico);//identifica criticidade do comando no DMA_UART
-	BluetoothAddComp(&bluetooth, &BLELightOff,     		"RX_DESLIGA_LAMPADA",    	RX_DESLIGA_LAMPADA,  		ComandoBasico);//identifica criticidade do comando no DMA_UART
+	BluetoothAddComp(&bluetooth, &BLEAtualizaRealtime, 	"RX_SOLICITA_REALTIME", 	RX_SOLICITA_REALTIME, 		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLESolicitaSincronia,	"RX_SOLICITA_SINCRONIA", 	RX_SOLICITA_SINCRONIA, 		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLEAlteraLimiteTemp, 	"RX_ALTERA_VALOR_LIMITE", 	RX_LIMITE_TEMPERATURA,		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLEAtualizaDataHora, 	"RX_ATUALIZA_HORA", 		RX_ATUALIZA_HORA,			ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLERestaura, 			"RX_RESTAURA", 				RX_RESTAURA,				ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLEPedeSenha,   		"RX_PEDE_SENHA",  			RX_PEDE_SENHA,   			ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLERecebeuSenha,     	"RX_RECEBEU_SENHA",        	RX_RECEBEU_SENHA,          	ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLESPTeto,     		"RX_SP_TEMP_TETO",        	RX_SP_TEMP_TETO,          	ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLESPLastro,     		"RX_SP_TEMP_LASTRO",       	RX_SP_TEMP_LASTRO,          ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLESPTempo,     		"RX_SP_TEMPO",       		RX_SP_TEMPO,        		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLEToggleTempo,     	"RX_TOGGLE_TEMPO",       	RX_TOGGLE_TEMPO,        	ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLEReceita,     		"RX_RECEITA",     		  	RX_RECEITA,        			ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLELightOn,     		"RX_LIGA_LAMPADA",     	  	RX_LIGA_LAMPADA,     		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLELightOff,     		"RX_DESLIGA_LAMPADA",    	RX_DESLIGA_LAMPADA,  		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLESetaLampada,     	"RX_LIMITE_LAMPADA",    	RX_LIMITE_LAMPADA,  		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLECancelaProcesso,  	"RX_CANCELA_PROCESSO",    	RX_CANCELA_PROCESSO,  		ComandoBasico);
 }
+
 void txBluetooth(void){
 	unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];//todo cogitar colocar na classe
 	osEvent  evttx;
@@ -63,8 +76,8 @@ void txBluetooth(void){
 		case TX_REALTIME_DATA:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
 			Buffer[1] 	= 0x16;									// FUNÇÃO -
-			Buffer[2] 	= Erro.byte;							// Conjunto de erros
-			Buffer[3] 	= PrimitiveStates.MaquinaMaster;		// State da maquina
+			Buffer[2] 	= PrimitiveStates.Erro.byte;							// Conjunto de erros
+			Buffer[3] 	= PrimitiveStates.stateMaquina;			// State da maquina
 			Buffer[4] 	= (uint16_t)PrimitiveStates.RealtimeTeto 	>>8;
 			Buffer[5] 	= (uint16_t)PrimitiveStates.RealtimeTeto 	& 0x00FF;
 			Buffer[6] 	= (uint16_t)PrimitiveStates.SetPointTeto 	>>8;
@@ -84,24 +97,24 @@ void txBluetooth(void){
 			Buffer[3] 	= PrimitiveStates.RTTimerSegundos;
 			Buffer[4] 	= PrimitiveStates.SPTimerMinutos;
 			Buffer[5] 	= PrimitiveStates.SPTimerSegundos;
-			Buffer[6] 	= PrimitiveStates.stateTimer;
-			Buffer[7] 	= (uint8_t)horimetroHoras.valor >> 8;
-			Buffer[8] 	= (uint8_t)horimetroHoras.valor & 0x00FF;
-			Buffer[9] 	= (uint8_t)horimetroMinutos.valor;
-			Buffer[10]	= PrimitiveStates.Lampada;
-			BluetoothEnviaComando(Buffer, 10);
+			Buffer[6] 	= (uint8_t)horimetroHoras.valor >> 8;
+			Buffer[7] 	= (uint8_t)horimetroHoras.valor & 0x00FF;
+			Buffer[8] 	= (uint8_t)horimetroMinutos.valor;
+			Buffer[9]	= PrimitiveStates.Lampada;
+			BluetoothEnviaComando(Buffer, 9);
 			break;
 		case TX_SINCRONIA:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
 			Buffer[1] 	= 0x18;									// FUNÇÃO -
 			Buffer[2] 	= 0x01;									// Modelo
 			Buffer[3] 	= (uint8_t)tempoDelayLuz.valor;
-			Buffer[4] 	= (uint8_t)LimiteTemperatura.valor;
-			Buffer[5] 	= (uint8_t)instalacaoDia.valor;
-			Buffer[6] 	= (uint8_t)instalacaoMes.valor;
-			Buffer[7] 	= (uint8_t)instalacaoAno.valor;
-			Buffer[8]	= VERSAO;
-			BluetoothEnviaComando(Buffer, 8);
+			Buffer[4] 	= (uint8_t)LimiteTemperatura.valor	>> 8 ;
+			Buffer[5] 	= (uint8_t)LimiteTemperatura.valor	& 0x00ff ;
+			Buffer[6] 	= (uint8_t)instalacaoDia.valor;
+			Buffer[7] 	= (uint8_t)instalacaoMes.valor;
+			Buffer[8] 	= (uint8_t)instalacaoAno.valor;
+			Buffer[9]	= VERSAO;
+			BluetoothEnviaComando(Buffer, 9);
 			break;
 		case TX_CHAVE:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
@@ -143,6 +156,7 @@ void txBluetooth(void){
 		}
 	}
 }
+
 void rxBluetooth(void){
 	osEvent  evtrx;
 	evtrx = osMessageGet(FilaRXBluetoothHandle, 0);
@@ -175,40 +189,82 @@ void rxBluetooth(void){
 			break;
 		case RX_SP_TEMP_TETO:
 			//---------ENDEREÇO | 0x21 | SP_Teto.high | SP_Teto.low | CRC | CRC
+			MACRO_ANULA_INATIVIDADE
 			uint16_t aux;
-
 			aux = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
 			PrimitiveStates.SetPointTeto = (double)aux;
-			//			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMP_TETO)
-			MACRO_ENVIA_AKNOLADGE
+			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMP_TETO)
 			break;
 		case RX_SP_TEMP_LASTRO:
 			//---------ENDEREÇO | 0x22 | SP_Lastro.high | SP_Lastro.low | CRC | CRC
+			MACRO_ANULA_INATIVIDADE
+
 			PrimitiveStates.SetPointLastro = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
-//			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMP_LASTRO)
-			MACRO_ENVIA_AKNOLADGE
+
+			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMP_LASTRO)
 			break;
 		case RX_SP_TEMPO:
-			//---------ENDEREÇO | 0x23 | TimerMinutos | TimerSegundos |CRC | CRC
+		{	//---------ENDEREÇO | 0x23 | TimerMinutos | TimerSegundos |CRC | CRC
+			MACRO_ANULA_INATIVIDADE
+
 			PrimitiveStates.SPTimerMinutos 	= bluetooth._RxDataArr[2];
 			PrimitiveStates.SPTimerSegundos = bluetooth._RxDataArr[3];
 
 			PrimitiveStates.RTTimerMinutos = PrimitiveStates.SPTimerMinutos;
 			PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
-			//todo possivelmente zerar o tempo atual
-			PrimitiveStates.stateTimer = decrementando; //estarta o timer
+
+			switch (PrimitiveStates.stateMaquina) {
+			case inicial:
+			case aquecendo:
+				//nao executa nada
+				__NOP();
+				break;
+			case aquecido:
+			case decrementando:
+			case pausado:
+				if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
+					PrimitiveStates.stateMaquina 	= decrementando;
+				}else{
+					PrimitiveStates.stateMaquina = aquecendo;
+				}
+				break;
+			}
+
 			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMPO)
-			break;
+		}
+		break;
 		case RX_TOGGLE_TEMPO:
+		{
 			//---------ENDEREÇO | 0x24 | 0x24 | TimerSegundos |CRC | CRC
-			if(PrimitiveStates.stateTimer == decrementando)
-				PrimitiveStates.stateTimer = pausado;
-			else
-				PrimitiveStates.stateTimer = emEspera;
+			MACRO_ANULA_INATIVIDADE
+
+			switch (PrimitiveStates.stateMaquina) {
+			case inicial:
+			case aquecendo:
+				//nao executa nada
+				__NOP();
+				break;
+			case aquecido:
+				PrimitiveStates.stateMaquina = decrementando;
+				break;
+			case decrementando:
+				PrimitiveStates.stateMaquina = pausado;
+				break;
+			case pausado:
+				if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
+					PrimitiveStates.stateMaquina = decrementando;
+				}else{
+					PrimitiveStates.stateMaquina = aquecendo;
+				}
+				break;
+			}
 
 			MACRO_ENVIA_AKNOLADGE_(RX_TOGGLE_TEMPO)
-			break;
+		}
+		break;
 		case RX_RECEITA:
+		{
+			MACRO_ANULA_INATIVIDADE
 			//---------ENDEREÇO | 0x25 | TemperaturaTeto.hi~.lo | TemperaturaLastro.hi~.lo | Minutos | Segundos | CRC | CRC
 			PrimitiveStates.SetPointTeto = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
 			PrimitiveStates.SetPointLastro = (bluetooth._RxDataArr[4]<< 8) | bluetooth._RxDataArr[5];
@@ -220,26 +276,52 @@ void rxBluetooth(void){
 			PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
 
 
-			TempSPTeto = PrimitiveStates.SetPointTeto;
-			TempSPLastro = PrimitiveStates.SetPointLastro;
-
-			PrimitiveStates.stateTimer = true; //estarta o timer
+			switch (PrimitiveStates.stateMaquina) {
+			case inicial:
+			case aquecendo:
+				//nao executa nada
+				__NOP();
+				break;
+			case aquecido:
+			case decrementando:
+			case pausado:
+				if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
+					PrimitiveStates.stateMaquina 	= decrementando;
+				}else{
+					PrimitiveStates.stateMaquina = aquecendo;
+				}
+				break;
+			}
 			MACRO_ENVIA_AKNOLADGE_(RX_RECEITA)
-			break;
+		}
+		break;
 		case RX_LIMITE_TEMPERATURA:
 			//---------ENDEREÇO | 0x26 | TemperaturaTeto.hi~.lo | TemperaturaLastro.hi~.lo | CRC | CRC
 			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_TEMPERATURA)
 			break;
 		case RX_LIGA_LAMPADA:
 			//---------ENDEREÇO | 0x27 | 0x27 | CRC | CRC
-			PrimitiveStates.SegundosLampada=30;//todo revisar variaveis de limite
+			MACRO_ANULA_INATIVIDADE
+			PrimitiveStates.RTLampada=PrimitiveStates.SPLampada;
 			LAMPADA_ON
 			MACRO_ENVIA_AKNOLADGE_(RX_LIGA_LAMPADA)
 			break;
 		case RX_DESLIGA_LAMPADA:
 			//---------ENDEREÇO | 0x28 | 0x28 | CRC | CRC
+			MACRO_ANULA_INATIVIDADE
 			LAMPADA_OFF
 			MACRO_ENVIA_AKNOLADGE_(RX_DESLIGA_LAMPADA)
+			break;
+		case RX_LIMITE_LAMPADA:
+			//---------ENDEREÇO | 0x30 | 0x30 | SPLampada | CRC | CRC
+			//todo sequencia salvar limite lampada eeprom
+			PrimitiveStates.SPLampada = bluetooth._RxDataArr[2];
+			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_LAMPADA)
+			break;
+		case RX_CANCELA_PROCESSO:
+			//---------ENDEREÇO | 0x29 | 0x29 | CRC | CRC
+			desligaForno();
+			MACRO_ENVIA_AKNOLADGE_(RX_CANCELA_PROCESSO)
 			break;
 		case RX_PEDE_SENHA:
 			if(bluetooth.JanelaConexao > 0)

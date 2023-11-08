@@ -39,8 +39,7 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-#define ERRO_CRITICO 0x0f
-#define CHEGOU_ADDR_BLE 0xbf
+
 
 #define DMA_RX_BUFFER_SIZE      64
 typedef struct DMA_SERIAL_Struct{
@@ -87,24 +86,21 @@ typedef enum
 	CEepromAtualizaHora,
 } ComandosEeprom;
 
-//---Estados da Aplicacao
+//---Estados maquina
 typedef enum
-{   sInicio = 0,
-	sManual,
-	sInteligente,
-	sPronta,
-	sPreparandoManual,
-	sPreparandoInteligente,
-	sError,
-	sPizzaPronta,
-} state_t;
+{   inicial = 0		,
+	aquecendo		,
+	aquecido		,
+	decrementando	,
+	pausado			,
+} Smaquina;
 
-//---Estados Timer
+//---Estados aquecimento
 typedef enum
-{   emEspera = 0,
-	decrementando,
-	pausado,
-} state_timer;
+{   buscandoTemp = 0	,
+	mantendoTemp		,
+} Sheat;
+
 
 //---Estrutura variaveis principais
 typedef struct
@@ -113,26 +109,42 @@ typedef struct
 	bool 		Teto; 		//on/off
 	bool 		Lastro;		//on/off
 	bool 		Lampada;	//on/off
+	bool 		Cooler;		//on/off
 	bool 		Led1;		//on/off
-	bool 		Led2;
-	uint8_t 	Receita; //Definido em @AcaoReceita | possiveis estados para receita
+	bool 		Led2;		//on/off
+	bool 		Led3;		//on/off
+
 	double 		RealtimeTeto;
 	double 		RealtimeLastro;
 	double		SetPointTeto;
 	double  	SetPointLastro;
-	state_t 	MaquinaMaster;
+
+	Sheat 		MaquinaAquecimento;
 	uint8_t		SPTimerMinutos;
 	uint8_t		SPTimerSegundos;
 	uint8_t		RTTimerMinutos;
 	uint8_t		RTTimerSegundos;
-	uint8_t		SegundosLampada;
-	state_timer		stateTimer;
+
+	uint8_t		SPLampada;
+	uint8_t		RTLampada;
+
+	Smaquina	stateMaquina;
+
+	BIT_TO_BYTE_ERROS		Erro;
 
 }GlobalPrimitiveIOStates;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+
+//-----------------DEFINES DE FABRICA------------------------------
+//-----------------DEFINES DE FABRICA------------------------------
+#define ERRO_CRITICO 0x0f
+#define CHEGOU_ADDR_BLE 0xbf
+#define ON_FAN_TEMPERATURA 		200 	// graus celcius
+#define TIME_INATIVO_SETUP 		1800 // tempo de inatividade limite
+#define TIME_MAX_AQUECIMENTO 	600  // tempo maximo permitido para nao entrar em erro de aquecimento
 
 /* USER CODE END EC */
 
@@ -172,8 +184,13 @@ typedef struct
 #define LAMPADA_ON RELE_5_ON\
 		PrimitiveStates.Lampada = true;
 #define LAMPADA_OFF RELE_5_OFF\
-		PrimitiveStates.SegundosLampada = 0;\
+		PrimitiveStates.RTLampada = 0;\
 		PrimitiveStates.Lampada = false;
+
+#define COOLER_ON RELE_4_ON\
+		PrimitiveStates.Cooler = true;
+#define COOLER_OFF RELE_4_OFF\
+		PrimitiveStates.Cooler = false;
 
 /* USER CODE END EM */
 
@@ -210,15 +227,15 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
+extern void desligaForno(void);
 extern TIM_HandleTypeDef htim3,htim2;
 extern I2C_HandleTypeDef hi2c1;
 extern UART_HandleTypeDef huart1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern GlobalPrimitiveIOStates PrimitiveStates;
-extern state_timer stateTimer;
 
 extern BIT_TO_BYTE_ERROS		Erro;
-extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro, TempSPTeto, TempSPLastro; //todo pensar uma forma melhor de enviar
+extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro; //todo pensar uma forma melhor de enviar
 
 /* USER CODE END Private defines */
 

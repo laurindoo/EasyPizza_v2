@@ -548,3 +548,26 @@ void BluetoothDescon(Bluetooth* ble){
 	UARTDMAHandle->Instance->CNDTR = DMA_RX_BUFFER_SIZE;    /* Set number of bytes to receive */
 	UARTDMAHandle->Instance->CCR |= DMA_CCR_EN;            /* Start DMA transfer */
 }
+
+void bluetooth10ms(Bluetooth* ble){
+
+	/*INCREMENTO DE INATIVIDADE-------------------*/
+	(ble->msIdle<240)?ble->msIdle++:0;
+
+	/*MONITOR INATIVIDADE-------------------------*/
+	if(ble->JanelaConexao>0){
+		if(ble->msIdle > DEF_TEMPO_MAX_S_MSG_HIGH)	{
+			BluetoothDescon(ble);
+		}
+	}
+	else{
+		if(ble->msIdle > DEF_TEMPO_MAX_S_MSG_LOW)	{
+			BluetoothDescon(ble);
+		}
+	}
+}
+
+void bluetooth1000ms(Bluetooth* ble){
+	if(ble->JanelaConexao>0)
+		ble->JanelaConexao--;
+}

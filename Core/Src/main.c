@@ -92,6 +92,11 @@ void StartTimer(void const * argument);
 void StartEeprom(void const * argument);
 void CBTimer10ms(void const * argument);
 void CBTimer1000ms(void const * argument);
+void desligaForno(void);
+void leTempInterna(void);
+void controleCooler(void);
+extern void TaskTemperatura1sec(void);
+extern void taskBluetooth1sec(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -110,10 +115,7 @@ uint32_t 	buffer_ADC[3];
 //---VARIAVEIS PRIMITIVAS
 GlobalPrimitiveIOStates PrimitiveStates;
 
-//---MAQUINA E VARS DERIVADAS
-BIT_TO_BYTE_ERROS		Erro;
 
-state_timer stateTimer;
 
 /* USER CODE END 0 */
 
@@ -678,7 +680,13 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-
+void desligaForno(void){
+	PrimitiveStates.RTTimerMinutos 	= 0;
+	PrimitiveStates.RTTimerSegundos = 0;
+	PrimitiveStates.SetPointLastro 	= 0;
+	PrimitiveStates.SetPointTeto 	= 0;
+	PrimitiveStates.stateMaquina 	= inicial;
+}
 
 void leTempInterna(void){
 #define Avg_slope .0043
@@ -686,6 +694,14 @@ void leTempInterna(void){
 #define VSENSE 3.3/4096 //12bit
 
 	tempInterna = ((V25_ - VSENSE*buffer_ADC[2])/Avg_slope)+25;
+}
+
+void controleCooler(void){
+	if(PrimitiveStates.RealtimeLastro>200 || PrimitiveStates.RealtimeTeto>200){
+		COOLER_ON
+	}else 	if(PrimitiveStates.RealtimeLastro<195 && PrimitiveStates.RealtimeTeto<195){
+		COOLER_OFF
+	}
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
@@ -833,40 +849,9 @@ __weak void StartEeprom(void const * argument)
 void CBTimer10ms(void const * argument)
 {
   /* USER CODE BEGIN CBTimer10ms */
-	//TODO COLOCAR ISSO NA CLASSE E APNEAS CHAMAR A CALLBACK ASQUI
 
+	bluetooth10ms(&bluetooth);
 
-	/*INCREMENTO DE INATIVIDADE-------------------*/
-	(bluetooth.msIdle<240)?bluetooth.msIdle++:0;
-
-
-	/*MONITOR INATIVIDADE-------------------------*/
-	if(bluetooth.JanelaConexao>0){
-		if(bluetooth.msIdle > DEF_TEMPO_MAX_S_MSG_HIGH)	{
-			BluetoothDescon(&bluetooth);
-		}
-	}
-	else{
-		if(bluetooth.msIdle > DEF_TEMPO_MAX_S_MSG_LOW)	{
-			BluetoothDescon(&bluetooth);
-		}
-	}
-
-	/*DECREMENTO JANELA CONEXAO-------------------*/
-	static uint8_t mstimes100;
-	if(mstimes100>=100){
-		//do
-		mstimes100=0;
-		//todo revisar
-		if(bluetooth.JanelaConexao>0)
-			bluetooth.JanelaConexao--;
-	}else{
-		//increment until 1 sec
-		mstimes100++;
-	}
-
-
-	/*MONITOR JANELA CONEXAO_____________________*/
   /* USER CODE END CBTimer10ms */
 }
 
@@ -875,6 +860,18 @@ void CBTimer1000ms(void const * argument)
 {
   /* USER CODE BEGIN CBTimer1000ms */
 
+	bluetooth1000ms(&bluetooth);
+
+	taskTemperatura1sec();
+
+	taskBluetooth1sec();
+
+	controleCooler();
+
+	//se existir erros do tipo abaixo, o forno é desligado
+	if(PrimitiveStates.Erro.byte != 0){
+		desligaForno();
+	}
   /* USER CODE END CBTimer1000ms */
 }
 

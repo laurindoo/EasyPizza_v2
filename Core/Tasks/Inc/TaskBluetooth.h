@@ -25,5 +25,6 @@ extern osMessageQId FilaRXBluetoothHandle,FilaTXBluetoothHandle,FilaEepromHandle
 extern int recorrencia;
 extern Bluetooth bluetooth;
 
+//#define MACRO_ANULA_INATIVIDADE PrimitiveStates.intatividadeTime = 0;
 
 #endif /* INC_APLICACAO_H_ */

@@ -9,7 +9,6 @@
 
 #include "TaskTemperatura.h"
 
-float GetTemp(double * PIDOut);
 void initPID(void);
 void computaPID(void);
 
@@ -17,7 +16,7 @@ void computaPID(void);
 extern osThreadId TaskTemperaturaHandle;
 
 //---variaveis PID
-double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro, TempSPTeto, TempSPLastro;
+double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro;
 PID_TypeDef TPIDTeto,TPIDLastro;
 
 
@@ -25,30 +24,34 @@ void StartTemperatura(void const * argument){
 
 	initPID();
 
-	//	osThreadSuspend(TaskTemperaturaHandle);
 	for(;;)	{
 
 		computaPID();
 		osThreadYield();
+
+		/*	-Em aquecimento
+		 * 		podendo:
+		 * 			->resetar timers realtime
+		 * 			->no else, vindo do aquecimento gera notificacao de temperatura alcancada	*/
+		if(PrimitiveStates.RealtimeTeto<(PrimitiveStates.SetPointTeto)-5 ||
+				PrimitiveStates.RealtimeLastro<(PrimitiveStates.SetPointLastro)-5){
+
+			PrimitiveStates.MaquinaAquecimento 	= buscandoTemp;
+			PrimitiveStates.stateMaquina 		= aquecendo;
+
+		}else 	if(PrimitiveStates.RealtimeTeto>=PrimitiveStates.SetPointTeto ||
+				PrimitiveStates.RealtimeLastro>=PrimitiveStates.SetPointLastro){
+
+			PrimitiveStates.MaquinaAquecimento = mantendoTemp;
+
+		}
+
 		osDelay(TIME_PID_CALC);
 	}
 }
 
-float GetTemp(double * PIDOut){
-	/*
-	 * Simulacao temperatura usando saida do PID
-	 */
 
-	static float tmp = 0;
-
-	tmp += (*PIDOut / 1000);
-
-	return tmp;
-}
 void initPID(void){
-
-	TempSPTeto 		= 0;
-	TempSPLastro 	= 0;
 
 	PID(&TPIDTeto, 		&PrimitiveStates.RealtimeTeto, 		&PIDOutTeto, 	&PrimitiveStates.SetPointTeto, 	30, 0.01, 0.3, _PID_P_ON_E, _PID_CD_DIRECT);
 	PID(&TPIDLastro, 	&PrimitiveStates.RealtimeLastro, 	&PIDOutLastro, 	&PrimitiveStates.SetPointLastro, 	30, 0.01, 0.3, _PID_P_ON_E, _PID_CD_DIRECT);
@@ -70,6 +73,24 @@ void computaPID(void){
 	htim3.Instance->CCR3 = PIDOutTeto;
 	htim3.Instance->CCR4 = PIDOutLastro;
 }
-void Temperatura1sec(void){
+void taskTemperatura1sec(void){
 
+	//MONITOR DE ERRO DE AQUECIMENTO
+	static uint16_t contadorAquecimento;
+	if(PrimitiveStates.stateMaquina == aquecendo){
+
+		if(contadorAquecimento>=TIME_MAX_AQUECIMENTO){
+			//verifica erro temperatura lastro
+			if(PrimitiveStates.RealtimeLastro < PrimitiveStates.SetPointLastro-5)
+				PrimitiveStates.Erro.bit.IdleLastro=1;
+
+			//verifica erro temperatura teto
+			if(PrimitiveStates.RealtimeTeto < PrimitiveStates.SetPointTeto-5)
+				PrimitiveStates.Erro.bit.IdleTeto=1;
+
+		}else{
+			contadorAquecimento++;
+		}
+	}else
+		contadorAquecimento=0;
 }

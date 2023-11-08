@@ -47,10 +47,10 @@ void StartTimer(void const * argument)
 void funcionamentoTimer(void){
 
 	//Decremento de minutos e segundos
-	if((PrimitiveStates.RTTimerMinutos>0 && PrimitiveStates.RTTimerSegundos==0) && PrimitiveStates.stateTimer == decrementando){
+	if((PrimitiveStates.RTTimerMinutos>0 && PrimitiveStates.RTTimerSegundos==0) && PrimitiveStates.stateMaquina == decrementando){
 		PrimitiveStates.RTTimerSegundos = 59;
 		PrimitiveStates.RTTimerMinutos--;
-	}else if((PrimitiveStates.RTTimerMinutos>0 || PrimitiveStates.RTTimerSegundos>0) && PrimitiveStates.stateTimer == decrementando){
+	}else if((PrimitiveStates.RTTimerMinutos>0 || PrimitiveStates.RTTimerSegundos>0) && PrimitiveStates.stateMaquina == decrementando){
 		PrimitiveStates.RTTimerSegundos--;
 
 		//chegou ao zero --- ROTINA DE FIM DE CICLO
@@ -59,7 +59,10 @@ void funcionamentoTimer(void){
 			PrimitiveStates.SetPointLastro 	= 0;
 			PrimitiveStates.SetPointTeto	= 0;
 			PrimitiveStates.SetPointLastro	= 0;
-			PrimitiveStates.stateTimer = emEspera;
+			//todo, avaliar temperatura, podendo ir para aquecimento ou aquecido
+			if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
+				PrimitiveStates.stateMaquina = aquecido;
+			}
 			osThreadResume(TaskBuzzerHandle);
 		}
 	}
@@ -68,9 +71,9 @@ void funcionamentoTimer(void){
 void funcionamentoLampada(void){
 
 	//decremento e apos desligamento lampada
-	if(PrimitiveStates.SegundosLampada>0){
-		PrimitiveStates.SegundosLampada--;
-		if(PrimitiveStates.SegundosLampada==0){
+	if(PrimitiveStates.RTLampada>0){
+		PrimitiveStates.RTLampada--;
+		if(PrimitiveStates.RTLampada==0){
 			LAMPADA_OFF
 		}else{
 			LAMPADA_ON

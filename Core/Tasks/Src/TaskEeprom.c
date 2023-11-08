@@ -27,7 +27,7 @@ void initEeprom(void){
 	//	zeraTodosMeses(&eeprom);
 
 	//criacao dos objetos variaveis
-	EepromAddVar(&eeprom, &tempoDelayLuz, 			"addrTEMPO_LUZ", 		addrTEMPO_LUZ,		DATA8BITS,	0,		0,		0		,0);
+	EepromAddVar(&eeprom, &tempoDelayLuz, 			"addrTEMPO_LUZ", 		addrTEMPO_LUZ,		DATA8BITS,	5,		30,		250		,(uint32_t *)&PrimitiveStates.SPLampada);
 	EepromAddVar(&eeprom, &horimetroHoras, 			"addrHORIMETRO", 		addrHORIMETRO,		DATA8BITS,	0,		0,		0		,0);
 	EepromAddVar(&eeprom, &horimetroMinutos, 		"addrMINUTIMETRO", 		addrMINUTIMETRO,	DATA8BITS,	0,		0,		0		,0);
 	EepromAddVar(&eeprom, &instalacaoDia, 			"addrINST_DIA", 		addrINST_DIA,		DATA8BITS,	1,		0,		31		,0);
@@ -36,13 +36,9 @@ void initEeprom(void){
 	EepromAddVar(&eeprom, &totalCiclos, 			"addrTOTAL_GERAL", 		addrTOTAL_GERAL,	DATA16BITS,	0,		0,		0		,0);
 	EepromAddVar(&eeprom, &LimiteTemperatura, 		"addrLIMITE_TEMP", 		addrLIMITE_TEMP,	DATA16BITS,	0,		0,		0		,0);
 
-		RestauraPadraoTudo(&eeprom);
+	RestauraPadraoTudo(&eeprom);
 	//faz o download dos objetos
 //	EepromDownloadValores(&eeprom);
-
-
-	//	osThreadResume(TaskComandoHandle);
-	//	osThreadResume(TaskBluetoothHandle);
 }
 
 void processaEeprom(void){

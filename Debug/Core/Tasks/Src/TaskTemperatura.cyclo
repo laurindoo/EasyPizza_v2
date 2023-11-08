@@ -1,5 +1,4 @@
-../Core/Tasks/Src/TaskTemperatura.c:24:6:StartTemperatura	1
-../Core/Tasks/Src/TaskTemperatura.c:37:7:GetTemp	1
-../Core/Tasks/Src/TaskTemperatura.c:48:6:initPID	1
-../Core/Tasks/Src/TaskTemperatura.c:65:6:computaPID	1
-../Core/Tasks/Src/TaskTemperatura.c:73:6:Temperatura1sec	1
+../Core/Tasks/Src/TaskTemperatura.c:23:6:StartTemperatura	5
+../Core/Tasks/Src/TaskTemperatura.c:54:6:initPID	1
+../Core/Tasks/Src/TaskTemperatura.c:68:6:computaPID	1
+../Core/Tasks/Src/TaskTemperatura.c:76:6:taskTemperatura1sec	5

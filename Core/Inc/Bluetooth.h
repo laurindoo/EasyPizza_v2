@@ -4,7 +4,18 @@
  *  Created on: Jul 24, 2023
  *      Author: lucas
  */
-
+/*
+ * configurar:
+ * 		-task de manipulação de dados
+ * 		-callback de DMA no stm32f1xx_it.c
+ * 		-callback 10ms do contador
+ * 		-callback 1000ms do contador
+ *
+ *
+ *
+ *
+ *
+ * */
 #ifndef INC_BLUETOOTH_H_
 #define INC_BLUETOOTH_H_
 
@@ -20,8 +31,8 @@
 #include "cmsis_os.h"
 
 //---DEFINICOES---TEMPOS DE CONEXAO
-#define DEF_TEMPO_MAX_S_MSG_LOW			200	//ms
-#define DEF_TEMPO_MAX_S_MSG_HIGH		200	//ms
+#define DEF_TEMPO_MAX_S_MSG_LOW			200	//x*10ms
+#define DEF_TEMPO_MAX_S_MSG_HIGH		200	//x*10ms
 
 #define BLUETOOTH_MAX_BUFF_LEN 32
 #define BLUETOOTH_TEXT_BUFF_LEN 32
@@ -41,6 +52,7 @@
 		bluetooth.TXBuffer[1] = 0xFF;\
 		bluetooth.TXBuffer[2] = val;\
 		Envia_bytes_UART(bluetooth.TXBuffer, 3);
+
 
 
 //---MAQUINA CONEXAO
@@ -87,6 +99,8 @@ typedef enum
 	RX_LIMITE_TEMPERATURA 	= 0x26,
 	RX_LIGA_LAMPADA		 	= 0x27,
 	RX_DESLIGA_LAMPADA	 	= 0x28,
+	RX_CANCELA_PROCESSO	 	= 0x29,
+	RX_LIMITE_LAMPADA	 	= 0x30,
 	RX_RECEBEU_SENHA		= 0x40,
 	RX_PEDE_SENHA			= 0x42,
 } ComandosBleRX;
@@ -181,5 +195,7 @@ void iniciaBleHm10(Bluetooth* ble);
 void redefineBluetooth(Bluetooth* ble);
 void BluetoothErroCRC(void);
 void BluetoothDescon(Bluetooth* ble);
+void bluetooth10ms(Bluetooth* ble);
+void bluetooth1000ms(Bluetooth* ble);
 
 #endif /* INC_BLUETOOTH_H_ */
