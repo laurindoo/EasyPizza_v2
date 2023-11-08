@@ -39,6 +39,7 @@ void StartTimer(void const * argument)
 
 		funcionamentoLampada();
 
+		osThreadYield();
 		osDelayUntil(&xLastWakeTime,1000);
 	}
 }
@@ -46,10 +47,10 @@ void StartTimer(void const * argument)
 void funcionamentoTimer(void){
 
 	//Decremento de minutos e segundos
-	if((PrimitiveStates.RTTimerMinutos>0 && PrimitiveStates.RTTimerSegundos==0) && PrimitiveStates.stateTimer){
+	if((PrimitiveStates.RTTimerMinutos>0 && PrimitiveStates.RTTimerSegundos==0) && PrimitiveStates.stateTimer == decrementando){
 		PrimitiveStates.RTTimerSegundos = 59;
 		PrimitiveStates.RTTimerMinutos--;
-	}else if((PrimitiveStates.RTTimerMinutos>0 || PrimitiveStates.RTTimerSegundos>0) && PrimitiveStates.stateTimer){
+	}else if((PrimitiveStates.RTTimerMinutos>0 || PrimitiveStates.RTTimerSegundos>0) && PrimitiveStates.stateTimer == decrementando){
 		PrimitiveStates.RTTimerSegundos--;
 
 		//chegou ao zero --- ROTINA DE FIM DE CICLO
@@ -58,21 +59,13 @@ void funcionamentoTimer(void){
 			PrimitiveStates.SetPointLastro 	= 0;
 			PrimitiveStates.SetPointTeto	= 0;
 			PrimitiveStates.SetPointLastro	= 0;
+			PrimitiveStates.stateTimer = emEspera;
 			osThreadResume(TaskBuzzerHandle);
 		}
 	}
 }
 
 void funcionamentoLampada(void){
-	osEvent evt;
-	//notificacao via piscar de lamapda
-	evt = osSignalWait (PISCADA_LAMPADA, 0);
-	if (evt.status == osEventSignal){
-
-		if(evt.value.v == PISCADA_LAMPADA){
-			//TODO LÓGICA DE PISCADA DE LAMPADA
-		}
-	}
 
 	//decremento e apos desligamento lampada
 	if(PrimitiveStates.SegundosLampada>0){

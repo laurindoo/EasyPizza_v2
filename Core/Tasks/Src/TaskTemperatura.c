@@ -29,7 +29,7 @@ void StartTemperatura(void const * argument){
 	for(;;)	{
 
 		computaPID();
-
+		osThreadYield();
 		osDelay(TIME_PID_CALC);
 	}
 }
@@ -69,4 +69,7 @@ void computaPID(void){
 
 	htim3.Instance->CCR3 = PIDOutTeto;
 	htim3.Instance->CCR4 = PIDOutLastro;
+}
+void Temperatura1sec(void){
+
 }

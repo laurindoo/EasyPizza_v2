@@ -116,6 +116,9 @@ void BLEDMA_IrqHandler (Bluetooth *ble)
 		/* Clear the transfer complete flag */
 		__HAL_DMA_CLEAR_FLAG(UARTDMAHandle, __HAL_DMA_GET_TC_FLAG_INDEX(UARTDMAHandle));
 
+		//zera contador de inatividade
+		ble->msIdle=0;
+
 		//calculo do tamanho da string recebida
 		ble->RxSize 		= DMA_RX_BUFFER_SIZE - UARTDMAHandle->Instance->CNDTR;
 
@@ -209,7 +212,7 @@ void Envia_bytes_UART(unsigned char _out[], uint8_t size){
 void Envia_texto_UART(char _out[], uint16_t delay){
 	HAL_UART_Transmit_IT(UARTHandle, (uint8_t *) _out, strlen(_out));
 	if(delay != 0){
-		HAL_Delay(delay);
+		osDelay(delay);
 	}
 }
 
@@ -532,4 +535,16 @@ void BluetoothErroCRC(void)
 	TXCRC[1] = 0xEE;\
 	TXCRC[2] = 0xEE;\
 	Envia_bytes_UART(TXCRC,3);
+}
+
+void BluetoothDescon(Bluetooth* ble){
+
+	osDelay(30);
+	Envia_texto_UART("AT",50);//DESCONECTA
+
+	/* Prepare DMA for next transfer */
+	/* Important! DMA stream won't start if all flags are not cleared first */
+	UARTDMAHandle->Instance->CMAR = (uint32_t)ble->_RxDataArr;   /* Set memory address for DMA again */
+	UARTDMAHandle->Instance->CNDTR = DMA_RX_BUFFER_SIZE;    /* Set number of bytes to receive */
+	UARTDMAHandle->Instance->CCR |= DMA_CCR_EN;            /* Start DMA transfer */
 }

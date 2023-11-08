@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2023 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -68,6 +68,8 @@ osMessageQId FilaComandoHandle;
 osMessageQId FilaTXBluetoothHandle;
 osMessageQId FilaRXBluetoothHandle;
 osMessageQId FilaEepromHandle;
+osTimerId timer10msHandle;
+osTimerId timer1000msHandle;
 osSemaphoreId BinSemUartTxHandle;
 /* USER CODE BEGIN PV */
 
@@ -88,6 +90,8 @@ void StartTemperatura(void const * argument);
 void StartBuzzer(void const * argument);
 void StartTimer(void const * argument);
 void StartEeprom(void const * argument);
+void CBTimer10ms(void const * argument);
+void CBTimer1000ms(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -95,6 +99,8 @@ void StartEeprom(void const * argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+float tempInterna;
 
 Bluetooth bluetooth;
 
@@ -106,6 +112,8 @@ GlobalPrimitiveIOStates PrimitiveStates;
 
 //---MAQUINA E VARS DERIVADAS
 BIT_TO_BYTE_ERROS		Erro;
+
+state_timer stateTimer;
 
 /* USER CODE END 0 */
 
@@ -145,15 +153,15 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA		(&hadc1	,(uint32_t*)&buffer_ADC, 2);// ADC_DMA
+	HAL_ADC_Start_DMA		(&hadc1	,(uint32_t*)&buffer_ADC, 3	);// ADC_DMA
 
-  	HAL_TIM_PWM_Start		(&htim3,TIM_CHANNEL_3);
-  	HAL_TIM_PWM_Start		(&htim3,TIM_CHANNEL_4);
+	HAL_TIM_PWM_Start		(&htim3,TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start		(&htim3,TIM_CHANNEL_4);
 
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+	/* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
@@ -162,11 +170,20 @@ int main(void)
   BinSemUartTxHandle = osSemaphoreCreate(osSemaphore(BinSemUartTx), 1);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
+	/* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
+  /* Create the timer(s) */
+  /* definition and creation of timer10ms */
+  osTimerDef(timer10ms, CBTimer10ms);
+  timer10msHandle = osTimerCreate(osTimer(timer10ms), osTimerPeriodic, NULL);
+
+  /* definition and creation of timer1000ms */
+  osTimerDef(timer1000ms, CBTimer1000ms);
+  timer1000msHandle = osTimerCreate(osTimer(timer1000ms), osTimerPeriodic, NULL);
+
   /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
+	/* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the queue(s) */
@@ -187,7 +204,7 @@ int main(void)
   FilaEepromHandle = osMessageCreate(osMessageQ(FilaEeprom), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+	/* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -212,7 +229,10 @@ int main(void)
   TaskEepromHandle = osThreadCreate(osThread(TaskEeprom), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+	/* add threads, ... */
+
+  osTimerStart(timer10msHandle,10);
+  osTimerStart(timer1000msHandle,1000);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -221,12 +241,12 @@ int main(void)
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1)
+	{
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -248,7 +268,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL10;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -260,7 +280,7 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
@@ -268,7 +288,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -301,7 +321,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.NbrOfConversion = 3;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -311,7 +331,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_71CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -321,6 +341,15 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+  sConfig.Rank = ADC_REGULAR_RANK_3;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -385,7 +414,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1800-1;
+  htim2.Init.Prescaler = 1200-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 100-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -444,7 +473,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 3600-1;
+  htim3.Init.Prescaler = 4000-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 100-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -649,6 +678,16 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+
+
+void leTempInterna(void){
+#define Avg_slope .0043
+#define V25_	1.43
+#define VSENSE 3.3/4096 //12bit
+
+	tempInterna = ((V25_ - VSENSE*buffer_ADC[2])/Avg_slope)+25;
+}
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 #define TAM 500
@@ -659,6 +698,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	double TempTeto, TempLastro;
 	static long somatorio1,somatorio2;
 	static uint16_t i = 0;
+
+
+	leTempInterna();
 
 	if(i<TAM){
 		somatorio1+=buffer_ADC[1]; // somatorio
@@ -685,13 +727,13 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	}
 
 
-//	//	TempInterna
-//	TempInterna = (   (buffer_ADC[2]*(3.3/4095)-V25)   /   (AVG_SLOPE*1000) )         + 35;
-//
-//	// Handles the IRQ of ADC1. EOC flag is cleared by reading data register
-//	static uint32_t temp = 0;
-//	temp = ADC1->DR;
-//	TempInterna = (temp-V25)/(AVG_SLOPE)+25;
+	//	//	TempInterna
+	//	TempInterna = (   (buffer_ADC[2]*(3.3/4095)-V25)   /   (AVG_SLOPE*1000) )         + 35;
+	//
+	//	// Handles the IRQ of ADC1. EOC flag is cleared by reading data register
+	//	static uint32_t temp = 0;
+	//	temp = ADC1->DR;
+	//	TempInterna = (temp-V25)/(AVG_SLOPE)+25;
 
 }
 
@@ -699,92 +741,141 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
 /* USER CODE BEGIN Header_StartBluetooth */
 /**
-  * @brief  Function implementing the TaskBluetooth thread.
-  * @param  argument: Not used
-  * @retval None
-  */
+ * @brief  Function implementing the TaskBluetooth thread.
+ * @param  argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartBluetooth */
 __weak void StartBluetooth(void const * argument)
 {
   /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	/* Infinite loop */
+	for(;;)
+	{
+		osDelay(1);
+	}
   /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_StartTemperatura */
 /**
-* @brief Function implementing the TaskTemperatura thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the TaskTemperatura thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartTemperatura */
 __weak void StartTemperatura(void const * argument)
 {
   /* USER CODE BEGIN StartTemperatura */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	/* Infinite loop */
+	for(;;)
+	{
+		osDelay(1);
+	}
   /* USER CODE END StartTemperatura */
 }
 
 /* USER CODE BEGIN Header_StartBuzzer */
 /**
-* @brief Function implementing the TaskBuzzer thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the TaskBuzzer thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartBuzzer */
 __weak void StartBuzzer(void const * argument)
 {
   /* USER CODE BEGIN StartBuzzer */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	/* Infinite loop */
+	for(;;)
+	{
+		osDelay(1);
+	}
   /* USER CODE END StartBuzzer */
 }
 
 /* USER CODE BEGIN Header_StartTimer */
 /**
-* @brief Function implementing the TaskTimer thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the TaskTimer thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartTimer */
 __weak void StartTimer(void const * argument)
 {
   /* USER CODE BEGIN StartTimer */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	/* Infinite loop */
+	for(;;)
+	{
+		osDelay(1);
+	}
   /* USER CODE END StartTimer */
 }
 
 /* USER CODE BEGIN Header_StartEeprom */
 /**
-* @brief Function implementing the TaskEeprom thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the TaskEeprom thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartEeprom */
 __weak void StartEeprom(void const * argument)
 {
   /* USER CODE BEGIN StartEeprom */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	/* Infinite loop */
+	for(;;)
+	{
+		osDelay(1);
+	}
   /* USER CODE END StartEeprom */
+}
+
+/* CBTimer10ms function */
+void CBTimer10ms(void const * argument)
+{
+  /* USER CODE BEGIN CBTimer10ms */
+	//TODO COLOCAR ISSO NA CLASSE E APNEAS CHAMAR A CALLBACK ASQUI
+
+
+	/*INCREMENTO DE INATIVIDADE-------------------*/
+	(bluetooth.msIdle<240)?bluetooth.msIdle++:0;
+
+
+	/*MONITOR INATIVIDADE-------------------------*/
+	if(bluetooth.JanelaConexao>0){
+		if(bluetooth.msIdle > DEF_TEMPO_MAX_S_MSG_HIGH)	{
+			BluetoothDescon(&bluetooth);
+		}
+	}
+	else{
+		if(bluetooth.msIdle > DEF_TEMPO_MAX_S_MSG_LOW)	{
+			BluetoothDescon(&bluetooth);
+		}
+	}
+
+	/*DECREMENTO JANELA CONEXAO-------------------*/
+	static uint8_t mstimes100;
+	if(mstimes100>=100){
+		//do
+		mstimes100=0;
+		//todo revisar
+		if(bluetooth.JanelaConexao>0)
+			bluetooth.JanelaConexao--;
+	}else{
+		//increment until 1 sec
+		mstimes100++;
+	}
+
+
+	/*MONITOR JANELA CONEXAO_____________________*/
+  /* USER CODE END CBTimer10ms */
+}
+
+/* CBTimer1000ms function */
+void CBTimer1000ms(void const * argument)
+{
+  /* USER CODE BEGIN CBTimer1000ms */
+
+  /* USER CODE END CBTimer1000ms */
 }
 
 /**
@@ -815,11 +906,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1)
+	{
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -834,7 +925,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+	/* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }

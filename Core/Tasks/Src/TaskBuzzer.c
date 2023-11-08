@@ -20,7 +20,7 @@ void StartBuzzer(void const * argument)
 		sequencia1Buzzer();
 
 		osThreadSuspend(TaskBuzzerHandle);
-
+		osThreadYield();
 		osDelay(100);
 	}
 	/* USER CODE END StartTaskBuzzer */
@@ -28,10 +28,14 @@ void StartBuzzer(void const * argument)
 
 void sequencia1Buzzer(void){
 	M_BUZZER_ON
-	HAL_Delay(300);
+	LAMPADA_ON
+	osDelay(300);
 	M_BUZZER_OFF
-	HAL_Delay(50);
+	LAMPADA_OFF
+	osDelay(50);
 	M_BUZZER_ON
-	HAL_Delay(250);
+	LAMPADA_ON
+	osDelay(250);
 	M_BUZZER_OFF
+	LAMPADA_OFF
 }

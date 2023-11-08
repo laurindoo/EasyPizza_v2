@@ -16,7 +16,7 @@ void StartEeprom(void const * argument)
 	for(;;)
 	{
 		processaEeprom();
-
+		osThreadYield();
 		osDelay(500);
 	}
 }
@@ -36,9 +36,9 @@ void initEeprom(void){
 	EepromAddVar(&eeprom, &totalCiclos, 			"addrTOTAL_GERAL", 		addrTOTAL_GERAL,	DATA16BITS,	0,		0,		0		,0);
 	EepromAddVar(&eeprom, &LimiteTemperatura, 		"addrLIMITE_TEMP", 		addrLIMITE_TEMP,	DATA16BITS,	0,		0,		0		,0);
 
-	RestauraPadraoTudo(&eeprom);
+		RestauraPadraoTudo(&eeprom);
 	//faz o download dos objetos
-	//	EepromDownloadValores(&eeprom);
+//	EepromDownloadValores(&eeprom);
 
 
 	//	osThreadResume(TaskComandoHandle);
@@ -67,7 +67,7 @@ void processaEeprom(void){
 		case CEepromSoftReset:
 			break;
 		case CEepromAtualizaHora:
-//
+			//
 			//				if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK){
 			//					Error_Handler();
 			//				}

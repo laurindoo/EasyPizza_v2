@@ -19,6 +19,10 @@
 #include "task.h"
 #include "cmsis_os.h"
 
+//---DEFINICOES---TEMPOS DE CONEXAO
+#define DEF_TEMPO_MAX_S_MSG_LOW			200	//ms
+#define DEF_TEMPO_MAX_S_MSG_HIGH		200	//ms
+
 #define BLUETOOTH_MAX_BUFF_LEN 32
 #define BLUETOOTH_TEXT_BUFF_LEN 32
 #define BLUETOOTH_MAX_COMANDOS_COUNT 45
@@ -92,6 +96,7 @@ typedef enum
 {
 	TX_ULTIMO_CODIGO 		= 0x01,
 	TX_REALTIME_DATA 		= 0x16,
+	TX_REALTIME_DATA2		= 0x17,
 	TX_SINCRONIA 			= 0x18,
 	TX_DATA_MEIA 			= 0x21,
 	TX_DATA_CHEIA 			= 0x22,
@@ -140,8 +145,9 @@ typedef struct
 
 	//contadores
 	uint8_t 	JanelaConexao		;	//contador decrescente de janela de conexao
-	uint8_t     msDesconectado    ;    //Contador crescente de tempo de desconectado em milisegundos
-	//flags
+	uint8_t     msDesconectado    	;    //Contador crescente de tempo de desconectado em milisegundos
+	uint8_t     msIdle    			;    //Contador crescente sem troca mensagens em milisegundos
+		//flags
 	bool 		StatusSenha			;	//FLAG QUE ARMAZENA VALIDACAO DE CHAVE DE ACESSO
 	bool 		StatusConexao		;	//depois de conectado e sincronizado
 	bool        SistemaEmErro       ;    //depois de conectado
@@ -174,5 +180,6 @@ void Inicia_HM10(Bluetooth* ble);
 void iniciaBleHm10(Bluetooth* ble);
 void redefineBluetooth(Bluetooth* ble);
 void BluetoothErroCRC(void);
+void BluetoothDescon(Bluetooth* ble);
 
 #endif /* INC_BLUETOOTH_H_ */

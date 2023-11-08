@@ -28,3 +28,4 @@
 ../Middlewares/Third_Party/FreeRTOS/Source/queue.c:2611:7:vQueueAddToRegistry	24	static
 ../Middlewares/Third_Party/FreeRTOS/Source/queue.c:2640:14:pcQueueGetName	24	static
 ../Middlewares/Third_Party/FreeRTOS/Source/queue.c:2668:7:vQueueUnregisterQueue	24	static
+../Middlewares/Third_Party/FreeRTOS/Source/queue.c:2700:7:vQueueWaitForMessageRestricted	32	static

@@ -40,7 +40,6 @@ extern "C" {
 /* USER CODE BEGIN ET */
 
 #define ERRO_CRITICO 0x0f
-#define PISCADA_LAMPADA 0x1f
 #define CHEGOU_ADDR_BLE 0xbf
 
 #define DMA_RX_BUFFER_SIZE      64
@@ -100,6 +99,13 @@ typedef enum
 	sPizzaPronta,
 } state_t;
 
+//---Estados Timer
+typedef enum
+{   emEspera = 0,
+	decrementando,
+	pausado,
+} state_timer;
+
 //---Estrutura variaveis principais
 typedef struct
 {
@@ -120,7 +126,7 @@ typedef struct
 	uint8_t		RTTimerMinutos;
 	uint8_t		RTTimerSegundos;
 	uint8_t		SegundosLampada;
-	bool		stateTimer;
+	state_timer		stateTimer;
 
 }GlobalPrimitiveIOStates;
 /* USER CODE END ET */
@@ -209,7 +215,7 @@ extern I2C_HandleTypeDef hi2c1;
 extern UART_HandleTypeDef huart1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern GlobalPrimitiveIOStates PrimitiveStates;
-
+extern state_timer stateTimer;
 
 extern BIT_TO_BYTE_ERROS		Erro;
 extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro, TempSPTeto, TempSPLastro; //todo pensar uma forma melhor de enviar

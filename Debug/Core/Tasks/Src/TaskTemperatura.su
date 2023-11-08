@@ -2,3 +2,4 @@
 ../Core/Tasks/Src/TaskTemperatura.c:37:7:GetTemp	24	static
 ../Core/Tasks/Src/TaskTemperatura.c:48:6:initPID	40	static
 ../Core/Tasks/Src/TaskTemperatura.c:65:6:computaPID	16	static
+../Core/Tasks/Src/TaskTemperatura.c:73:6:Temperatura1sec	4	static
