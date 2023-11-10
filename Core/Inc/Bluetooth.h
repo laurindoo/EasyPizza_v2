@@ -6,13 +6,12 @@
  */
 /*
  * configurar:
- * 		-task de manipulação de dados
- * 		-callback de DMA no stm32f1xx_it.c
- * 		-callback 10ms do contador
- * 		-callback 1000ms do contador
- *
- *
- *
+ * 		-definir nome 				-> Bluetooth.h
+ * 		-criar task de manipulação de dados ->TaskBluetooth.c
+ * 		-criar fila de rx e tx 		-> confgiRtos
+ * 		-callback de DMA 			-> stm32f1xx_it.c
+ * 		-callback 10ms do contador 	-> main.c
+ * 		-callback 1000ms do contador-> main.c
  *
  *
  * */
@@ -29,6 +28,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
+
+#define BLE_DEVICE_NAME "EasyPizza" // Substitua por um nome apropriado
+#define COMANDO_BUFFER_SIZE (50) // Escolha um tamanho que seja suficiente
 
 //---DEFINICOES---TEMPOS DE CONEXAO
 #define DEF_TEMPO_MAX_S_MSG_LOW			200	//x*10ms
@@ -53,8 +55,6 @@
 		bluetooth.TXBuffer[1] = 0xFF;\
 		bluetooth.TXBuffer[2] = val;\
 		Envia_bytes_UART(bluetooth.TXBuffer, 3);
-
-
 
 //---MAQUINA CONEXAO
 typedef enum{
@@ -85,43 +85,7 @@ typedef enum
 	ComandoConexao,
 } TypeComandoBle;
 
-//---Comandos Ble
-typedef enum
-{
-	RX_ATUALIZA_HORA 		= 0x03,
-	RX_RESTAURA 			= 0x10,
-	RX_SOLICITA_REALTIME 	= 0x15,
-	RX_SOLICITA_SINCRONIA 	= 0x17,
-	RX_SP_TEMP_TETO			= 0x21,
-	RX_SP_TEMP_LASTRO		= 0x22,
-	RX_SP_TEMPO				= 0x23,
-	RX_TOGGLE_TEMPO			= 0x24,
-	RX_RECEITA			 	= 0x25,
-	RX_LIMITE_TEMPERATURA 	= 0x26,
-	RX_LIGA_LAMPADA		 	= 0x27,
-	RX_DESLIGA_LAMPADA	 	= 0x28,
-	RX_CANCELA_PROCESSO	 	= 0x29,
-	RX_LIMITE_LAMPADA	 	= 0x30,
-	RX_RECEBEU_SENHA		= 0x40,
-	RX_PEDE_SENHA			= 0x42,
-} ComandosBleRX;
 
-//---Comandos Ble
-typedef enum
-{
-	TX_ULTIMO_CODIGO 		= 0x01,
-	TX_REALTIME_DATA 		= 0x16,
-	TX_REALTIME_DATA2		= 0x17,
-	TX_SINCRONIA 			= 0x18,
-	TX_DATA_MEIA 			= 0x21,
-	TX_DATA_CHEIA 			= 0x22,
-	TX_COMANDO_NEGADO 		= 0x89,
-	TX_DESCONECTA			,
-	TX_CHAVE				,
-	TX_CHAVE_ERRO			,
-	TX_RESULTADO_CHAVE_OK	,
-	TX_RESULTADO_CHAVE_ERRO	,
-} ComandosBleTX;
 
 /*
  * BleComando Struct
@@ -191,7 +155,6 @@ void BluetoothEnviaComando(unsigned char _out[], int size);
 void Envia_bytes_UART(unsigned char _out[], uint8_t size);
 void Envia_texto_UART(char _out[], uint16_t delay);
 unsigned short CRC16 (unsigned char *puchMsg, unsigned short usDataLen);
-void Inicia_HM10(Bluetooth* ble);
 void iniciaBleHm10(Bluetooth* ble);
 void redefineBluetooth(Bluetooth* ble);
 void BluetoothErroCRC(void);

@@ -34,6 +34,7 @@ void StartBluetooth(void const * argument)
 
 static uint16_t tempoSemAtividade;
 #define MACRO_ANULA_INATIVIDADE tempoSemAtividade = 0;
+
 void taskBluetooth1sec(void){
 	if(tempoSemAtividade>=TIME_INATIVO_SETUP){
 		desligaForno();

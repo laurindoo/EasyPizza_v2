@@ -271,117 +271,6 @@ unsigned short CRC16 (unsigned char *puchMsg, unsigned short usDataLen)
 	return (uchCRCHi << 8 | uchCRCLo) ;
 }//---END---//
 
-void Inicia_HM10(Bluetooth* ble)
-{
-
-#define M_BLE_RESET Envia_texto_UART("AT+RESET",400);//RESETA
-#define M_UART_SETA_9600 \
-		HAL_UART_Abort_IT(UARTHandle);\
-		HAL_UART_DeInit(UARTHandle);\
-		HAL_Delay(10);\
-		UARTHandle->Init.BaudRate=9600;\
-		HAL_UART_Init(UARTHandle);\
-		HAL_Delay(10);
-#define M_UART_SETA_115200\
-		HAL_UART_Abort_IT(UARTHandle);\
-		HAL_UART_DeInit(UARTHandle);\
-		HAL_Delay(10);\
-		UARTHandle->Init.BaudRate=115200;\
-		HAL_UART_Init(UARTHandle);\
-		HAL_Delay(10);
-
-
-	/*rascunho de maquina de inicio do bluetooth*/
-	/*
-	 * 	BAUD 115200
-	 * 		pergunto nome do bluetooth
-	 * 		-nome diferente do setado?
-	 * 		--->setar flag de reset do bluetooth
-	 * */
-
-	uint8_t trying;
-	trying = 0;
-	M_UART_SETA_115200
-	Envia_texto_UART("AT",50);	//
-	Envia_texto_UART("AT",50);	//
-
-	/*---HABILITA INTERRUPÇÃO---*/
-	__HAL_UART_ENABLE_IT 	(UARTHandle, UART_IT_IDLE);							// HABILITA idle line INTERRUPT
-	__HAL_DMA_ENABLE_IT 	(UARTDMAHandle, DMA_IT_TC);							// HABILITA O DMA Tx cplt INTERRUPT
-	HAL_UART_Receive_DMA 	(UARTHandle, ble->_RxDataArr, DMA_RX_BUFFER_SIZE);	// STARTA O UART1 EM DMA MODE
-
-	//instrucao para procurar o nome do bluetooth
-	procuraNomeBle:
-	if(trying>5){
-		goto RedefineBluetooth;
-	}
-
-	Envia_texto_UART("AT+NAME?",100);
-	//eventReceiveDMA = osSignalWait(0x03, 1000);
-	HAL_Delay(1000);
-	ble->ss = NULL;
-	ble->ss = strstr(ble->StringRecebida, "NAME");
-	if (ble->ss != NULL){
-		/*---   Recebeu proprio nome  ---*/
-		ble->ss = strstr(ble->StringRecebida, "Coffea-14L"); //todo colocar uma outra forma de resetar o ble tambem
-		if (ble->ss != NULL){
-			/*---   Recebeu proprio nome  ---*/
-			goto Final;
-		}else{
-			/*---   Recebeu outro nome  ---*/
-			goto RedefineBluetooth;
-		}
-	}else{
-		//nao obteve retorno
-		trying++;
-		goto procuraNomeBle;
-	}
-
-	RedefineBluetooth:
-	//-------------------------------------- RedefineBluetooth --------------------------------
-	MACRO_RESET_BLE		//HARDRESET NO BLE_HM10
-	HAL_Delay(100);\
-
-	//seta em 115200
-	M_UART_SETA_115200
-	Envia_texto_UART("AT",100);	//
-	Envia_texto_UART("AT",100);	//
-	Envia_texto_UART("AT+RENEW",1000);	//RESTAURA PADRAO FABRICA
-	//seta em 9600
-	M_UART_SETA_9600
-	Envia_texto_UART("AT+RENEW",1000);	//RESTAURA PADRAO FABRICA
-
-	Envia_texto_UART("AT",100);	//
-	Envia_texto_UART("AT",100);	//
-	Envia_texto_UART("AT+ADTY3",300);	//BLOQUEIA CONEXAO
-	Envia_texto_UART("AT+BAUD4",300);	//COLOCA BAUD EM 115200
-	//seta em 115200
-	M_UART_SETA_115200
-	//	M_BLE_RESET
-	MACRO_RESET_BLE
-
-	//CONFIGURA CENTRAL
-	Envia_texto_UART("AT",100);	//
-	Envia_texto_UART("AT",100);	//
-	Envia_texto_UART("AT+POWE3",300);	//POTENCIA MAXIMA
-	Envia_texto_UART("AT+SHOW3",300);	//MOSTRA O NOME e rssi
-	Envia_texto_UART("AT+GAIN1",300);	//INSERE GANHO
-	Envia_texto_UART("AT+NOTI1",300);	//NOTIFICA QUE CONECTOU
-	Envia_texto_UART("AT+PIO11",300);	//1 - CONECT = 1  \  DISC = 0
-	M_BLE_RESET
-
-	Envia_texto_UART("AT+NAMECoffea-14L",400);		//NOME
-	Envia_texto_UART("AT+ADTY0",300);				//DESBLOQUEIA CONEXA
-	M_BLE_RESET
-
-	Final:
-	/*---HABILITA INTERRUPÇÃO---*/
-	__HAL_UART_ENABLE_IT 	(UARTHandle, UART_IT_IDLE);						// HABILITA idle line INTERRUPT
-	__HAL_DMA_ENABLE_IT 	(UARTDMAHandle, DMA_IT_TC);					// HABILITA O DMA Tx cplt INTERRUPT
-	HAL_UART_Receive_DMA 	(UARTHandle, ble->_RxDataArr, DMA_RX_BUFFER_SIZE);	// STARTA O UART1 EM DMA MODE
-
-}//---END---//
-
 void iniciaBleHm10(Bluetooth* ble){
 #define M_BLE_RESET Envia_texto_UART("AT+RESET",400);//RESETA
 #define SETUP_UART(baud_rate) \
@@ -432,10 +321,9 @@ void iniciaBleHm10(Bluetooth* ble){
 				ble->ss = strstr(ble->StringRecebida, "NAME");
 
 				if (ble->ss != NULL){
-					ble->ss = strstr(ble->StringRecebida, "EasyPizza");
+					ble->ss = strstr(ble->StringRecebida, BLE_DEVICE_NAME);
 					if (ble->ss != NULL){
-									sequenciaBLE = capturaAddr;
-//						sequenciaBLE = final;
+						sequenciaBLE = capturaAddr;
 						break;
 					} else {
 						sequenciaBLE = redefineBle;
@@ -483,11 +371,14 @@ void iniciaBleHm10(Bluetooth* ble){
 			Envia_texto_UART("AT+PIO11",300);	//1 - CONECT = 1  \  DISC = 0
 			M_BLE_RESET
 
-			Envia_texto_UART("AT+NAMEEasyPizza",400);		//NOME
+			char comando[COMANDO_BUFFER_SIZE]; // Buffer para o comando AT
+			snprintf(comando, sizeof(comando), "AT+NAME%s", BLE_DEVICE_NAME);
+			Envia_texto_UART(comando, 400); // Configura o nome no dispositivo
+
+
 			Envia_texto_UART("AT+ADTY0",300);				//DESBLOQUEIA CONEXA
 			M_BLE_RESET
-						sequenciaBLE = capturaAddr;
-//			sequenciaBLE = final;
+			sequenciaBLE = capturaAddr;
 			break;
 		case capturaAddr:
 			static uint8_t tryingAddr=0;
