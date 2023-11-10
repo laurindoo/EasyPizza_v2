@@ -14,7 +14,7 @@ void taskBluetooth1sec(void);
 BleComando BLEAtualizaRealtime;
 BleComando BLESolicitaSincronia;
 BleComando BLEAtualizaDataHora,BLEAlteraLimiteTemp,BLERestaura,BLESPTeto,BLESPLastro,BLESPtempo,BLEToggleTempo,BLEReceita,BLESPTempo,BLELightOn,BLELightOff;
-BleComando BLEPedeSenha,BLERecebeuSenha,BLESetaLampada,BLECancelaProcesso;
+BleComando BLESetaLampada,BLECancelaProcesso;
 
 
 void StartBluetooth(void const * argument)
@@ -55,8 +55,6 @@ void initBluetooth(void){
 	BluetoothAddComp(&bluetooth, &BLEAlteraLimiteTemp, 	"RX_ALTERA_VALOR_LIMITE", 	RX_LIMITE_TEMPERATURA,		ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLEAtualizaDataHora, 	"RX_ATUALIZA_HORA", 		RX_ATUALIZA_HORA,			ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLERestaura, 			"RX_RESTAURA", 				RX_RESTAURA,				ComandoBasico);
-	BluetoothAddComp(&bluetooth, &BLEPedeSenha,   		"RX_PEDE_SENHA",  			RX_PEDE_SENHA,   			ComandoBasico);
-	BluetoothAddComp(&bluetooth, &BLERecebeuSenha,     	"RX_RECEBEU_SENHA",        	RX_RECEBEU_SENHA,          	ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLESPTeto,     		"RX_SP_TEMP_TETO",        	RX_SP_TEMP_TETO,          	ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLESPLastro,     		"RX_SP_TEMP_LASTRO",       	RX_SP_TEMP_LASTRO,          ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLESPTempo,     		"RX_SP_TEMPO",       		RX_SP_TEMPO,        		ComandoBasico);
@@ -116,43 +114,6 @@ void txBluetooth(void){
 			Buffer[8] 	= (uint8_t)instalacaoAno.valor;
 			Buffer[9]	= VERSAO;
 			BluetoothEnviaComando(Buffer, 9);
-			break;
-		case TX_CHAVE:
-			Buffer[0] 	= 0x01;									// ENDEREÇO
-			Buffer[1] 	= 0x51;									// FUNÇÃO -
-			Buffer[2] 	= 0x51;									// FUNÇÃO -
-			Buffer[3] 	= 0x01;
-			Buffer[4] 	= bluetooth.chave >> 8 		;
-			Buffer[5] 	= bluetooth.chave & 0x00ff	;
-			BluetoothEnviaComando(Buffer, 5);
-			break;
-		case TX_CHAVE_ERRO:
-			Buffer[0] 	= 0x01;									// ENDEREÇO
-			Buffer[1] 	= 0x51;									// FUNÇÃO -
-			Buffer[2] 	= 0x51;									// FUNÇÃO -
-			Buffer[3] 	= 0x00;
-			Buffer[4] 	= 0x00;
-			Buffer[5] 	= 0x00;
-			BluetoothEnviaComando(Buffer, 5);
-
-			BluetoothDescon(&bluetooth);
-			break;
-		case TX_RESULTADO_CHAVE_OK:
-			Buffer[0] 	= 0x01;									// ENDEREÇO
-			Buffer[1] 	= 0x52;									// FUNÇÃO -
-			Buffer[2] 	= 0x52;									// FUNÇÃO -
-			Buffer[3] 	= 0x01;									//resultado ok
-			BluetoothEnviaComando(Buffer, 3);
-			break;
-		case TX_RESULTADO_CHAVE_ERRO:
-			Buffer[0] 	= 0x01;									// ENDEREÇO
-			Buffer[1] 	= 0x52;									// FUNÇÃO -
-			Buffer[2] 	= 0x52;									// FUNÇÃO -
-			Buffer[3] 	= 0x00;									//resultado ok
-			BluetoothEnviaComando(Buffer, 3);
-
-			HAL_Delay(30);
-			Envia_texto_UART("AT",50);//DESCONECTA
 			break;
 		}
 	}
@@ -333,25 +294,7 @@ void rxBluetooth(void){
 			desligaForno();
 			MACRO_ENVIA_AKNOLADGE_(RX_CANCELA_PROCESSO)
 			break;
-		case RX_PEDE_SENHA:
-			if(bluetooth.JanelaConexao > 0)
-				osMessagePut(FilaTXBluetoothHandle, TX_CHAVE, 0);
-			else{
-				osMessagePut(FilaTXBluetoothHandle, TX_CHAVE_ERRO, 0);
-			}
-			break;
-		case RX_RECEBEU_SENHA:
-			if(		bluetooth._RxDataArr[3] == (bluetooth.chave >> 8) &&
-					bluetooth._RxDataArr[4] == (bluetooth.chave & 0x00ff) ){
-				//--->	CHAVE CORRETA
-				bluetooth.MaquinaConexao	= RX_VALIDADO;
-				osMessagePut(FilaTXBluetoothHandle, TX_RESULTADO_CHAVE_OK, 0);
-				break;
-			}else{
-				//--->	CHAVE ERRADA
-				osMessagePut(FilaTXBluetoothHandle, TX_RESULTADO_CHAVE_ERRO, 0);
-			}
-			break;
+
 		}
 	}
 }

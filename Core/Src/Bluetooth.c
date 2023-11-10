@@ -18,7 +18,7 @@ CRC_short 			CRCReceive;
 
 extern osThreadId TaskBluetoothHandle;
 
-
+BleComando BLEPedeSenha,BLERecebeuSenha;
 uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, DMA_HandleTypeDef *bluetoothUARTDMAHandle, osMessageQId *filaRX, osMessageQId *filaTX){
 	//Pass the used UART handle to the struct
 	ble->UARTHandle 	= bluetoothUARTHandle;
@@ -35,6 +35,9 @@ uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, D
 	ble->_BleCommCount  = 0;
 
 	ble->JanelaConexao = 120;//120 segundos
+
+	BluetoothAddComp(ble, &BLEPedeSenha,   		"RX_PEDE_SENHA",  			RX_PEDE_SENHA,   			ComandoConexao);
+	BluetoothAddComp(ble, &BLERecebeuSenha,     "RX_RECEBEU_SENHA",        	RX_RECEBEU_SENHA,          	ComandoConexao);
 
 	//Return OK
 	return 0;
@@ -80,15 +83,74 @@ void BluetoothPutFila(Bluetooth* ble){
 				return;
 			}
 
-			else if(ble->_BleCommArr[i]->_tipo == ComandoCritico ){
-				if(ble->SistemaEmErro){
-					osMessagePut(*ble->filaComandosRX, ble->_BleCommArr[i]->_comando, osWaitForever);
-				}else{
-					//TODO:devolver codigo informando que nao é possivel praticar comandos criticos quando em erro
-					//TX_COMANDO_NEGADO
+			else if(ble->_BleCommArr[i]->_tipo == ComandoConexao ){
+				//todo eu posso tomar um semaphorede bluetooth aqui ?????????
+				//ou entao esperar a fila esvaziar
+				//ou entao esvaziar a fila forcadamente
+				//todo atencao com o erro de hardfault ao forcar uma finalizacao de fila
+				switch (ble->_RxDataArr[1]) {
+				case RX_PEDE_SENHA:
+					solicitacaoSenhaBluetooh(ble);
+					break;
+				case RX_RECEBEU_SENHA:
+
+					avaliaSenhaRecebidaBluetooh(ble);
+					break;
 				}
 			}
 		}
+	}
+}
+
+void solicitacaoSenhaBluetooh(Bluetooth* ble){
+	unsigned char	Buffer		[20];
+
+	if(ble->JanelaConexao > 0){
+
+		/*----DENTRO DO TEMPO, ENTAO RESPONDE----*/
+		Buffer[0] 	= 0x01;									// ENDEREÇO
+		Buffer[1] 	= 0x51;									// FUNÇÃO -
+		Buffer[2] 	= 0x51;									// FUNÇÃO -
+		Buffer[3] 	= 0x01;
+		Buffer[4] 	= ble->chave >> 8 		;
+		Buffer[5] 	= ble->chave & 0x00ff	;
+		BluetoothEnviaComando(Buffer, 5);
+
+	}else{
+		/*----FORA DO TEMPO DE RESPOSTA ----*/
+		Buffer[0] 	= 0x01;									// ENDEREÇO
+		Buffer[1] 	= 0x51;									// FUNÇÃO -
+		Buffer[2] 	= 0x51;									// FUNÇÃO -
+		Buffer[3] 	= 0x00;
+		Buffer[4] 	= 0x00;
+		Buffer[5] 	= 0x00;
+		BluetoothEnviaComando(Buffer, 5);
+	}
+}
+
+void avaliaSenhaRecebidaBluetooh(Bluetooth* ble){
+	unsigned char	Buffer		[20];
+
+	if(		ble->_RxDataArr[3] == (ble->chave >> 8) &&
+			ble->_RxDataArr[4] == (ble->chave & 0x00ff) ){
+		//--->	CHAVE CORRETA
+		ble->MaquinaConexao	= RX_VALIDADO;
+		Buffer[0] 	= 0x01;									// ENDEREÇO
+		Buffer[1] 	= 0x52;									// FUNÇÃO -
+		Buffer[2] 	= 0x52;									// FUNÇÃO -
+		Buffer[3] 	= 0x01;									//resultado ok
+		BluetoothEnviaComando(Buffer, 3);
+
+	}else{
+		//--->	CHAVE ERRADA
+		Buffer[0] 	= 0x01;									// ENDEREÇO
+		Buffer[1] 	= 0x52;									// FUNÇÃO -
+		Buffer[2] 	= 0x52;									// FUNÇÃO -
+		Buffer[3] 	= 0x00;									//resultado ok
+		BluetoothEnviaComando(Buffer, 3);
+
+		HAL_Delay(30);
+		Envia_texto_UART("AT",50);//DESCONECTA
 	}
 }
 

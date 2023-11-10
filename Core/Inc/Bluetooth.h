@@ -86,6 +86,24 @@ typedef enum
 } TypeComandoBle;
 
 
+//---Comandos Ble
+typedef enum
+{
+	RX_RECEBEU_SENHA		= 0x40,
+	RX_PEDE_SENHA			= 0x42,
+} ConexaoBleRX;
+
+//---Comandos Ble
+typedef enum
+{
+	TX_ULTIMO_CODIGO 		= 0x01,
+	TX_COMANDO_NEGADO 		= 0x89,
+	TX_RESULTADO_CHAVE_OK	,
+	TX_RESULTADO_CHAVE_ERRO	,
+	TX_CHAVE				,
+	TX_CHAVE_ERRO			,
+} ConexaoBleTX;
+
 
 /*
  * BleComando Struct
@@ -149,6 +167,8 @@ typedef struct
 uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, DMA_HandleTypeDef *bluetoothUARTDMAHandle, osMessageQId *filaRX, osMessageQId *filaTX);
 uint8_t BluetoothAddComp(Bluetooth* ble, BleComando* _blecomm, char* objectname, uint8_t __comando, TypeComandoBle __tipo);
 void BluetoothPutFila(Bluetooth* ble);
+void solicitacaoSenhaBluetooh(Bluetooth* ble);
+void avaliaSenhaRecebidaBluetooh(Bluetooth* ble);
 void BLEUSART_IrqHandler(Bluetooth *ble);
 void BLEDMA_IrqHandler (Bluetooth *ble);
 void BluetoothEnviaComando(unsigned char _out[], int size);
