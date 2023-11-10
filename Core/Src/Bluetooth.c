@@ -7,8 +7,7 @@
 
 #include "Bluetooth.h"
 
-//VAR PARA CAPTURA DO ADDR
-//endereco mac
+//VAR PARA CAPTURA DO ADDR ---> endereco mac
 uint8_t 	addr8Bits	[12];	//VAR QUE ARMAZENA ENDERE�O DO DISPOSITIVO
 uint32_t 	addr32Bits	[3];	//VAR QUE ARMAZENA ENDERE�O DO DISPOSITIVO
 

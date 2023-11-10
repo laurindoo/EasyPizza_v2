@@ -16,10 +16,20 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "Eeprom.h"
-//#include "Bluetooth.h"
 
 extern osThreadId TaskEepromHandle,TaskComandoHandle,TaskBluetoothHandle;
 extern TYPE_CALENDARIO			Calendario;
 extern osMessageQId FilaEepromHandle;
+
+//variaveis globais da EEprom
+extern  Eeprom eeprom;
+extern	EepromVariaveis horimetroHoras,horimetroMinutos;
+extern	EepromVariaveis instalacaoDia,instalacaoMes,instalacaoAno;
+extern	EepromVariaveis totalCiclos,LimiteTemperatura;
+extern  EepromVariaveis tempoDelayLuz;
+
+
+void atualizaDataEeprom(RTC_DateTypeDef data, RTC_TimeTypeDef hora);
+
 
 #endif /* INC_TASKEEPROM_H_ */

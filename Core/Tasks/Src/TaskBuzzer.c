@@ -13,10 +13,11 @@ extern osThreadId TaskBuzzerHandle;
 void StartBuzzer(void const * argument)
 {
 	/* USER CODE BEGIN StartTaskBuzzer */
-	//osThreadSuspend(TaskBuzzerHandle);
+
 	/* Infinite loop */
 	for(;;)
 	{
+		//todo sequencia de piscar até receber o comando de iniciar ou de parar completamente
 		sequencia1Buzzer();
 
 		osThreadSuspend(TaskBuzzerHandle);

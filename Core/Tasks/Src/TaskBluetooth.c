@@ -61,14 +61,14 @@ void initBluetooth(void){
 	BluetoothAddComp(&bluetooth, &BLESPTempo,     		"RX_SP_TEMPO",       		RX_SP_TEMPO,        		ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLEToggleTempo,     	"RX_TOGGLE_TEMPO",       	RX_TOGGLE_TEMPO,        	ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLEReceita,     		"RX_RECEITA",     		  	RX_RECEITA,        			ComandoBasico);
-	BluetoothAddComp(&bluetooth, &BLELightOn,     		"RX_LIGA_LAMPADA",     	  	RX_LIGA_LAMPADA,     		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLELightOn,     		"RX_LIGA_LAMADA",     	  	RX_LIGA_LAMPADA,     		ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLELightOff,     		"RX_DESLIGA_LAMPADA",    	RX_DESLIGA_LAMPADA,  		ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLESetaLampada,     	"RX_LIMITE_LAMPADA",    	RX_LIMITE_LAMPADA,  		ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLECancelaProcesso,  	"RX_CANCELA_PROCESSO",    	RX_CANCELA_PROCESSO,  		ComandoBasico);
 }
 
 void txBluetooth(void){
-	unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];//todo cogitar colocar na classe
+	unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];
 	osEvent  evttx;
 	evttx = osMessageGet(FilaTXBluetoothHandle, 0);
 	if (evttx.status == osEventMessage) {
@@ -170,17 +170,21 @@ void rxBluetooth(void){
 			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA, 0);
 			break;
 		case RX_ATUALIZA_HORA:
-			//todo revisar
-			//				sDate.WeekDay 	= bluetooth._RxDataArr[2]; //Dia da semana p/atualizar
-			//				sDate.Date 		= bluetooth._RxDataArr[3]; //Dia do mes p/atualizar
-			//				sDate.Month 	= bluetooth._RxDataArr[4]; //mes p/atualizar
-			//				sDate.Year 		= bluetooth._RxDataArr[5]; //ano p/atualizar
-			//				sTime.Hours 	= bluetooth._RxDataArr[6]; //hora p/atualizar
-			//				sTime.Minutes 	= bluetooth._RxDataArr[7]; //minuto p/atualizar
-			//				sTime.Seconds 	= bluetooth._RxDataArr[8]; //segundos p/atualizar
-			osMessagePut(FilaEepromHandle, CEepromAtualizaHora, 0);
 
-			MACRO_ENVIA_AKNOLADGE_(bluetooth._RxDataArr[1])
+			RTC_DateTypeDef datetoUpdate;
+			RTC_TimeTypeDef timeToUpdate;
+
+			datetoUpdate.WeekDay 	= bluetooth._RxDataArr[2]; //Dia da semana p/atualizar
+			datetoUpdate.Date 		= bluetooth._RxDataArr[3]; //Dia do mes p/atualizar
+			datetoUpdate.Month 		= bluetooth._RxDataArr[4]; //mes p/atualizar
+			datetoUpdate.Year 		= bluetooth._RxDataArr[5]; //ano p/atualizar
+			timeToUpdate.Hours 		= bluetooth._RxDataArr[6]; //hora p/atualizar
+			timeToUpdate.Minutes 	= bluetooth._RxDataArr[7]; //minuto p/atualizar
+			timeToUpdate.Seconds 	= bluetooth._RxDataArr[8]; //segundos p/atualizar
+
+			atualizaDataEeprom(datetoUpdate, timeToUpdate);
+
+			MACRO_ENVIA_AKNOLADGE_(RX_ATUALIZA_HORA)
 			break;
 		case RX_RESTAURA:
 			//				//---------ENDEREÇO | 0x10 | 0x10  | CRC | CRC
@@ -190,9 +194,9 @@ void rxBluetooth(void){
 		case RX_SP_TEMP_TETO:
 			//---------ENDEREÇO | 0x21 | SP_Teto.high | SP_Teto.low | CRC | CRC
 			MACRO_ANULA_INATIVIDADE
-			uint16_t aux;
-			aux = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
-			PrimitiveStates.SetPointTeto = (double)aux;
+
+			PrimitiveStates.SetPointTeto = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+
 			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMP_TETO)
 			break;
 		case RX_SP_TEMP_LASTRO:
@@ -297,6 +301,11 @@ void rxBluetooth(void){
 		break;
 		case RX_LIMITE_TEMPERATURA:
 			//---------ENDEREÇO | 0x26 | TemperaturaTeto.hi~.lo | TemperaturaLastro.hi~.lo | CRC | CRC
+			MACRO_ANULA_INATIVIDADE
+
+			PrimitiveStates.LimiteTemp = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+			osMessagePut(FilaEepromHandle, CEepromLimiteTemp, 0);
+
 			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_TEMPERATURA)
 			break;
 		case RX_LIGA_LAMPADA:
@@ -314,8 +323,8 @@ void rxBluetooth(void){
 			break;
 		case RX_LIMITE_LAMPADA:
 			//---------ENDEREÇO | 0x30 | 0x30 | SPLampada | CRC | CRC
-			//todo sequencia salvar limite lampada eeprom
 			PrimitiveStates.SPLampada = bluetooth._RxDataArr[2];
+			osMessagePut(FilaEepromHandle, CEepromLimiteLuz, 0);
 			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_LAMPADA)
 			break;
 		case RX_CANCELA_PROCESSO:

@@ -59,7 +59,7 @@ void funcionamentoTimer(void){
 			PrimitiveStates.SetPointLastro 	= 0;
 			PrimitiveStates.SetPointTeto	= 0;
 			PrimitiveStates.SetPointLastro	= 0;
-			//todo, avaliar temperatura, podendo ir para aquecimento ou aquecido
+			//avalia temperatura, podendo ir para aquecimento ou aquecido
 			if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
 				PrimitiveStates.stateMaquina = aquecido;
 			}
@@ -87,7 +87,6 @@ void verificaErro(void){
 	if (evt.status == osEventSignal){
 
 		if(evt.value.v == ERRO_CRITICO){
-			//TODO REVISAR
 			osThreadSuspend(TaskTimerHandle);
 		}
 	}

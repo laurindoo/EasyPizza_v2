@@ -119,14 +119,6 @@ typedef struct
 
 }Eeprom;
 
-
-//variaveis globais da EEprom
-extern  Eeprom eeprom;
-extern	EepromVariaveis horimetroHoras,horimetroMinutos;
-extern	EepromVariaveis instalacaoDia,instalacaoMes,instalacaoAno;
-extern	EepromVariaveis totalCiclos,LimiteTemperatura;
-extern  EepromVariaveis tempoDelayLuz;
-
 //prototipos das funcoes da eeprom
 uint8_t EepromInit(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila);
 void EepromUpdateMes(Eeprom *eeprom, uint16_t __addMes, uint16_t __addItem, uint32_t valor, TypeTamData _sizeType);

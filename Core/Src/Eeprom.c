@@ -12,15 +12,6 @@
 #ifndef INC_EEPROM_C_
 #define INC_EEPROM_C_
 
-Eeprom eeprom;
-EepromVariaveis horimetroHoras,horimetroMinutos;
-EepromVariaveis instalacaoDia,instalacaoMes,instalacaoAno;
-EepromVariaveis totalCiclos,LimiteTemperatura;
-EepromVariaveis tempoDelayLuz;
-
-#endif /* SRC_EEPROM_H_ */
-
-
 uint8_t EepromInit(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila)
 {
 	//Pass the used I2C handle to the struct
@@ -291,7 +282,7 @@ void Write_1_byte(Eeprom *eeprom, uint16_t addr, uint8_t * ptr)
 
 
 
-
+#endif /* SRC_EEPROM_H_ */
 
 
 

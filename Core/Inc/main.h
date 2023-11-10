@@ -39,20 +39,11 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-
-
-#define DMA_RX_BUFFER_SIZE      64
-typedef struct DMA_SERIAL_Struct{
-	uint8_t			DMA_RX_Buffer	[DMA_RX_BUFFER_SIZE]	;	//BUFFER Endereco_central VIA UART
-	uint8_t			DMA_RX_size					;	//TAMANHO DA INFORMACAO RECEBIDA
-
-}DMA_SERIAL_Struct;//TODO TRANSFORMAR EM CLASSE
-
 //---ESTRUTURA AGRUPAMENTO DE 8 BITS EM 1 BYTE-------------------------------------
 typedef union BIT_TO_BYTE_ERROS
 {
 	struct
-	{ //todo revisar
+	{
 		unsigned char TimeoutTeto		: 1;
 		unsigned char TimeoutLastro		: 1;
 		unsigned char IdleTeto			: 1;
@@ -69,21 +60,23 @@ typedef union BIT_TO_BYTE_ERROS
 //---ESTRUTURA VARIAVEIS Calendario ------------------------------------
 typedef struct TYPE_CALENDARIO{
 
-	//	RTC_DateTypeDef 		Data_instalacao;
+	RTC_DateTypeDef 		Data_instalacao;
 	uint16_t				Horimetro_horas;		//total de horas da maquina
 	uint8_t					Horimetro_parcial_min; 	//a cada minuto eu incremento, comparo com o gravado, e hora++ se for o caso
-
+	uint16_t				TotalCiclos;
 }
 TYPE_CALENDARIO;//
 
 //---Comandos Eeprom
 typedef enum
-{   CEepromShifiting,
-	CEepromHorimetro,
+{   CEepromHorimetro,
 	CEepromDataInstalacao,
 	CEepromHardReset,
 	CEepromSoftReset,
 	CEepromAtualizaHora,
+	CEepromLimiteTemp,
+	CEepromLimiteLuz,
+	CEepromNewCile,
 } ComandosEeprom;
 
 //---Estados maquina
@@ -127,6 +120,8 @@ typedef struct
 
 	uint8_t		SPLampada;
 	uint8_t		RTLampada;
+
+	uint16_t	LimiteTemp;
 
 	Smaquina	stateMaquina;
 
@@ -228,6 +223,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 
 extern void desligaForno(void);
+extern RTC_HandleTypeDef hrtc;
 extern TIM_HandleTypeDef htim3,htim2;
 extern I2C_HandleTypeDef hi2c1;
 extern UART_HandleTypeDef huart1;
@@ -235,7 +231,8 @@ extern DMA_HandleTypeDef hdma_usart1_rx;
 extern GlobalPrimitiveIOStates PrimitiveStates;
 
 extern BIT_TO_BYTE_ERROS		Erro;
-extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro; //todo pensar uma forma melhor de enviar
+extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro;
+extern TYPE_CALENDARIO Calendario;
 
 /* USER CODE END Private defines */
 

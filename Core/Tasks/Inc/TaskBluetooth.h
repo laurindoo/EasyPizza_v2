@@ -15,10 +15,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
-#include "Eeprom.h"
-#include "Bluetooth.h" //todo falta sincar
+#include "Bluetooth.h"
 
-
+#include "TaskEeprom.h"
 #define VERSAO 	1// versao salva no dia 31/05/2023 -
 
 extern osMessageQId FilaRXBluetoothHandle,FilaTXBluetoothHandle,FilaEepromHandle;
