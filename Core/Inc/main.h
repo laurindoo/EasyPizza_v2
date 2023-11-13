@@ -136,7 +136,7 @@ typedef struct
 //-----------------DEFINES DE FABRICA------------------------------
 //-----------------DEFINES DE FABRICA------------------------------
 #define ERRO_CRITICO 0x0f
-#define CHEGOU_ADDR_BLE 0xbf
+
 #define ON_FAN_TEMPERATURA 		200 	// graus celcius
 #define TIME_INATIVO_SETUP 		1800 // tempo de inatividade limite
 #define TIME_MAX_AQUECIMENTO 	600  // tempo maximo permitido para nao entrar em erro de aquecimento

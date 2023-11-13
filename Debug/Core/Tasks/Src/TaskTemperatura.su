@@ -1,4 +1,4 @@
-../Core/Tasks/Src/TaskTemperatura.c:23:6:StartTemperatura	24	static
-../Core/Tasks/Src/TaskTemperatura.c:54:6:initPID	40	static
-../Core/Tasks/Src/TaskTemperatura.c:68:6:computaPID	16	static
-../Core/Tasks/Src/TaskTemperatura.c:76:6:taskTemperatura1sec	16	static
+../Core/Tasks/Src/TaskTemperatura.c:23:6:StartTemperatura	24	static,ignoring_inline_asm
+../Core/Tasks/Src/TaskTemperatura.c:68:6:initPID	40	static
+../Core/Tasks/Src/TaskTemperatura.c:82:6:computaPID	16	static
+../Core/Tasks/Src/TaskTemperatura.c:90:6:taskTemperatura1sec	16	static

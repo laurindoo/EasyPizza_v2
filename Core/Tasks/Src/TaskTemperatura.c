@@ -39,10 +39,24 @@ void StartTemperatura(void const * argument){
 			PrimitiveStates.MaquinaAquecimento 	= buscandoTemp;
 			PrimitiveStates.stateMaquina 		= aquecendo;
 
-		}else 	if(PrimitiveStates.RealtimeTeto>=PrimitiveStates.SetPointTeto ||
-				PrimitiveStates.RealtimeLastro>=PrimitiveStates.SetPointLastro){
+		}else{
 
 			PrimitiveStates.MaquinaAquecimento = mantendoTemp;
+
+			switch (PrimitiveStates.stateMaquina) {
+			case inicial:
+			case aquecendo:
+				if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
+					PrimitiveStates.stateMaquina 	= decrementando;
+				}else{
+					PrimitiveStates.stateMaquina = aquecendo;
+				}
+				break;
+			default:
+				__NOP();
+				break;
+			}
+
 
 		}
 

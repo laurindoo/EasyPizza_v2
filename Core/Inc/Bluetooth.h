@@ -36,6 +36,8 @@
 #define DEF_TEMPO_MAX_S_MSG_LOW			200	//x*10ms
 #define DEF_TEMPO_MAX_S_MSG_HIGH		200	//x*10ms
 
+
+#define CHEGOU_ADDR_BLE 0xbf
 #define DMA_RX_BUFFER_SIZE      64
 #define BLUETOOTH_MAX_BUFF_LEN 	32
 #define BLUETOOTH_TEXT_BUFF_LEN 32

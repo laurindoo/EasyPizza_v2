@@ -37,15 +37,15 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  16 .debug_rnglists 0000155d  00000000  00000000  00049ba8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_macro  0001dd6d  00000000  00000000  0004b105  2**0
+ 17 .debug_macro  0001dd6c  00000000  00000000  0004b105  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line   00024193  00000000  00000000  00068e72  2**0
+ 18 .debug_line   00024190  00000000  00000000  00068e71  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    000a0582  00000000  00000000  0008d005  2**0
+ 19 .debug_str    000a0582  00000000  00000000  0008d001  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_frame  000079d4  00000000  00000000  0012d588  2**2
+ 20 .debug_frame  000079d4  00000000  00000000  0012d584  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000068  00000000  00000000  00134f5c  2**0
+ 21 .debug_line_str 00000068  00000000  00000000  00134f58  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -10065,30 +10065,47 @@ void StartTemperatura(void const * argument){
  80048a4:	f883 2032 	strb.w	r2, [r3, #50]	; 0x32
  80048a8:	e019      	b.n	80048de <StartTemperatura+0xaa>
 
-		}else 	if(PrimitiveStates.RealtimeTeto>=PrimitiveStates.SetPointTeto ||
- 80048aa:	4b0f      	ldr	r3, [pc, #60]	; (80048e8 <StartTemperatura+0xb4>)
- 80048ac:	e9d3 0102 	ldrd	r0, r1, [r3, #8]
- 80048b0:	4b0d      	ldr	r3, [pc, #52]	; (80048e8 <StartTemperatura+0xb4>)
- 80048b2:	e9d3 2306 	ldrd	r2, r3, [r3, #24]
- 80048b6:	f7fc f895 	bl	80009e4 <__aeabi_dcmpge>
- 80048ba:	4603      	mov	r3, r0
- 80048bc:	2b00      	cmp	r3, #0
- 80048be:	d10a      	bne.n	80048d6 <StartTemperatura+0xa2>
-				PrimitiveStates.RealtimeLastro>=PrimitiveStates.SetPointLastro){
- 80048c0:	4b09      	ldr	r3, [pc, #36]	; (80048e8 <StartTemperatura+0xb4>)
- 80048c2:	e9d3 0104 	ldrd	r0, r1, [r3, #16]
- 80048c6:	4b08      	ldr	r3, [pc, #32]	; (80048e8 <StartTemperatura+0xb4>)
- 80048c8:	e9d3 2308 	ldrd	r2, r3, [r3, #32]
-		}else 	if(PrimitiveStates.RealtimeTeto>=PrimitiveStates.SetPointTeto ||
- 80048cc:	f7fc f88a 	bl	80009e4 <__aeabi_dcmpge>
- 80048d0:	4603      	mov	r3, r0
- 80048d2:	2b00      	cmp	r3, #0
- 80048d4:	d003      	beq.n	80048de <StartTemperatura+0xaa>
+		}else{
 
 			PrimitiveStates.MaquinaAquecimento = mantendoTemp;
- 80048d6:	4b04      	ldr	r3, [pc, #16]	; (80048e8 <StartTemperatura+0xb4>)
- 80048d8:	2201      	movs	r2, #1
- 80048da:	f883 2028 	strb.w	r2, [r3, #40]	; 0x28
+ 80048aa:	4b0f      	ldr	r3, [pc, #60]	; (80048e8 <StartTemperatura+0xb4>)
+ 80048ac:	2201      	movs	r2, #1
+ 80048ae:	f883 2028 	strb.w	r2, [r3, #40]	; 0x28
+
+			switch (PrimitiveStates.stateMaquina) {
+ 80048b2:	4b0d      	ldr	r3, [pc, #52]	; (80048e8 <StartTemperatura+0xb4>)
+ 80048b4:	f893 3032 	ldrb.w	r3, [r3, #50]	; 0x32
+ 80048b8:	2b01      	cmp	r3, #1
+ 80048ba:	d80e      	bhi.n	80048da <StartTemperatura+0xa6>
+			case inicial:
+			case aquecendo:
+				if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
+ 80048bc:	4b0a      	ldr	r3, [pc, #40]	; (80048e8 <StartTemperatura+0xb4>)
+ 80048be:	f893 3028 	ldrb.w	r3, [r3, #40]	; 0x28
+ 80048c2:	2b01      	cmp	r3, #1
+ 80048c4:	d104      	bne.n	80048d0 <StartTemperatura+0x9c>
+					PrimitiveStates.stateMaquina 	= decrementando;
+ 80048c6:	4b08      	ldr	r3, [pc, #32]	; (80048e8 <StartTemperatura+0xb4>)
+ 80048c8:	2203      	movs	r2, #3
+ 80048ca:	f883 2032 	strb.w	r2, [r3, #50]	; 0x32
+				}else{
+					PrimitiveStates.stateMaquina = aquecendo;
+				}
+				break;
+ 80048ce:	e006      	b.n	80048de <StartTemperatura+0xaa>
+					PrimitiveStates.stateMaquina = aquecendo;
+ 80048d0:	4b05      	ldr	r3, [pc, #20]	; (80048e8 <StartTemperatura+0xb4>)
+ 80048d2:	2201      	movs	r2, #1
+ 80048d4:	f883 2032 	strb.w	r2, [r3, #50]	; 0x32
+				break;
+ 80048d8:	e001      	b.n	80048de <StartTemperatura+0xaa>
+			default:
+				__NOP();
+ 80048da:	bf00      	nop
+				break;
+ 80048dc:	bf00      	nop
+			}
+
 
 		}
 

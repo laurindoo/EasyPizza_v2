@@ -342,7 +342,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Src/Eeprom.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Src/Eeprom.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Src/Eeprom.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Src/Eeprom.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Src/Eeprom.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Src/Eeprom.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Src/Eeprom.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Src/Eeprom.o
@@ -503,7 +503,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Src/freertos.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Src/freertos.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Src/freertos.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Src/freertos.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Src/freertos.o
  .group         0x0000000000000000        0xc ./Core/Src/main.o
  .group         0x0000000000000000        0xc ./Core/Src/main.o
  .group         0x0000000000000000        0xc ./Core/Src/main.o
@@ -672,7 +672,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Src/main.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Src/main.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Src/main.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Src/main.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Src/main.o
  .debug_macro   0x0000000000000000       0xf6 ./Core/Src/main.o
  .debug_macro   0x0000000000000000      0x15a ./Core/Src/main.o
  .debug_macro   0x0000000000000000       0xd7 ./Core/Src/main.o
@@ -694,7 +694,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x10 ./Core/Src/main.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Src/main.o
  .debug_macro   0x0000000000000000      0x147 ./Core/Src/main.o
- .debug_macro   0x0000000000000000       0x4c ./Core/Src/main.o
+ .debug_macro   0x0000000000000000       0x52 ./Core/Src/main.o
  .group         0x0000000000000000        0xc ./Core/Src/pid.o
  .group         0x0000000000000000        0xc ./Core/Src/pid.o
  .group         0x0000000000000000        0xc ./Core/Src/pid.o
@@ -828,7 +828,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000      0x28e ./Core/Src/pid.o
  .debug_macro   0x0000000000000000       0x83 ./Core/Src/pid.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Src/pid.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Src/pid.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Src/pid.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Src/pid.o
  .group         0x0000000000000000        0xc ./Core/Src/stm32f1xx_hal_msp.o
  .group         0x0000000000000000        0xc ./Core/Src/stm32f1xx_hal_msp.o
@@ -960,7 +960,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Src/stm32f1xx_hal_msp.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Src/stm32f1xx_hal_msp.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Src/stm32f1xx_hal_msp.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Src/stm32f1xx_hal_msp.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Src/stm32f1xx_hal_msp.o
  .group         0x0000000000000000        0xc ./Core/Src/stm32f1xx_hal_timebase_tim.o
  .group         0x0000000000000000        0xc ./Core/Src/stm32f1xx_hal_timebase_tim.o
  .group         0x0000000000000000        0xc ./Core/Src/stm32f1xx_hal_timebase_tim.o
@@ -1195,7 +1195,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Src/stm32f1xx_it.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Src/stm32f1xx_it.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Src/stm32f1xx_it.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Src/stm32f1xx_it.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Src/stm32f1xx_it.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Src/stm32f1xx_it.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Src/stm32f1xx_it.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Src/stm32f1xx_it.o
@@ -1218,7 +1218,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x7e ./Core/Src/stm32f1xx_it.o
  .debug_macro   0x0000000000000000       0x19 ./Core/Src/stm32f1xx_it.o
  .debug_macro   0x0000000000000000       0xf2 ./Core/Src/stm32f1xx_it.o
- .debug_macro   0x0000000000000000       0x4c ./Core/Src/stm32f1xx_it.o
+ .debug_macro   0x0000000000000000       0x52 ./Core/Src/stm32f1xx_it.o
  .group         0x0000000000000000        0xc ./Core/Src/syscalls.o
  .group         0x0000000000000000        0xc ./Core/Src/syscalls.o
  .group         0x0000000000000000        0xc ./Core/Src/syscalls.o
@@ -1638,7 +1638,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Tasks/Src/TaskBluetooth.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskBluetooth.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Tasks/Src/TaskBluetooth.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Tasks/Src/TaskBluetooth.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Tasks/Src/TaskBluetooth.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskBluetooth.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskBluetooth.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskBluetooth.o
@@ -1661,7 +1661,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x7e ./Core/Tasks/Src/TaskBluetooth.o
  .debug_macro   0x0000000000000000       0x19 ./Core/Tasks/Src/TaskBluetooth.o
  .debug_macro   0x0000000000000000       0xf2 ./Core/Tasks/Src/TaskBluetooth.o
- .debug_macro   0x0000000000000000       0x4c ./Core/Tasks/Src/TaskBluetooth.o
+ .debug_macro   0x0000000000000000       0x52 ./Core/Tasks/Src/TaskBluetooth.o
  .debug_macro   0x0000000000000000       0x70 ./Core/Tasks/Src/TaskBluetooth.o
  .group         0x0000000000000000        0xc ./Core/Tasks/Src/TaskBuzzer.o
  .group         0x0000000000000000        0xc ./Core/Tasks/Src/TaskBuzzer.o
@@ -1808,7 +1808,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Tasks/Src/TaskBuzzer.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskBuzzer.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Tasks/Src/TaskBuzzer.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Tasks/Src/TaskBuzzer.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Tasks/Src/TaskBuzzer.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskBuzzer.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskBuzzer.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskBuzzer.o
@@ -1976,7 +1976,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Tasks/Src/TaskEeprom.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskEeprom.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Tasks/Src/TaskEeprom.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Tasks/Src/TaskEeprom.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Tasks/Src/TaskEeprom.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskEeprom.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskEeprom.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskEeprom.o
@@ -2148,7 +2148,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Tasks/Src/TaskTemperatura.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskTemperatura.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Tasks/Src/TaskTemperatura.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Tasks/Src/TaskTemperatura.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Tasks/Src/TaskTemperatura.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskTemperatura.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskTemperatura.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskTemperatura.o
@@ -2316,7 +2316,7 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x20 ./Core/Tasks/Src/TaskTimer.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskTimer.o
  .debug_macro   0x0000000000000000       0x22 ./Core/Tasks/Src/TaskTimer.o
- .debug_macro   0x0000000000000000      0x138 ./Core/Tasks/Src/TaskTimer.o
+ .debug_macro   0x0000000000000000      0x131 ./Core/Tasks/Src/TaskTimer.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskTimer.o
  .debug_macro   0x0000000000000000       0x16 ./Core/Tasks/Src/TaskTimer.o
  .debug_macro   0x0000000000000000       0x29 ./Core/Tasks/Src/TaskTimer.o
@@ -8152,7 +8152,7 @@ LOAD C:/ST/STM32CubeIDE_1.13.2/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_rnglists
                 0x0000000000001522       0x3b ./Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.o
 
-.debug_macro    0x0000000000000000    0x1dd6d
+.debug_macro    0x0000000000000000    0x1dd6c
  .debug_macro   0x0000000000000000      0x418 ./Core/Src/Bluetooth.o
  .debug_macro   0x0000000000000418      0xa9c ./Core/Src/Bluetooth.o
  .debug_macro   0x0000000000000eb4      0x233 ./Core/Src/Bluetooth.o
@@ -8213,91 +8213,91 @@ LOAD C:/ST/STM32CubeIDE_1.13.2/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_macro   0x0000000000016f05       0x20 ./Core/Src/Bluetooth.o
  .debug_macro   0x0000000000016f25       0x29 ./Core/Src/Bluetooth.o
  .debug_macro   0x0000000000016f4e       0x22 ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000016f70      0x138 ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000170a8       0x16 ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000170be       0x16 ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000170d4       0x29 ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000170fd       0x1c ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017119       0x10 ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017129       0x1c ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017145       0x16 ./Core/Src/Bluetooth.o
- .debug_macro   0x000000000001715b      0x147 ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000172a2       0xf6 ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017398      0x15a ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000174f2       0xd7 ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000175c9       0x10 ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000175d9       0x1f ./Core/Src/Bluetooth.o
- .debug_macro   0x00000000000175f8       0x16 ./Core/Src/Bluetooth.o
- .debug_macro   0x000000000001760e      0x4aa ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017ab8       0xb5 ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017b6d       0x8c ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017bf9       0x91 ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017c8a       0x8d ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017d17       0x7e ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017d95       0x19 ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017dae       0xf2 ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017ea0       0x4c ./Core/Src/Bluetooth.o
- .debug_macro   0x0000000000017eec      0x410 ./Core/Src/Eeprom.o
- .debug_macro   0x00000000000182fc       0x70 ./Core/Src/Eeprom.o
- .debug_macro   0x000000000001836c      0x34e ./Core/Src/freertos.o
- .debug_macro   0x00000000000186ba       0xf6 ./Core/Src/freertos.o
- .debug_macro   0x00000000000187b0       0x10 ./Core/Src/freertos.o
- .debug_macro   0x00000000000187c0      0x4e3 ./Core/Src/main.o
- .debug_macro   0x0000000000018ca3       0x16 ./Core/Src/main.o
- .debug_macro   0x0000000000018cb9       0x10 ./Core/Src/main.o
- .debug_macro   0x0000000000018cc9       0x10 ./Core/Src/main.o
- .debug_macro   0x0000000000018cd9       0x10 ./Core/Src/main.o
- .debug_macro   0x0000000000018ce9       0x1c ./Core/Src/main.o
- .debug_macro   0x0000000000018d05       0x52 ./Core/Src/main.o
- .debug_macro   0x0000000000018d57       0x22 ./Core/Src/main.o
- .debug_macro   0x0000000000018d79       0x10 ./Core/Src/main.o
- .debug_macro   0x0000000000018d89       0x52 ./Core/Src/main.o
- .debug_macro   0x0000000000018ddb       0xcf ./Core/Src/main.o
- .debug_macro   0x0000000000018eaa       0x1c ./Core/Src/main.o
- .debug_macro   0x0000000000018ec6       0x3d ./Core/Src/main.o
- .debug_macro   0x0000000000018f03       0x35 ./Core/Src/main.o
- .debug_macro   0x0000000000018f38       0x10 ./Core/Src/main.o
- .debug_macro   0x0000000000018f48      0x2ce ./Core/Src/pid.o
- .debug_macro   0x0000000000019216       0x56 ./Core/Src/pid.o
- .debug_macro   0x000000000001926c      0x2ce ./Core/Src/stm32f1xx_hal_msp.o
- .debug_macro   0x000000000001953a      0x1d5 ./Core/Src/stm32f1xx_hal_timebase_tim.o
- .debug_macro   0x000000000001970f      0x414 ./Core/Src/stm32f1xx_it.o
- .debug_macro   0x0000000000019b23       0xff ./Core/Src/sysmem.o
- .debug_macro   0x0000000000019c22      0x23c ./Core/Src/sysmem.o
- .debug_macro   0x0000000000019e5e      0x1d5 ./Core/Src/system_stm32f1xx.o
- .debug_macro   0x000000000001a033      0x445 ./Core/Tasks/Src/TaskBluetooth.o
- .debug_macro   0x000000000001a478      0x40a ./Core/Tasks/Src/TaskBuzzer.o
- .debug_macro   0x000000000001a882       0x10 ./Core/Tasks/Src/TaskBuzzer.o
- .debug_macro   0x000000000001a892      0x418 ./Core/Tasks/Src/TaskEeprom.o
- .debug_macro   0x000000000001acaa      0x410 ./Core/Tasks/Src/TaskTemperatura.o
- .debug_macro   0x000000000001b0ba       0x1c ./Core/Tasks/Src/TaskTemperatura.o
- .debug_macro   0x000000000001b0d6      0x40a ./Core/Tasks/Src/TaskTimer.o
- .debug_macro   0x000000000001b4e0       0x64 ./Core/Tasks/Src/TaskTimer.o
- .debug_macro   0x000000000001b544      0x1f9 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
- .debug_macro   0x000000000001b73d      0x1f2 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.o
- .debug_macro   0x000000000001b92f      0x1d5 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.o
- .debug_macro   0x000000000001bb04      0x1d5 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.o
- .debug_macro   0x000000000001bcd9      0x240 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio.o
- .debug_macro   0x000000000001bf19      0x223 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.o
- .debug_macro   0x000000000001c13c      0x235 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pwr.o
- .debug_macro   0x000000000001c371      0x1e7 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc.o
- .debug_macro   0x000000000001c558      0x1d5 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc_ex.o
- .debug_macro   0x000000000001c72d      0x1e4 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rtc.o
- .debug_macro   0x000000000001c911      0x1d6 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.o
- .debug_macro   0x000000000001cae7      0x1d5 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.o
- .debug_macro   0x000000000001ccbc      0x1d6 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.o
- .debug_macro   0x000000000001ce92      0x210 ./Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.o
- .debug_macro   0x000000000001d0a2       0xab ./Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.o
- .debug_macro   0x000000000001d14d      0x199 ./Middlewares/Third_Party/FreeRTOS/Source/list.o
- .debug_macro   0x000000000001d2e6      0x224 ./Middlewares/Third_Party/FreeRTOS/Source/queue.o
- .debug_macro   0x000000000001d50a       0x16 ./Middlewares/Third_Party/FreeRTOS/Source/queue.o
- .debug_macro   0x000000000001d520      0x292 ./Middlewares/Third_Party/FreeRTOS/Source/tasks.o
- .debug_macro   0x000000000001d7b2       0x10 ./Middlewares/Third_Party/FreeRTOS/Source/tasks.o
- .debug_macro   0x000000000001d7c2      0x1dc ./Middlewares/Third_Party/FreeRTOS/Source/timers.o
- .debug_macro   0x000000000001d99e      0x20f ./Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.o
- .debug_macro   0x000000000001dbad      0x1c0 ./Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.o
+ .debug_macro   0x0000000000016f70      0x131 ./Core/Src/Bluetooth.o
+ .debug_macro   0x00000000000170a1       0x16 ./Core/Src/Bluetooth.o
+ .debug_macro   0x00000000000170b7       0x16 ./Core/Src/Bluetooth.o
+ .debug_macro   0x00000000000170cd       0x29 ./Core/Src/Bluetooth.o
+ .debug_macro   0x00000000000170f6       0x1c ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017112       0x10 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017122       0x1c ./Core/Src/Bluetooth.o
+ .debug_macro   0x000000000001713e       0x16 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017154      0x147 ./Core/Src/Bluetooth.o
+ .debug_macro   0x000000000001729b       0xf6 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017391      0x15a ./Core/Src/Bluetooth.o
+ .debug_macro   0x00000000000174eb       0xd7 ./Core/Src/Bluetooth.o
+ .debug_macro   0x00000000000175c2       0x10 ./Core/Src/Bluetooth.o
+ .debug_macro   0x00000000000175d2       0x1f ./Core/Src/Bluetooth.o
+ .debug_macro   0x00000000000175f1       0x16 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017607      0x4aa ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017ab1       0xb5 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017b66       0x8c ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017bf2       0x91 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017c83       0x8d ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017d10       0x7e ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017d8e       0x19 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017da7       0xf2 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017e99       0x52 ./Core/Src/Bluetooth.o
+ .debug_macro   0x0000000000017eeb      0x410 ./Core/Src/Eeprom.o
+ .debug_macro   0x00000000000182fb       0x70 ./Core/Src/Eeprom.o
+ .debug_macro   0x000000000001836b      0x34e ./Core/Src/freertos.o
+ .debug_macro   0x00000000000186b9       0xf6 ./Core/Src/freertos.o
+ .debug_macro   0x00000000000187af       0x10 ./Core/Src/freertos.o
+ .debug_macro   0x00000000000187bf      0x4e3 ./Core/Src/main.o
+ .debug_macro   0x0000000000018ca2       0x16 ./Core/Src/main.o
+ .debug_macro   0x0000000000018cb8       0x10 ./Core/Src/main.o
+ .debug_macro   0x0000000000018cc8       0x10 ./Core/Src/main.o
+ .debug_macro   0x0000000000018cd8       0x10 ./Core/Src/main.o
+ .debug_macro   0x0000000000018ce8       0x1c ./Core/Src/main.o
+ .debug_macro   0x0000000000018d04       0x52 ./Core/Src/main.o
+ .debug_macro   0x0000000000018d56       0x22 ./Core/Src/main.o
+ .debug_macro   0x0000000000018d78       0x10 ./Core/Src/main.o
+ .debug_macro   0x0000000000018d88       0x52 ./Core/Src/main.o
+ .debug_macro   0x0000000000018dda       0xcf ./Core/Src/main.o
+ .debug_macro   0x0000000000018ea9       0x1c ./Core/Src/main.o
+ .debug_macro   0x0000000000018ec5       0x3d ./Core/Src/main.o
+ .debug_macro   0x0000000000018f02       0x35 ./Core/Src/main.o
+ .debug_macro   0x0000000000018f37       0x10 ./Core/Src/main.o
+ .debug_macro   0x0000000000018f47      0x2ce ./Core/Src/pid.o
+ .debug_macro   0x0000000000019215       0x56 ./Core/Src/pid.o
+ .debug_macro   0x000000000001926b      0x2ce ./Core/Src/stm32f1xx_hal_msp.o
+ .debug_macro   0x0000000000019539      0x1d5 ./Core/Src/stm32f1xx_hal_timebase_tim.o
+ .debug_macro   0x000000000001970e      0x414 ./Core/Src/stm32f1xx_it.o
+ .debug_macro   0x0000000000019b22       0xff ./Core/Src/sysmem.o
+ .debug_macro   0x0000000000019c21      0x23c ./Core/Src/sysmem.o
+ .debug_macro   0x0000000000019e5d      0x1d5 ./Core/Src/system_stm32f1xx.o
+ .debug_macro   0x000000000001a032      0x445 ./Core/Tasks/Src/TaskBluetooth.o
+ .debug_macro   0x000000000001a477      0x40a ./Core/Tasks/Src/TaskBuzzer.o
+ .debug_macro   0x000000000001a881       0x10 ./Core/Tasks/Src/TaskBuzzer.o
+ .debug_macro   0x000000000001a891      0x418 ./Core/Tasks/Src/TaskEeprom.o
+ .debug_macro   0x000000000001aca9      0x410 ./Core/Tasks/Src/TaskTemperatura.o
+ .debug_macro   0x000000000001b0b9       0x1c ./Core/Tasks/Src/TaskTemperatura.o
+ .debug_macro   0x000000000001b0d5      0x40a ./Core/Tasks/Src/TaskTimer.o
+ .debug_macro   0x000000000001b4df       0x64 ./Core/Tasks/Src/TaskTimer.o
+ .debug_macro   0x000000000001b543      0x1f9 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
+ .debug_macro   0x000000000001b73c      0x1f2 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.o
+ .debug_macro   0x000000000001b92e      0x1d5 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.o
+ .debug_macro   0x000000000001bb03      0x1d5 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.o
+ .debug_macro   0x000000000001bcd8      0x240 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio.o
+ .debug_macro   0x000000000001bf18      0x223 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.o
+ .debug_macro   0x000000000001c13b      0x235 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pwr.o
+ .debug_macro   0x000000000001c370      0x1e7 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc.o
+ .debug_macro   0x000000000001c557      0x1d5 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc_ex.o
+ .debug_macro   0x000000000001c72c      0x1e4 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rtc.o
+ .debug_macro   0x000000000001c910      0x1d6 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.o
+ .debug_macro   0x000000000001cae6      0x1d5 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.o
+ .debug_macro   0x000000000001ccbb      0x1d6 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.o
+ .debug_macro   0x000000000001ce91      0x210 ./Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.o
+ .debug_macro   0x000000000001d0a1       0xab ./Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.o
+ .debug_macro   0x000000000001d14c      0x199 ./Middlewares/Third_Party/FreeRTOS/Source/list.o
+ .debug_macro   0x000000000001d2e5      0x224 ./Middlewares/Third_Party/FreeRTOS/Source/queue.o
+ .debug_macro   0x000000000001d509       0x16 ./Middlewares/Third_Party/FreeRTOS/Source/queue.o
+ .debug_macro   0x000000000001d51f      0x292 ./Middlewares/Third_Party/FreeRTOS/Source/tasks.o
+ .debug_macro   0x000000000001d7b1       0x10 ./Middlewares/Third_Party/FreeRTOS/Source/tasks.o
+ .debug_macro   0x000000000001d7c1      0x1dc ./Middlewares/Third_Party/FreeRTOS/Source/timers.o
+ .debug_macro   0x000000000001d99d      0x20f ./Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.o
+ .debug_macro   0x000000000001dbac      0x1c0 ./Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.o
 
-.debug_line     0x0000000000000000    0x24193
+.debug_line     0x0000000000000000    0x24190
  .debug_line    0x0000000000000000     0x112f ./Core/Src/Bluetooth.o
  .debug_line    0x000000000000112f      0xe8a ./Core/Src/Eeprom.o
  .debug_line    0x0000000000001fb9      0xa14 ./Core/Src/freertos.o
@@ -8312,42 +8312,42 @@ LOAD C:/ST/STM32CubeIDE_1.13.2/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_line    0x0000000000007460      0xe34 ./Core/Tasks/Src/TaskBluetooth.o
  .debug_line    0x0000000000008294      0xb45 ./Core/Tasks/Src/TaskBuzzer.o
  .debug_line    0x0000000000008dd9      0xc1d ./Core/Tasks/Src/TaskEeprom.o
- .debug_line    0x00000000000099f6      0xc06 ./Core/Tasks/Src/TaskTemperatura.o
- .debug_line    0x000000000000a5fc      0xc20 ./Core/Tasks/Src/TaskTimer.o
- .debug_line    0x000000000000b21c      0xa21 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
- .debug_line    0x000000000000bc3d     0x109e ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.o
- .debug_line    0x000000000000ccdb      0xc09 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.o
- .debug_line    0x000000000000d8e4      0xe7a ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.o
- .debug_line    0x000000000000e75e      0xaba ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio.o
- .debug_line    0x000000000000f218     0x3b98 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.o
- .debug_line    0x0000000000012db0      0x9a3 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pwr.o
- .debug_line    0x0000000000013753      0xe2a ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc.o
- .debug_line    0x000000000001457d      0x965 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc_ex.o
- .debug_line    0x0000000000014ee2     0x1193 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rtc.o
- .debug_line    0x0000000000016075     0x350d ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.o
- .debug_line    0x0000000000019582     0x1980 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.o
- .debug_line    0x000000000001af02     0x294f ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.o
- .debug_line    0x000000000001d851     0x1327 ./Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.o
- .debug_line    0x000000000001eb78      0x796 ./Middlewares/Third_Party/FreeRTOS/Source/list.o
- .debug_line    0x000000000001f30e     0x155a ./Middlewares/Third_Party/FreeRTOS/Source/queue.o
- .debug_line    0x0000000000020868     0x1a6c ./Middlewares/Third_Party/FreeRTOS/Source/tasks.o
- .debug_line    0x00000000000222d4      0xc6a ./Middlewares/Third_Party/FreeRTOS/Source/timers.o
- .debug_line    0x0000000000022f3e      0x8fd ./Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.o
- .debug_line    0x000000000002383b      0x958 ./Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.o
+ .debug_line    0x00000000000099f6      0xc03 ./Core/Tasks/Src/TaskTemperatura.o
+ .debug_line    0x000000000000a5f9      0xc20 ./Core/Tasks/Src/TaskTimer.o
+ .debug_line    0x000000000000b219      0xa21 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
+ .debug_line    0x000000000000bc3a     0x109e ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.o
+ .debug_line    0x000000000000ccd8      0xc09 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.o
+ .debug_line    0x000000000000d8e1      0xe7a ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.o
+ .debug_line    0x000000000000e75b      0xaba ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio.o
+ .debug_line    0x000000000000f215     0x3b98 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.o
+ .debug_line    0x0000000000012dad      0x9a3 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pwr.o
+ .debug_line    0x0000000000013750      0xe2a ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc.o
+ .debug_line    0x000000000001457a      0x965 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc_ex.o
+ .debug_line    0x0000000000014edf     0x1193 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rtc.o
+ .debug_line    0x0000000000016072     0x350d ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.o
+ .debug_line    0x000000000001957f     0x1980 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.o
+ .debug_line    0x000000000001aeff     0x294f ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.o
+ .debug_line    0x000000000001d84e     0x1327 ./Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.o
+ .debug_line    0x000000000001eb75      0x796 ./Middlewares/Third_Party/FreeRTOS/Source/list.o
+ .debug_line    0x000000000001f30b     0x155a ./Middlewares/Third_Party/FreeRTOS/Source/queue.o
+ .debug_line    0x0000000000020865     0x1a6c ./Middlewares/Third_Party/FreeRTOS/Source/tasks.o
+ .debug_line    0x00000000000222d1      0xc6a ./Middlewares/Third_Party/FreeRTOS/Source/timers.o
+ .debug_line    0x0000000000022f3b      0x8fd ./Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.o
+ .debug_line    0x0000000000023838      0x958 ./Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.o
 
 .debug_str      0x0000000000000000    0xa0582
  .debug_str     0x0000000000000000    0x9599f ./Core/Src/Bluetooth.o
                                       0x95e0a (size before relaxing)
  .debug_str     0x000000000009599f      0x81b ./Core/Src/Eeprom.o
-                                      0x95a4c (size before relaxing)
+                                      0x95a37 (size before relaxing)
  .debug_str     0x00000000000961ba      0x49d ./Core/Src/freertos.o
-                                      0x92b0c (size before relaxing)
+                                      0x92af7 (size before relaxing)
  .debug_str     0x0000000000096657     0x2010 ./Core/Src/main.o
                                       0x981a5 (size before relaxing)
  .debug_str     0x0000000000098667      0x229 ./Core/Src/pid.o
-                                      0x8ee2c (size before relaxing)
+                                      0x8ee17 (size before relaxing)
  .debug_str     0x0000000000098890      0x17e ./Core/Src/stm32f1xx_hal_msp.o
-                                      0x8fccc (size before relaxing)
+                                      0x8fcb7 (size before relaxing)
  .debug_str     0x0000000000098a0e       0xe5 ./Core/Src/stm32f1xx_hal_timebase_tim.o
                                       0x8bbc9 (size before relaxing)
  .debug_str     0x0000000000098af3      0x139 ./Core/Src/stm32f1xx_it.o
@@ -8361,13 +8361,13 @@ LOAD C:/ST/STM32CubeIDE_1.13.2/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_str     0x000000000009903a      0x439 ./Core/Tasks/Src/TaskBluetooth.o
                                       0x964bc (size before relaxing)
  .debug_str     0x0000000000099473       0xd6 ./Core/Tasks/Src/TaskBuzzer.o
-                                      0x95834 (size before relaxing)
+                                      0x9581f (size before relaxing)
  .debug_str     0x0000000000099549       0x4a ./Core/Tasks/Src/TaskEeprom.o
-                                      0x95f53 (size before relaxing)
+                                      0x95f3e (size before relaxing)
  .debug_str     0x0000000000099593      0x1c5 ./Core/Tasks/Src/TaskTemperatura.o
-                                      0x959f6 (size before relaxing)
+                                      0x959e1 (size before relaxing)
  .debug_str     0x0000000000099758      0x5c4 ./Core/Tasks/Src/TaskTimer.o
-                                      0x958b3 (size before relaxing)
+                                      0x9589e (size before relaxing)
  .debug_str     0x0000000000099d1c      0x334 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
                                       0x8ba44 (size before relaxing)
  .debug_str     0x000000000009a050      0x363 ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.o
