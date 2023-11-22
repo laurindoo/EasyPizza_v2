@@ -149,7 +149,7 @@ void avaliaSenhaRecebidaBluetooh(Bluetooth* ble){
 		Buffer[3] 	= 0x00;									//resultado ok
 		BluetoothEnviaComando(Buffer, 3);
 
-		HAL_Delay(30);
+		osDelay(30);
 		Envia_texto_UART("AT",50);//DESCONECTA
 	}
 }
@@ -232,14 +232,18 @@ void BLEDMA_IrqHandler (Bluetooth *ble)
 				ble->StatusConexao 		= false;
 			}
 
-
-			BluetoothPutFila(ble);
+			if(ble->SistemaInit){
+				BluetoothPutFila(ble);
+			}else{
+				ble->MaquinaConexao = RX_DESCONECTADO;
+			}
 
 			break;
 
 		default:
 			break;
 		}
+
 		/* Prepare DMA for next transfer */
 		/* Important! DMA stream won't start if all flags are not cleared first */
 		UARTDMAHandle->Instance->CMAR = (uint32_t)ble->_RxDataArr;   /* Set memory address for DMA again */
@@ -271,7 +275,7 @@ void Envia_bytes_UART(unsigned char _out[], uint8_t size){
 }
 
 void Envia_texto_UART(char _out[], uint16_t delay){
-	HAL_UART_Transmit_IT(UARTHandle, (uint8_t *) _out, strlen(_out));
+	HAL_UART_Transmit(UARTHandle, (uint8_t *) _out, strlen(_out),delay);
 	if(delay != 0){
 		osDelay(delay);
 	}
@@ -338,10 +342,10 @@ void iniciaBleHm10(Bluetooth* ble){
 #define SETUP_UART(baud_rate) \
 		HAL_UART_Abort_IT(UARTHandle);\
 		HAL_UART_DeInit(UARTHandle);\
-		HAL_Delay(50);\
+		osDelay(50);\
 		UARTHandle->Init.BaudRate = baud_rate;\
 		HAL_UART_Init(UARTHandle);\
-		HAL_Delay(50);
+		osDelay(50);
 
 	typedef enum
 	{   inicio = 0,
@@ -357,11 +361,12 @@ void iniciaBleHm10(Bluetooth* ble){
 	while(sequenciaBLE!=final || sequenciaBLE!=erro){
 		switch (sequenciaBLE) {
 		case inicio:
-			HAL_Delay(50);
+			osDelay(50);
 			SETUP_UART(115200)
-			HAL_Delay(50);
-			Envia_texto_UART("AT",50);	//
-			Envia_texto_UART("AT",50);	//
+			BluetoothDescon(ble);
+			Envia_texto_UART("AT+ADTY3",300);	//BLOQUEIA CONEXAO
+			BluetoothDescon(ble);
+			Envia_texto_UART("AT+ADTY3",300);	//BLOQUEIA CONEXAO
 
 			/*---HABILITA INTERRUPÇÃO---*/
 			__HAL_UART_ENABLE_IT 	(UARTHandle, UART_IT_IDLE);							// HABILITA idle line INTERRUPT
@@ -378,7 +383,7 @@ void iniciaBleHm10(Bluetooth* ble){
 			while (tryingName < max_attempts) {
 				Envia_texto_UART("AT+NAME?", 100);
 
-				HAL_Delay(delay_between_attempts_ms);
+				osDelay(delay_between_attempts_ms);
 				ble->ss = NULL;
 				ble->ss = strstr(ble->StringRecebida, "NAME");
 
@@ -402,7 +407,7 @@ void iniciaBleHm10(Bluetooth* ble){
 			break;
 		case redefineBle:
 			MACRO_RESET_BLE		//HARDRESET NO BLE_HM10
-			HAL_Delay(100);
+			osDelay(100);
 
 			//seta em 115200
 			SETUP_UART(115200)
@@ -438,7 +443,7 @@ void iniciaBleHm10(Bluetooth* ble){
 			Envia_texto_UART(comando, 400); // Configura o nome no dispositivo
 
 
-			Envia_texto_UART("AT+ADTY0",300);				//DESBLOQUEIA CONEXA
+			Envia_texto_UART("AT+ADTY0",300);	//DESBLOQUEIA CONEXA
 			M_BLE_RESET
 			sequenciaBLE = capturaAddr;
 			break;
@@ -448,7 +453,7 @@ void iniciaBleHm10(Bluetooth* ble){
 			while (tryingAddr < max_attempts) {
 
 				Envia_texto_UART("AT+ADDR?",300);//pede addr
-				HAL_Delay(delay_between_attempts_ms);
+				osDelay(delay_between_attempts_ms);
 
 				if (ble->chave != 0){
 					sequenciaBLE = final;
@@ -464,6 +469,9 @@ void iniciaBleHm10(Bluetooth* ble){
 
 			break;
 		case final:
+			Envia_texto_UART("AT+ADTY0",300);	//DESBLOQUEIA CONEXA
+			M_BLE_RESET
+			ble->SistemaInit = 1;
 			/*---HABILITA INTERRUPÇÃO---*/
 			__HAL_UART_ENABLE_IT 	(UARTHandle, UART_IT_IDLE);						// HABILITA idle line INTERRUPT
 			__HAL_DMA_ENABLE_IT 	(UARTDMAHandle, DMA_IT_TC);					// HABILITA O DMA Tx cplt INTERRUPT

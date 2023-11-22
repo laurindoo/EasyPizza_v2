@@ -11,7 +11,7 @@ Eeprom eeprom;
 EepromVariaveis horimetroHoras,horimetroMinutos;
 EepromVariaveis instalacaoDia,instalacaoMes,instalacaoAno;
 EepromVariaveis totalCiclos,LimiteTemperatura;
-EepromVariaveis tempoDelayLuz;
+EepromVariaveis tempoDelayLuz,ContTetoMax,ContLastroMax;
 
 
 RTC_DateTypeDef datetoUpdate;
@@ -44,9 +44,13 @@ void initEeprom(void){
 	EepromAddVar(&eeprom, &totalCiclos, 			"addrTOTAL_GERAL", 		addrTOTAL_GERAL,	DATA16BITS,	0,		0,		0		,(uint32_t *)&Calendario.TotalCiclos);
 	EepromAddVar(&eeprom, &LimiteTemperatura, 		"addrLIMITE_TEMP", 		addrLIMITE_TEMP,	DATA16BITS,	0,		0,		0		,(uint32_t *)&PrimitiveStates.LimiteTemp);
 
-	RestauraPadraoTudo(&eeprom);
+
+	EepromAddVar(&eeprom, &ContTetoMax, 			"addrCONT_MAX_TETO", 	addrCONT_MAX_TETO,	DATA16BITS,	0,		400,	700		,(uint32_t *)&Calendario.ContMaxTeto);
+	EepromAddVar(&eeprom, &ContLastroMax, 			"addrCONT_MAX_LASTRO", 	addrCONT_MAX_LASTRO,DATA16BITS,	0,		400,	700		,(uint32_t *)&Calendario.ContMaxLastro);
+
+//	RestauraPadraoTudo(&eeprom);
 	//faz o download dos objetos
-	//	EepromDownloadValores(&eeprom);
+		EepromDownloadValores(&eeprom);
 }
 
 void processaEeprom(void){
@@ -62,7 +66,13 @@ void processaEeprom(void){
 			EepromSetVar(&eeprom, &totalCiclos, 	0);
 			break;
 		case CEepromHorimetro:
-			EepromSetVar(&eeprom, &horimetroHoras, 	0);
+			if(Calendario.Horimetro_parcial_min<59){
+				Calendario.Horimetro_parcial_min++;
+			}else{
+				Calendario.Horimetro_parcial_min=0;
+				Calendario.Horimetro_horas++;
+			}
+			EepromSetVar(&eeprom, &horimetroHoras, 		0);
 			EepromSetVar(&eeprom, &horimetroMinutos, 	0);
 			break;
 		case CEepromDataInstalacao:
@@ -94,6 +104,14 @@ void processaEeprom(void){
 			break;
 		case CEepromLimiteLuz:
 			EepromSetVar(&eeprom, &tempoDelayLuz, 	0);
+			break;
+		case CEepromTempMaxTetoAgain:
+			Calendario.ContMaxTeto+=1;
+			EepromSetVar(&eeprom, &ContTetoMax, 	0);
+			break;
+		case CEepromTempMaxLastroAgain:
+			Calendario.ContMaxLastro+=1;
+			EepromSetVar(&eeprom, &ContLastroMax, 	0);
 			break;
 		default:
 			break;

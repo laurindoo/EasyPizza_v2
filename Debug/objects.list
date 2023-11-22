@@ -1,5 +1,6 @@
 "./Core/Src/Bluetooth.o"
 "./Core/Src/Eeprom.o"
+"./Core/Src/OutputDigital.o"
 "./Core/Src/freertos.o"
 "./Core/Src/main.o"
 "./Core/Src/pid.o"

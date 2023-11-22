@@ -47,22 +47,16 @@ void StartTimer(void const * argument)
 void funcionamentoTimer(void){
 
 	//Decremento de minutos e segundos
-	if((PrimitiveStates.RTTimerMinutos>0 && PrimitiveStates.RTTimerSegundos==0) && PrimitiveStates.stateMaquina == decrementando){
+	if((PrimitiveStates.RTTimerMinutos>0 && PrimitiveStates.RTTimerSegundos==0) && PrimitiveStates.stateTimer == TIMER_decrementando){
 		PrimitiveStates.RTTimerSegundos = 59;
 		PrimitiveStates.RTTimerMinutos--;
-	}else if((PrimitiveStates.RTTimerMinutos>0 || PrimitiveStates.RTTimerSegundos>0) && PrimitiveStates.stateMaquina == decrementando){
+	}else if((PrimitiveStates.RTTimerMinutos>0 || PrimitiveStates.RTTimerSegundos>0) && PrimitiveStates.stateTimer == TIMER_decrementando){
 		PrimitiveStates.RTTimerSegundos--;
 
 		//chegou ao zero --- ROTINA DE FIM DE CICLO
-		if(PrimitiveStates.RTTimerSegundos==0 && PrimitiveStates.RTTimerMinutos==0){
-			PrimitiveStates.SetPointTeto 	= 0;
-			PrimitiveStates.SetPointLastro 	= 0;
-			PrimitiveStates.SetPointTeto	= 0;
-			PrimitiveStates.SetPointLastro	= 0;
-			//avalia temperatura, podendo ir para aquecimento ou aquecido
-			if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
-				PrimitiveStates.stateMaquina = aquecido;
-			}
+		if(PrimitiveStates.RTTimerSegundos==0 && PrimitiveStates.RTTimerMinutos==0 && PrimitiveStates.stateTimer != TIMER_idle){
+			osMessagePut(FilaEepromHandle, CEepromNewCile, 0);
+			PrimitiveStates.stateTimer = TIMER_idle;
 			osThreadResume(TaskBuzzerHandle);
 		}
 	}
@@ -74,9 +68,9 @@ void funcionamentoLampada(void){
 	if(PrimitiveStates.RTLampada>0){
 		PrimitiveStates.RTLampada--;
 		if(PrimitiveStates.RTLampada==0){
-			LAMPADA_OFF
+			offOutput(&PrimitiveStates.Lampada);
 		}else{
-			LAMPADA_ON
+			onOutput(&PrimitiveStates.Lampada);
 		}
 	}
 }

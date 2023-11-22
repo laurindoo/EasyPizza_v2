@@ -29,7 +29,7 @@
 #include "task.h"
 #include "cmsis_os.h"
 
-#define BLE_DEVICE_NAME "EasyPizza" // Substitua por um nome apropriado
+#define BLE_DEVICE_NAME "EasyPizzaA" // Substitua por um nome apropriado
 #define COMANDO_BUFFER_SIZE (50) // Escolha um tamanho que seja suficiente
 
 //---DEFINICOES---TEMPOS DE CONEXAO
@@ -46,7 +46,7 @@
 //---MACROS---BLUETOOTH----------------------------
 #define MACRO_LE_BT_STATUS	HAL_GPIO_ReadPin 	(BLE_STATUS_GPIO_Port,	BLE_STATUS_Pin)
 #define MACRO_RESET_BLE			HAL_GPIO_WritePin		(BLE_RESET_GPIO_Port,		BLE_RESET_Pin	,GPIO_PIN_RESET);\
-		HAL_Delay(200);\
+		osDelay(200);\
 		HAL_GPIO_WritePin		(BLE_RESET_GPIO_Port,		BLE_RESET_Pin	,GPIO_PIN_SET);
 #define MACRO_ENVIA_AKNOLADGE 		bluetooth.TXBuffer[0] = 0x01;\
 		bluetooth.TXBuffer[1] = 0xFF;\
@@ -149,6 +149,7 @@ typedef struct
 		//flags
 	bool 		StatusSenha			;	//FLAG QUE ARMAZENA VALIDACAO DE CHAVE DE ACESSO
 	bool 		StatusConexao		;	//depois de conectado e sincronizado
+	bool 		SistemaInit			;	//indica que sistema ja esta inicializado
 	bool        SistemaEmErro       ;    //depois de conectado
 
 	//endereco ja codificado em chave

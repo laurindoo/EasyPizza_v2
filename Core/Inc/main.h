@@ -31,6 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "OutputDigital.h"
 #include "pid.h"
 #include "stdbool.h"
 
@@ -64,6 +65,8 @@ typedef struct TYPE_CALENDARIO{
 	uint16_t				Horimetro_horas;		//total de horas da maquina
 	uint8_t					Horimetro_parcial_min; 	//a cada minuto eu incremento, comparo com o gravado, e hora++ se for o caso
 	uint16_t				TotalCiclos;
+	uint16_t				ContMaxTeto;
+	uint16_t				ContMaxLastro;
 }
 TYPE_CALENDARIO;//
 
@@ -77,42 +80,44 @@ typedef enum
 	CEepromLimiteTemp,
 	CEepromLimiteLuz,
 	CEepromNewCile,
+	CEepromTempMaxTetoAgain,
+	CEepromTempMaxLastroAgain,
 } ComandosEeprom;
 
 //---Estados maquina
 typedef enum
-{   inicial = 0		,
-	aquecendo		,
-	aquecido		,
-	decrementando	,
-	pausado			,
-} Smaquina;
+{   TIMER_idle = 0		,
+	TIMER_decrementando	,
+	TIMER_pausado		,
+} Stimer;
+
 
 //---Estados aquecimento
 typedef enum
-{   buscandoTemp = 0	,
-	mantendoTemp		,
+{   PID_idle = 0		,
+	PID_buscandoTemp	,
+	PID_mantendoTemp	,
 } Sheat;
 
 
 //---Estrutura variaveis principais
 typedef struct
 {
-	bool 		ConectionBle;
-	bool 		Teto; 		//on/off
-	bool 		Lastro;		//on/off
-	bool 		Lampada;	//on/off
-	bool 		Cooler;		//on/off
-	bool 		Led1;		//on/off
-	bool 		Led2;		//on/off
-	bool 		Led3;		//on/off
 
+	OutputDigital 				outPuts;
+	IndviduoOutput 				Lampada, Cooler; 	//saidas digitais
+	IndviduoOutput				pwmTeto,pwmLastro;	//saida pwm
+
+	IndviduoOutput				LedVerde;			//Led verde sinalizando ok
+	IndviduoOutput				LedTeto, LedLastro;	//saida pwm
+
+
+	bool 		ConectionBle;
 	double 		RealtimeTeto;
 	double 		RealtimeLastro;
 	double		SetPointTeto;
 	double  	SetPointLastro;
 
-	Sheat 		MaquinaAquecimento;
 	uint8_t		SPTimerMinutos;
 	uint8_t		SPTimerSegundos;
 	uint8_t		RTTimerMinutos;
@@ -123,7 +128,7 @@ typedef struct
 
 	uint16_t	LimiteTemp;
 
-	Smaquina	stateMaquina;
+	Stimer		stateTimer;
 
 	BIT_TO_BYTE_ERROS		Erro;
 
@@ -176,16 +181,6 @@ typedef struct
 		HAL_Delay(100);\
 		RELE_5_OFF
 
-#define LAMPADA_ON RELE_5_ON\
-		PrimitiveStates.Lampada = true;
-#define LAMPADA_OFF RELE_5_OFF\
-		PrimitiveStates.RTLampada = 0;\
-		PrimitiveStates.Lampada = false;
-
-#define COOLER_ON RELE_4_ON\
-		PrimitiveStates.Cooler = true;
-#define COOLER_OFF RELE_4_OFF\
-		PrimitiveStates.Cooler = false;
 
 /* USER CODE END EM */
 

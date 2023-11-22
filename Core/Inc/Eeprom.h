@@ -52,7 +52,9 @@
 #define addrINST_MES			0x000d	// 8-bits
 #define addrINST_ANO			0x000e	// 8-bits
 #define addrTOTAL_GERAL			0x000f	// 16-bits
-#define addrLIMITE_TEMP			0x0014	// 16-bits
+#define addrLIMITE_TEMP			0x0011	// 16-bits
+#define addrCONT_MAX_TETO		0x0013	// 16-bits
+#define addrCONT_MAX_LASTRO		0x0015	// 16-bits
 
 
 //---MACROS---EEPROM----------------------------

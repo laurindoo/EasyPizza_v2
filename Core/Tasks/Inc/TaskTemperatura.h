@@ -20,6 +20,9 @@ void taskTemperatura1sec(void);
 #include <stdio.h>
 //#include "pid.h"
 
+
+extern osMessageQId FilaEepromHandle;
+
 //---CALDEIRA
 #define MACRO_LIGA_CALDEIRA		HAL_GPIO_WritePin 	(GPIOB,	GPIO_PIN_1,	GPIO_PIN_SET);
 #define MACRO_DESLIGA_CALDEIRA	HAL_GPIO_WritePin 	(GPIOB,	GPIO_PIN_1,	GPIO_PIN_RESET);

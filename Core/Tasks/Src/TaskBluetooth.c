@@ -69,23 +69,25 @@ void initBluetooth(void){
 void txBluetooth(void){
 	unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];
 	osEvent  evttx;
-	evttx = osMessageGet(FilaTXBluetoothHandle, 0);
+	evttx = osMessageGet(FilaTXBluetoothHandle, 100);
 	if (evttx.status == osEventMessage) {
 		switch ((unsigned int)evttx.value.p) {
 		case TX_REALTIME_DATA:
-			Buffer[0] 	= 0x01;									// ENDEREÇO
-			Buffer[1] 	= 0x16;									// FUNÇÃO -
-			Buffer[2] 	= PrimitiveStates.Erro.byte;							// Conjunto de erros
-			Buffer[3] 	= PrimitiveStates.stateMaquina;			// State da maquina
-			Buffer[4] 	= (uint16_t)PrimitiveStates.RealtimeTeto 	>>8;
-			Buffer[5] 	= (uint16_t)PrimitiveStates.RealtimeTeto 	& 0x00FF;
-			Buffer[6] 	= (uint16_t)PrimitiveStates.SetPointTeto 	>>8;
-			Buffer[7] 	= (uint16_t)PrimitiveStates.SetPointTeto 	& 0x00FF;
-			Buffer[8] 	= (uint16_t)PrimitiveStates.RealtimeLastro 	>>8;
-			Buffer[9] 	= (uint16_t)PrimitiveStates.RealtimeLastro 	& 0x00FF;
-			Buffer[10] 	= (uint16_t)PrimitiveStates.SetPointLastro 	>>8;
-			Buffer[11] 	= (uint16_t)PrimitiveStates.SetPointLastro 	& 0x00FF;
-			BluetoothEnviaComando(Buffer, 11);
+			Buffer[0] 	= 0x01;								// ENDEREÇO
+			Buffer[1] 	= 0x16;								// FUNÇÃO -
+			Buffer[2] 	= PrimitiveStates.Erro.byte;		// Conjunto de erros
+			Buffer[3] 	= PrimitiveStates.pwmTeto._PWMstate;// State da maquina de aquecimento
+//			Buffer[3] 	= PrimitiveStates.pwmLastro._PWMstate;// State da maquina de aquecimento
+			Buffer[4] 	= PrimitiveStates.stateTimer;		// State da maquina de timer
+			Buffer[5] 	= (uint16_t)PrimitiveStates.RealtimeTeto 	>>8;
+			Buffer[6] 	= (uint16_t)PrimitiveStates.RealtimeTeto 	& 0x00FF;
+			Buffer[7] 	= (uint16_t)PrimitiveStates.SetPointTeto 	>>8;
+			Buffer[8] 	= (uint16_t)PrimitiveStates.SetPointTeto 	& 0x00FF;
+			Buffer[9] 	= (uint16_t)PrimitiveStates.RealtimeLastro 	>>8;
+			Buffer[10] 	= (uint16_t)PrimitiveStates.RealtimeLastro 	& 0x00FF;
+			Buffer[11] 	= (uint16_t)PrimitiveStates.SetPointLastro 	>>8;
+			Buffer[12] 	= (uint16_t)PrimitiveStates.SetPointLastro 	& 0x00FF;
+			BluetoothEnviaComando(Buffer, 12);
 			osDelay(10);
 			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA2, 0);
 			break;
@@ -99,7 +101,7 @@ void txBluetooth(void){
 			Buffer[6] 	= (uint8_t)horimetroHoras.valor >> 8;
 			Buffer[7] 	= (uint8_t)horimetroHoras.valor & 0x00FF;
 			Buffer[8] 	= (uint8_t)horimetroMinutos.valor;
-			Buffer[9]	= PrimitiveStates.Lampada;
+			Buffer[9]	= PrimitiveStates.Lampada._state;
 			BluetoothEnviaComando(Buffer, 9);
 			break;
 		case TX_SINCRONIA:
@@ -114,6 +116,13 @@ void txBluetooth(void){
 			Buffer[8] 	= (uint8_t)instalacaoAno.valor;
 			Buffer[9]	= VERSAO;
 			BluetoothEnviaComando(Buffer, 9);
+
+//			Buffer[10] 	= (uint8_t)Calendario.ContMaxTeto >> 8;
+//			Buffer[11] 	= (uint8_t)Calendario.ContMaxTeto & 0x00FF;
+//			Buffer[12] 	= (uint8_t)Calendario.ContMaxLastro >> 8;
+//			Buffer[13] 	= (uint8_t)Calendario.ContMaxLastro & 0x00FF;
+//			BluetoothEnviaComando(Buffer, 13);
+
 			break;
 		}
 	}
@@ -121,7 +130,7 @@ void txBluetooth(void){
 
 void rxBluetooth(void){
 	osEvent  evtrx;
-	evtrx = osMessageGet(FilaRXBluetoothHandle, 0);
+	evtrx = osMessageGet(FilaRXBluetoothHandle, 100);
 	if (evtrx.status == osEventMessage) {
 		//			switch ((unsigned int)evtrx.value.p) {
 		switch (bluetooth._RxDataArr[1]) {
@@ -179,21 +188,8 @@ void rxBluetooth(void){
 			PrimitiveStates.RTTimerMinutos = PrimitiveStates.SPTimerMinutos;
 			PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
 
-			switch (PrimitiveStates.stateMaquina) {
-			case inicial:
-			case aquecendo:
-				//nao executa nada
-				__NOP();
-				break;
-			case aquecido:
-			case decrementando:
-			case pausado:
-				if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
-					PrimitiveStates.stateMaquina 	= decrementando;
-				}else{
-					PrimitiveStates.stateMaquina = aquecendo;
-				}
-				break;
+			if(PrimitiveStates.pwmLastro._PWMstate != buscando && PrimitiveStates.pwmTeto._PWMstate != buscando){
+				PrimitiveStates.stateTimer 	= TIMER_decrementando;
 			}
 
 			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMPO)
@@ -204,24 +200,29 @@ void rxBluetooth(void){
 			//---------ENDEREÇO | 0x24 | 0x24 | TimerSegundos |CRC | CRC
 			MACRO_ANULA_INATIVIDADE
 
-			switch (PrimitiveStates.stateMaquina) {
-			case inicial:
-			case aquecendo:
-				//nao executa nada
-				__NOP();
-				break;
-			case aquecido:
-				PrimitiveStates.stateMaquina = decrementando;
-				break;
-			case decrementando:
-				PrimitiveStates.stateMaquina = pausado;
-				break;
-			case pausado:
-				if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
-					PrimitiveStates.stateMaquina = decrementando;
+			switch (PrimitiveStates.stateTimer) {
+			case TIMER_idle:
+
+				PrimitiveStates.RTTimerMinutos 	= PrimitiveStates.SPTimerMinutos;
+				PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
+
+				if(PrimitiveStates.pwmLastro._PWMstate != buscando && PrimitiveStates.pwmTeto._PWMstate != buscando){
+					PrimitiveStates.stateTimer 	= TIMER_decrementando;
 				}else{
-					PrimitiveStates.stateMaquina = aquecendo;
+					PrimitiveStates.stateTimer = TIMER_idle;
 				}
+				break;
+			case TIMER_pausado:
+
+				if(PrimitiveStates.pwmLastro._PWMstate != buscando && PrimitiveStates.pwmTeto._PWMstate != buscando){
+					PrimitiveStates.stateTimer 	= TIMER_decrementando;
+				}else{
+					PrimitiveStates.stateTimer = TIMER_idle;
+				}
+				break;
+			case TIMER_decrementando:
+
+				PrimitiveStates.stateTimer 	= TIMER_pausado;
 				break;
 			}
 
@@ -242,22 +243,12 @@ void rxBluetooth(void){
 			PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
 
 
-			switch (PrimitiveStates.stateMaquina) {
-			case inicial:
-			case aquecendo:
-				//nao executa nada
-				__NOP();
-				break;
-			case aquecido:
-			case decrementando:
-			case pausado:
-				if(PrimitiveStates.MaquinaAquecimento == mantendoTemp){
-					PrimitiveStates.stateMaquina 	= decrementando;
-				}else{
-					PrimitiveStates.stateMaquina = aquecendo;
-				}
-				break;
+			if(PrimitiveStates.pwmLastro._PWMstate != buscando && PrimitiveStates.pwmTeto._PWMstate != buscando){
+				PrimitiveStates.stateTimer 	= TIMER_decrementando;
+			}else{
+				PrimitiveStates.stateTimer = TIMER_idle;
 			}
+
 			MACRO_ENVIA_AKNOLADGE_(RX_RECEITA)
 		}
 		break;
@@ -273,19 +264,18 @@ void rxBluetooth(void){
 		case RX_LIGA_LAMPADA:
 			//---------ENDEREÇO | 0x27 | 0x27 | CRC | CRC
 			MACRO_ANULA_INATIVIDADE
-			PrimitiveStates.RTLampada=PrimitiveStates.SPLampada;
-			LAMPADA_ON
+			onOutput(&PrimitiveStates.Lampada);
 			MACRO_ENVIA_AKNOLADGE_(RX_LIGA_LAMPADA)
 			break;
 		case RX_DESLIGA_LAMPADA:
 			//---------ENDEREÇO | 0x28 | 0x28 | CRC | CRC
 			MACRO_ANULA_INATIVIDADE
-			LAMPADA_OFF
+			offOutput(&PrimitiveStates.Lampada);
 			MACRO_ENVIA_AKNOLADGE_(RX_DESLIGA_LAMPADA)
 			break;
 		case RX_LIMITE_LAMPADA:
 			//---------ENDEREÇO | 0x30 | 0x30 | SPLampada | CRC | CRC
-			PrimitiveStates.SPLampada = bluetooth._RxDataArr[2];
+			PrimitiveStates.SPLampada = bluetooth._RxDataArr[3];
 			osMessagePut(FilaEepromHandle, CEepromLimiteLuz, 0);
 			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_LAMPADA)
 			break;
