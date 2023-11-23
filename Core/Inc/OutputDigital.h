@@ -54,13 +54,8 @@ typedef enum
  */
 typedef struct
 {
-	TypeOutput 		_tipo;
-
-	uint16_t 		GPIO_Pin;
-	GPIO_TypeDef* 	GPIOx;
-
-	GenericPwmState _PWMstate;
-	double			_pwmValue;
+	uint16_t 			GPIO_Pin;
+	GPIO_TypeDef* 		GPIOx;
 
 	GenericState	_state;
 
@@ -74,6 +69,32 @@ typedef struct
 
 }IndviduoOutput;
 
+typedef struct
+{
+	//handle do timer
+	TIM_HandleTypeDef 	*TimHandle;
+	uint32_t 			Channel;
+
+	//PID
+	double 		kp;
+	double 		ki;
+	double 		kd;
+	double 		PWMOut;
+
+	//var values
+	double 			realtime;
+	double			setPoint;
+	double			limite;
+	uint16_t		histerese;
+	GenericPwmState _PWMstate;
+
+	//timeout e callback
+	uint16_t		timeOn;
+	uint16_t		limiteOn;
+	void (*timeOut)();
+
+}IndviduoPID;
+
 
 /*
  * Conjunto saidas
@@ -81,15 +102,20 @@ typedef struct
 typedef struct
 {
 	//Variavel para receber lista de comandos
-	IndviduoOutput* _OutCommArr[6];
-	uint8_t _OutCommCount;
+	IndviduoOutput* _OutDigitalArr[6];
+	IndviduoPID* _OutPidArr[4];
+	uint8_t _DigitalCount;
+	uint8_t _PidCount;
 
 }OutputDigital;
 
-uint8_t OutputAddComp(OutputDigital* Output, IndviduoOutput* _individ, TypeOutput __tipo, uint16_t _pinoOUT, GPIO_TypeDef *_portaOUT, void (*callback)(),uint16_t limitOn,uint16_t limitOff);
-void onOutput(IndviduoOutput* outPut);
-void offOutput(IndviduoOutput* valv);
+uint8_t OutputAddDigital(OutputDigital* Output, IndviduoOutput* _individ, uint16_t _pinoOUT, GPIO_TypeDef *_portaOUT, void (*callback)(),uint16_t limitOn,uint16_t limitOff);
+uint8_t OutputAddPID(OutputDigital* Output,IndviduoPID* _individ, TIM_HandleTypeDef *htim, uint32_t Channel, double Kp, double Ki, double Kd, uint16_t histerese,uint16_t limit_on,void (*callback)());
+void onDigital(IndviduoOutput* outPut);
+void offDigital(IndviduoOutput* outPut);
 void contadorOutput(OutputDigital* Output);
+void IndviduoPID_SetPWMValue(IndviduoPID *pid, double pwmValue);
+void IndviduoPID_SetPWMValueDirect(IndviduoPID *pid, uint32_t pwmValue) ;
 
 //extern OutputDigital outPuts;
 

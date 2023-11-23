@@ -82,6 +82,7 @@ typedef enum
 	CEepromNewCile,
 	CEepromTempMaxTetoAgain,
 	CEepromTempMaxLastroAgain,
+	CEepromTunning,
 } ComandosEeprom;
 
 //---Estados maquina
@@ -99,34 +100,26 @@ typedef enum
 	PID_mantendoTemp	,
 } Sheat;
 
-
 //---Estrutura variaveis principais
 typedef struct
 {
 
 	OutputDigital 				outPuts;
-	IndviduoOutput 				Lampada, Cooler; 	//saidas digitais
-	IndviduoOutput				pwmTeto,pwmLastro;	//saida pwm
 
-	IndviduoOutput				LedVerde;			//Led verde sinalizando ok
-	IndviduoOutput				LedTeto, LedLastro;	//saida pwm
-
+	//saidas digitais
+	IndviduoOutput 	Lampada, Cooler; 	//saidas digitais
+	IndviduoOutput	LedVerde;			//Led verde sinalizando ok
+	IndviduoOutput	LedTeto, LedLastro;	//Leds das resistencias
+	//saidas pid
+	IndviduoPID		Teto;
+	IndviduoPID		Lastro;
 
 	bool 		ConectionBle;
-	double 		RealtimeTeto;
-	double 		RealtimeLastro;
-	double		SetPointTeto;
-	double  	SetPointLastro;
 
 	uint8_t		SPTimerMinutos;
 	uint8_t		SPTimerSegundos;
 	uint8_t		RTTimerMinutos;
 	uint8_t		RTTimerSegundos;
-
-	uint8_t		SPLampada;
-	uint8_t		RTLampada;
-
-	uint16_t	LimiteTemp;
 
 	Stimer		stateTimer;
 
@@ -145,6 +138,13 @@ typedef struct
 #define ON_FAN_TEMPERATURA 		200 	// graus celcius
 #define TIME_INATIVO_SETUP 		1800 // tempo de inatividade limite
 #define TIME_MAX_AQUECIMENTO 	600  // tempo maximo permitido para nao entrar em erro de aquecimento
+
+//tunning PID
+#define STD_KP		30
+#define STD_KI		0.01
+#define STD_KD		0.3
+#define STD_HISTERESE	3
+#define STD_LIMITE		450
 
 /* USER CODE END EC */
 

@@ -56,6 +56,19 @@
 #define addrCONT_MAX_TETO		0x0013	// 16-bits
 #define addrCONT_MAX_LASTRO		0x0015	// 16-bits
 
+#define addrTETO_KP				0x0017	// 64-bits
+#define addrTETO_KI				0x0021	// 64-bits
+#define addrTETO_KD				0x0025	// 64-bits
+#define addrTETO_HIST			0x0029	// 64-bits
+#define addrTETO_LIMIT			0x002D	// 64-bits
+
+#define addrLASTRO_KP			0x0031	// 64-bits
+#define addrLASTRO_KI			0x0035	// 64-bits
+#define addrLASTRO_KD			0x0039	// 64-bits
+#define addrLASTRO_HIST			0x0041	// 64-bits
+#define addrLASTRO_LIMIT		0x0045	// 64-bits
+
+
 
 //---MACROS---EEPROM----------------------------
 #define M_EEPROM_SHIFT	Maquina.Maquina_eeprom = EEPROM_SHIFITING;
@@ -74,6 +87,7 @@ typedef enum{
 	DATA8BITS  = 1,
 	DATA16BITS = 2,
 	DATA32BITS = 4,
+	DATADOUBLE = 8,
 }	TypeTamData;
 
 /*
@@ -96,6 +110,7 @@ typedef struct
 	uint8_t *ptr8;
 	uint16_t *ptr16;
 	uint32_t *ptr32;
+	double *ptrDouble;
 
 }EepromVariaveis;
 
@@ -124,7 +139,7 @@ typedef struct
 //prototipos das funcoes da eeprom
 uint8_t EepromInit(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila);
 void EepromUpdateMes(Eeprom *eeprom, uint16_t __addMes, uint16_t __addItem, uint32_t valor, TypeTamData _sizeType);
-uint8_t EepromAddVar(Eeprom *eeprom, EepromVariaveis* _eepromvar, char* objectname, uint8_t __addreeprom,TypeTamData tamanho,uint32_t minimo,uint32_t padrao,uint32_t maximo,uint32_t *addrVar);
+uint8_t EepromAddVar(Eeprom *eeprom, EepromVariaveis* _eepromvar, char* objectname, uint8_t __addreeprom,TypeTamData tamanho,uint32_t minimo,uint32_t padrao,uint32_t maximo,void *addrVar);
 __IO bool EepromSetVar(Eeprom *eeprom, EepromVariaveis *eepromvar,uint32_t valor);
 void EepromDownloadValores(Eeprom *eeprom);
 void RestauraPadraoTudo(Eeprom *eeprom);

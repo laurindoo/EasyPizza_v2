@@ -10,7 +10,6 @@
 
 
 void funcionamentoTimer(void);
-void funcionamentoLampada(void);
 void verificaErro(void);
 
 
@@ -37,8 +36,6 @@ void StartTimer(void const * argument)
 
 		funcionamentoTimer();
 
-		funcionamentoLampada();
-
 		osThreadYield();
 		osDelayUntil(&xLastWakeTime,1000);
 	}
@@ -62,18 +59,7 @@ void funcionamentoTimer(void){
 	}
 }
 
-void funcionamentoLampada(void){
 
-	//decremento e apos desligamento lampada
-	if(PrimitiveStates.RTLampada>0){
-		PrimitiveStates.RTLampada--;
-		if(PrimitiveStates.RTLampada==0){
-			offOutput(&PrimitiveStates.Lampada);
-		}else{
-			onOutput(&PrimitiveStates.Lampada);
-		}
-	}
-}
 
 void verificaErro(void){
 	osEvent evt;

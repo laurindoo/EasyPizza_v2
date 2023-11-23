@@ -29,12 +29,12 @@
 #include "task.h"
 #include "cmsis_os.h"
 
-#define BLE_DEVICE_NAME "EasyPizzaA" // Substitua por um nome apropriado
+#define BLE_DEVICE_NAME "EasyPizza" // Substitua por um nome apropriado
 #define COMANDO_BUFFER_SIZE (50) // Escolha um tamanho que seja suficiente
 
 //---DEFINICOES---TEMPOS DE CONEXAO
-#define DEF_TEMPO_MAX_S_MSG_LOW			200	//x*10ms
-#define DEF_TEMPO_MAX_S_MSG_HIGH		200	//x*10ms
+#define DEF_TEMPO_MAX_S_MSG_LOW			300	//x*10ms
+#define DEF_TEMPO_MAX_S_MSG_HIGH		300	//x*10ms
 
 
 #define CHEGOU_ADDR_BLE 0xbf

@@ -18,7 +18,8 @@
 #include "Bluetooth.h"
 
 #include "TaskEeprom.h"
-#define VERSAO 	1// versao salva no dia 31/05/2023 -
+//#define VERSAO 	1// versao salva no dia 31/05/2023 -
+#define VERSAO 	2// versao salva no dia 23/11/2023 -
 
 extern osMessageQId FilaRXBluetoothHandle,FilaTXBluetoothHandle,FilaEepromHandle;
 extern int recorrencia;
@@ -50,6 +51,10 @@ typedef enum
 	TX_REALTIME_DATA 		= 0x16,
 	TX_REALTIME_DATA2		= 0x17,
 	TX_SINCRONIA 			= 0x18,
+	TX_SINCRONIA2 			= 0x19,
+	TX_SINCRONIA3 			= 0x20,
+	TX_RESETANDO 			= 0x29,
+	TX_RESETADO_OK 			= 0x30,
 
 } ComandosBleTX;
 

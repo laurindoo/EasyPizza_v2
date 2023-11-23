@@ -16,6 +16,7 @@ BleComando BLESolicitaSincronia;
 BleComando BLEAtualizaDataHora,BLEAlteraLimiteTemp,BLERestaura,BLESPTeto,BLESPLastro,BLESPtempo,BLEToggleTempo,BLEReceita,BLESPTempo,BLELightOn,BLELightOff;
 BleComando BLESetaLampada,BLECancelaProcesso;
 
+void verificaLimiteSetpoint(IndviduoPID	*canal);
 
 void StartBluetooth(void const * argument)
 {
@@ -73,20 +74,20 @@ void txBluetooth(void){
 	if (evttx.status == osEventMessage) {
 		switch ((unsigned int)evttx.value.p) {
 		case TX_REALTIME_DATA:
-			Buffer[0] 	= 0x01;								// ENDEREÇO
-			Buffer[1] 	= 0x16;								// FUNÇÃO -
-			Buffer[2] 	= PrimitiveStates.Erro.byte;		// Conjunto de erros
-			Buffer[3] 	= PrimitiveStates.pwmTeto._PWMstate;// State da maquina de aquecimento
-//			Buffer[3] 	= PrimitiveStates.pwmLastro._PWMstate;// State da maquina de aquecimento
-			Buffer[4] 	= PrimitiveStates.stateTimer;		// State da maquina de timer
-			Buffer[5] 	= (uint16_t)PrimitiveStates.RealtimeTeto 	>>8;
-			Buffer[6] 	= (uint16_t)PrimitiveStates.RealtimeTeto 	& 0x00FF;
-			Buffer[7] 	= (uint16_t)PrimitiveStates.SetPointTeto 	>>8;
-			Buffer[8] 	= (uint16_t)PrimitiveStates.SetPointTeto 	& 0x00FF;
-			Buffer[9] 	= (uint16_t)PrimitiveStates.RealtimeLastro 	>>8;
-			Buffer[10] 	= (uint16_t)PrimitiveStates.RealtimeLastro 	& 0x00FF;
-			Buffer[11] 	= (uint16_t)PrimitiveStates.SetPointLastro 	>>8;
-			Buffer[12] 	= (uint16_t)PrimitiveStates.SetPointLastro 	& 0x00FF;
+			Buffer[0] 	= 0x01;									// ENDEREÇO
+			Buffer[1] 	= 0x16;									// FUNÇÃO -
+			Buffer[2] 	= PrimitiveStates.Erro.byte;			// Conjunto de erros
+			Buffer[3] 	= PrimitiveStates.Teto._PWMstate;
+			Buffer[4] 	= PrimitiveStates.Lastro._PWMstate;
+			Buffer[5] 	= (uint16_t)PrimitiveStates.Teto.realtime 		>>8;
+			Buffer[6] 	= (uint16_t)PrimitiveStates.Teto.realtime 		& 0x00FF;
+			Buffer[7] 	= (uint16_t)PrimitiveStates.Teto.setPoint 		>>8;
+			Buffer[8] 	= (uint16_t)PrimitiveStates.Teto.setPoint 		& 0x00FF;
+			Buffer[9] 	= (uint16_t)PrimitiveStates.Lastro.realtime		>>8;
+			Buffer[10] 	= (uint16_t)PrimitiveStates.Lastro.realtime 	& 0x00FF;
+			Buffer[11] 	= (uint16_t)PrimitiveStates.Lastro.setPoint 	>>8;
+			Buffer[12] 	= (uint16_t)PrimitiveStates.Lastro.setPoint 	& 0x00FF;
+
 			BluetoothEnviaComando(Buffer, 12);
 			osDelay(10);
 			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA2, 0);
@@ -94,35 +95,89 @@ void txBluetooth(void){
 		case TX_REALTIME_DATA2:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
 			Buffer[1] 	= 0x17;									// FUNÇÃO -
-			Buffer[2] 	= PrimitiveStates.RTTimerMinutos;
-			Buffer[3] 	= PrimitiveStates.RTTimerSegundos;
-			Buffer[4] 	= PrimitiveStates.SPTimerMinutos;
-			Buffer[5] 	= PrimitiveStates.SPTimerSegundos;
-			Buffer[6] 	= (uint8_t)horimetroHoras.valor >> 8;
-			Buffer[7] 	= (uint8_t)horimetroHoras.valor & 0x00FF;
-			Buffer[8] 	= (uint8_t)horimetroMinutos.valor;
-			Buffer[9]	= PrimitiveStates.Lampada._state;
-			BluetoothEnviaComando(Buffer, 9);
+			Buffer[2] 	= PrimitiveStates.stateTimer;			// State da maquina de timer
+			Buffer[3] 	= PrimitiveStates.RTTimerMinutos;
+			Buffer[4] 	= PrimitiveStates.RTTimerSegundos;
+			Buffer[5] 	= PrimitiveStates.SPTimerMinutos;
+			Buffer[6] 	= PrimitiveStates.SPTimerSegundos;
+			Buffer[7] 	= (uint16_t)horimetroHoras.valor >> 8;
+			Buffer[8] 	= (uint16_t)horimetroHoras.valor & 0x00FF;
+			Buffer[9] 	= (uint8_t)horimetroMinutos.valor;
+			Buffer[10]	= PrimitiveStates.Lampada._state;
+			Buffer[11] 	= (uint16_t)Calendario.TotalCiclos >> 8;
+			Buffer[12] 	= (uint16_t)Calendario.TotalCiclos & 0x00FF;
+			BluetoothEnviaComando(Buffer, 12);
+
+			osDelay(10);
+			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA, 0);
+
 			break;
 		case TX_SINCRONIA:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
 			Buffer[1] 	= 0x18;									// FUNÇÃO -
 			Buffer[2] 	= 0x01;									// Modelo
-			Buffer[3] 	= (uint8_t)tempoDelayLuz.valor;
-			Buffer[4] 	= (uint8_t)LimiteTemperatura.valor	>> 8 ;
-			Buffer[5] 	= (uint8_t)LimiteTemperatura.valor	& 0x00ff ;
-			Buffer[6] 	= (uint8_t)instalacaoDia.valor;
-			Buffer[7] 	= (uint8_t)instalacaoMes.valor;
-			Buffer[8] 	= (uint8_t)instalacaoAno.valor;
-			Buffer[9]	= VERSAO;
-			BluetoothEnviaComando(Buffer, 9);
+			Buffer[3] 	= (uint8_t)PrimitiveStates.Lampada.limitOn;
+			Buffer[4] 	= (uint8_t)instalacaoDia.valor;
+			Buffer[5] 	= (uint8_t)instalacaoMes.valor;
+			Buffer[6] 	= (uint8_t)instalacaoAno.valor;
+			Buffer[7]	= VERSAO;
+			Buffer[8] 	= (uint16_t)Calendario.ContMaxTeto >> 8;
+			Buffer[9] 	= (uint16_t)Calendario.ContMaxTeto & 0x00FF;
+			Buffer[10] 	= (uint16_t)Calendario.ContMaxLastro >> 8;
+			Buffer[11] 	= (uint16_t)Calendario.ContMaxLastro & 0x00FF;
+			BluetoothEnviaComando(Buffer, 11);
 
-//			Buffer[10] 	= (uint8_t)Calendario.ContMaxTeto >> 8;
-//			Buffer[11] 	= (uint8_t)Calendario.ContMaxTeto & 0x00FF;
-//			Buffer[12] 	= (uint8_t)Calendario.ContMaxLastro >> 8;
-//			Buffer[13] 	= (uint8_t)Calendario.ContMaxLastro & 0x00FF;
-//			BluetoothEnviaComando(Buffer, 13);
+			osDelay(10);
+			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA2, 0);
 
+			break;
+		case TX_SINCRONIA2:
+			Buffer[0] 	= 0x01;									// ENDEREÇO
+			Buffer[1] 	= 0x19;									// FUNÇÃO -
+			Buffer[2] 	= (uint16_t)PrimitiveStates.Teto.kp	>> 8 ;
+			Buffer[3] 	= (uint16_t)PrimitiveStates.Teto.kp	& 0x00ff ;
+			Buffer[4] 	= (uint16_t)PrimitiveStates.Teto.ki	>> 8 ;
+			Buffer[5] 	= (uint16_t)PrimitiveStates.Teto.ki	& 0x00ff ;
+			Buffer[6] 	= (uint16_t)PrimitiveStates.Teto.kd	>> 8 ;
+			Buffer[7]	= (uint16_t)PrimitiveStates.Teto.kd	& 0x00ff ;
+			Buffer[8] 	= (uint16_t)PrimitiveStates.Teto.histerese >> 8;
+			Buffer[9] 	= (uint16_t)PrimitiveStates.Teto.histerese & 0x00FF;
+			Buffer[10] 	= (uint16_t)PrimitiveStates.Teto.limite >> 8;
+			Buffer[11] 	= (uint16_t)PrimitiveStates.Teto.limite & 0x00FF;
+			BluetoothEnviaComando(Buffer, 11);
+
+			osDelay(10);
+			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA3, 0);
+
+			break;
+		case TX_SINCRONIA3:
+			Buffer[0] 	= 0x01;									// ENDEREÇO
+			Buffer[1] 	= 0x20;									// FUNÇÃO -
+			Buffer[2] 	= (uint16_t)PrimitiveStates.Lastro.kp	>> 8 ;
+			Buffer[3] 	= (uint16_t)PrimitiveStates.Lastro.kp	& 0x00ff ;
+			Buffer[4] 	= (uint16_t)PrimitiveStates.Lastro.ki	>> 8 ;
+			Buffer[5] 	= (uint16_t)PrimitiveStates.Lastro.ki	& 0x00ff ;
+			Buffer[6] 	= (uint16_t)PrimitiveStates.Lastro.kd	>> 8 ;
+			Buffer[7]	= (uint16_t)PrimitiveStates.Lastro.kd	& 0x00ff ;
+			Buffer[8] 	= (uint16_t)PrimitiveStates.Lastro.histerese >> 8;
+			Buffer[9] 	= (uint16_t)PrimitiveStates.Lastro.histerese & 0x00FF;
+			Buffer[10] 	= (uint16_t)PrimitiveStates.Lastro.limite >> 8;
+			Buffer[11] 	= (uint16_t)PrimitiveStates.Lastro.limite & 0x00FF;
+			BluetoothEnviaComando(Buffer, 11);
+
+			break;
+		case TX_RESETANDO:
+			Buffer[0] 	= 0x01;									// ENDEREÇO
+			Buffer[1] 	= 0x19;									// FUNÇÃO -
+			Buffer[2] 	= 0x19;									// FUNÇÃO -
+			BluetoothEnviaComando(Buffer, 2);
+
+			break;
+		case TX_RESETADO_OK:
+			Buffer[0] 	= 0x01;									// ENDEREÇO
+			Buffer[1] 	= 0x20;									// FUNÇÃO -
+			Buffer[2] 	= 0x20;									// FUNÇÃO -
+			BluetoothEnviaComando(Buffer, 2);
 			break;
 		}
 	}
@@ -132,7 +187,6 @@ void rxBluetooth(void){
 	osEvent  evtrx;
 	evtrx = osMessageGet(FilaRXBluetoothHandle, 100);
 	if (evtrx.status == osEventMessage) {
-		//			switch ((unsigned int)evtrx.value.p) {
 		switch (bluetooth._RxDataArr[1]) {
 		case RX_SOLICITA_REALTIME:
 			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA, 0);
@@ -158,15 +212,17 @@ void rxBluetooth(void){
 			MACRO_ENVIA_AKNOLADGE_(RX_ATUALIZA_HORA)
 			break;
 		case RX_RESTAURA:
-			//				//---------ENDEREÇO | 0x10 | 0x10  | CRC | CRC
-			//				Maquina.Maquina_eeprom = EEPROM_HARD_RESET;
-			//				MACRO_ENVIA_AKNOLADGE_(RX_RESTAURA)
+			//---------ENDEREÇO | 0x10 | 0x10 | CRC | CRC
+			osMessagePut(FilaEepromHandle, CEepromHardReset, 0);
+			osMessagePut(FilaTXBluetoothHandle, TX_RESETANDO, 0);
 			break;
 		case RX_SP_TEMP_TETO:
 			//---------ENDEREÇO | 0x21 | SP_Teto.high | SP_Teto.low | CRC | CRC
 			MACRO_ANULA_INATIVIDADE
 
-			PrimitiveStates.SetPointTeto = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+			PrimitiveStates.Teto.setPoint = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+
+			verificaLimiteSetpoint(&PrimitiveStates.Teto);
 
 			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMP_TETO)
 			break;
@@ -174,7 +230,8 @@ void rxBluetooth(void){
 			//---------ENDEREÇO | 0x22 | SP_Lastro.high | SP_Lastro.low | CRC | CRC
 			MACRO_ANULA_INATIVIDADE
 
-			PrimitiveStates.SetPointLastro = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+			PrimitiveStates.Lastro.setPoint = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+			verificaLimiteSetpoint(&PrimitiveStates.Lastro);
 
 			MACRO_ENVIA_AKNOLADGE_(RX_SP_TEMP_LASTRO)
 			break;
@@ -188,7 +245,7 @@ void rxBluetooth(void){
 			PrimitiveStates.RTTimerMinutos = PrimitiveStates.SPTimerMinutos;
 			PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
 
-			if(PrimitiveStates.pwmLastro._PWMstate != buscando && PrimitiveStates.pwmTeto._PWMstate != buscando){
+			if(PrimitiveStates.Lastro._PWMstate != buscando && PrimitiveStates.Teto._PWMstate != buscando){
 				PrimitiveStates.stateTimer 	= TIMER_decrementando;
 			}
 
@@ -206,7 +263,7 @@ void rxBluetooth(void){
 				PrimitiveStates.RTTimerMinutos 	= PrimitiveStates.SPTimerMinutos;
 				PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
 
-				if(PrimitiveStates.pwmLastro._PWMstate != buscando && PrimitiveStates.pwmTeto._PWMstate != buscando){
+				if(PrimitiveStates.Lastro._PWMstate != buscando && PrimitiveStates.Teto._PWMstate != buscando){
 					PrimitiveStates.stateTimer 	= TIMER_decrementando;
 				}else{
 					PrimitiveStates.stateTimer = TIMER_idle;
@@ -214,7 +271,7 @@ void rxBluetooth(void){
 				break;
 			case TIMER_pausado:
 
-				if(PrimitiveStates.pwmLastro._PWMstate != buscando && PrimitiveStates.pwmTeto._PWMstate != buscando){
+				if(PrimitiveStates.Lastro._PWMstate != buscando && PrimitiveStates.Teto._PWMstate != buscando){
 					PrimitiveStates.stateTimer 	= TIMER_decrementando;
 				}else{
 					PrimitiveStates.stateTimer = TIMER_idle;
@@ -233,8 +290,13 @@ void rxBluetooth(void){
 		{
 			MACRO_ANULA_INATIVIDADE
 			//---------ENDEREÇO | 0x25 | TemperaturaTeto.hi~.lo | TemperaturaLastro.hi~.lo | Minutos | Segundos | CRC | CRC
-			PrimitiveStates.SetPointTeto = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
-			PrimitiveStates.SetPointLastro = (bluetooth._RxDataArr[4]<< 8) | bluetooth._RxDataArr[5];
+			PrimitiveStates.Teto.setPoint 	= (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+			PrimitiveStates.Lastro.setPoint = (bluetooth._RxDataArr[4]<< 8) | bluetooth._RxDataArr[5];
+
+			//verifica limite
+			verificaLimiteSetpoint(&PrimitiveStates.Lastro);
+			verificaLimiteSetpoint(&PrimitiveStates.Teto);
+
 			PrimitiveStates.SPTimerMinutos 	= bluetooth._RxDataArr[6];
 			PrimitiveStates.SPTimerSegundos = bluetooth._RxDataArr[7];
 
@@ -243,7 +305,7 @@ void rxBluetooth(void){
 			PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
 
 
-			if(PrimitiveStates.pwmLastro._PWMstate != buscando && PrimitiveStates.pwmTeto._PWMstate != buscando){
+			if(PrimitiveStates.Lastro._PWMstate != buscando && PrimitiveStates.Teto._PWMstate != buscando){
 				PrimitiveStates.stateTimer 	= TIMER_decrementando;
 			}else{
 				PrimitiveStates.stateTimer = TIMER_idle;
@@ -253,31 +315,38 @@ void rxBluetooth(void){
 		}
 		break;
 		case RX_LIMITE_TEMPERATURA:
-			//---------ENDEREÇO | 0x26 | TemperaturaTeto.hi~.lo | TemperaturaLastro.hi~.lo | CRC | CRC
+			//---------ENDEREÇO | 0x26 | TempMaxTeto.hi | TempMaxTeto.lo | TempMaxLastro.hi | TempMaxLastro.lo | CRC | CRC
 			MACRO_ANULA_INATIVIDADE
 
-			PrimitiveStates.LimiteTemp = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+			PrimitiveStates.Teto.limite = (bluetooth._RxDataArr[2]<< 8) | bluetooth._RxDataArr[3];
+			PrimitiveStates.Lastro.limite = (bluetooth._RxDataArr[4]<< 8) | bluetooth._RxDataArr[5];
 			osMessagePut(FilaEepromHandle, CEepromLimiteTemp, 0);
 
-			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_TEMPERATURA)
+			//verifica limite
+			verificaLimiteSetpoint(&PrimitiveStates.Lastro);
+			verificaLimiteSetpoint(&PrimitiveStates.Teto);
+
+			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA, 0);
+			//			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_TEMPERATURA)
 			break;
 		case RX_LIGA_LAMPADA:
 			//---------ENDEREÇO | 0x27 | 0x27 | CRC | CRC
 			MACRO_ANULA_INATIVIDADE
-			onOutput(&PrimitiveStates.Lampada);
+			onDigital(&PrimitiveStates.Lampada);
 			MACRO_ENVIA_AKNOLADGE_(RX_LIGA_LAMPADA)
 			break;
 		case RX_DESLIGA_LAMPADA:
 			//---------ENDEREÇO | 0x28 | 0x28 | CRC | CRC
 			MACRO_ANULA_INATIVIDADE
-			offOutput(&PrimitiveStates.Lampada);
+			offDigital(&PrimitiveStates.Lampada);
 			MACRO_ENVIA_AKNOLADGE_(RX_DESLIGA_LAMPADA)
 			break;
 		case RX_LIMITE_LAMPADA:
 			//---------ENDEREÇO | 0x30 | 0x30 | SPLampada | CRC | CRC
-			PrimitiveStates.SPLampada = bluetooth._RxDataArr[3];
+			PrimitiveStates.Lampada.limitOn = bluetooth._RxDataArr[3];
 			osMessagePut(FilaEepromHandle, CEepromLimiteLuz, 0);
-			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_LAMPADA)
+			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA, 0);
+			//			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_LAMPADA)
 			break;
 		case RX_CANCELA_PROCESSO:
 			//---------ENDEREÇO | 0x29 | 0x29 | CRC | CRC
@@ -289,3 +358,10 @@ void rxBluetooth(void){
 	}
 }
 
+void verificaLimiteSetpoint(IndviduoPID	*canal){
+	if(canal->setPoint < canal->limite)
+		return;
+
+	canal->setPoint = canal->limite;
+	return;
+}

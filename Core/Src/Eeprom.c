@@ -55,12 +55,14 @@ void EepromUpdateMes(Eeprom *eeprom, uint16_t __addMes, uint16_t __addItem, uint
 			buffer2[3] = (uint8_t)(valor & 0xFF);
 			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR, __addMes+__addItem, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer2, 4, 200);
 			break;
+		default:
+			break;
 		}
 	}
 }
 
 //variaveis de eeprom que serao manipuladas
-uint8_t EepromAddVar(Eeprom *eeprom, EepromVariaveis* _eepromvar, char* objectname,uint8_t __addreeprom,TypeTamData tamanho,uint32_t minimo,uint32_t padrao,uint32_t maximo, uint32_t *addrVar)
+uint8_t EepromAddVar(Eeprom *eeprom, EepromVariaveis* _eepromvar, char* objectname,uint8_t __addreeprom,TypeTamData tamanho,uint32_t minimo,uint32_t padrao,uint32_t maximo, void *addrVar)
 {
 	//Make space before passing the object name to the nexcomp struct
 	_eepromvar->objname = (char *) malloc((strlen(objectname)*sizeof(char)) + 1);
@@ -96,6 +98,9 @@ uint8_t EepromAddVar(Eeprom *eeprom, EepromVariaveis* _eepromvar, char* objectna
 	case DATA32BITS:
 		_eepromvar->ptr32=(uint32_t *)addrVar;
 		break;
+	case DATADOUBLE:
+		_eepromvar->ptrDouble=(double *)addrVar;
+		break;
 	}
 	return 0;
 }
@@ -107,6 +112,7 @@ bool EepromSetVar(Eeprom *eeprom, EepromVariaveis *eepromvar, uint32_t valor)
 	uint8_t buffer0[1];
 	uint8_t buffer1[2];
 	uint8_t buffer2[4];
+	uint8_t buffer3[8];
 	//envio para memoria pagina 1
 	LIBERA_EEPROM
 	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,30,HAL_MAX_DELAY);
@@ -146,6 +152,26 @@ bool EepromSetVar(Eeprom *eeprom, EepromVariaveis *eepromvar, uint32_t valor)
 					break;
 				*eepromvar->ptr32 = (uint32_t)valor;
 				break;
+			case DATADOUBLE:
+				    eepromvar->valor = (double)valor;
+				    union {
+				        double asDouble;
+				        uint64_t asUInt;
+				    } doubleToUInt;
+
+				    doubleToUInt.asDouble = eepromvar->valor;
+				    uint64_t valAsUInt = doubleToUInt.asUInt;
+
+	//			    uint64_t valAsUInt = *(uint64_t*)&(eepromvar->valor);
+				    for (int i = 0; i < 8; i++) {
+				        buffer3[i] = (uint8_t)(valAsUInt >> (56 - 8*i));
+				    }
+				    HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR, eepromvar->_addrEprom, I2C_MEMADD_SIZE_16BIT, (uint8_t *)buffer3, 8, 200);
+
+				    if (!eepromvar->ptrDouble)
+				        break;
+				    *eepromvar->ptrDouble = (double)valor;
+				    break;
 			}
 		}else{ //usar valor da var local
 			switch (eepromvar->_sizeType) {
@@ -178,6 +204,20 @@ bool EepromSetVar(Eeprom *eeprom, EepromVariaveis *eepromvar, uint32_t valor)
 
 				HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR, eepromvar->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer2, 4, 200);
 				break;
+			case DATADOUBLE:
+			    if (!eepromvar->ptrDouble)
+			        break;
+			    union {
+			        double asDouble;
+			        uint64_t asUInt;
+			    } doubleToUInt2;
+			    doubleToUInt2.asDouble = *eepromvar->ptrDouble;
+			    uint64_t valAsUInt2 = doubleToUInt2.asUInt;
+			    for (int i = 0; i < 8; i++) {
+			        buffer3[i] = (uint8_t)(valAsUInt2 >> (56 - 8*i));
+			    }
+			    HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR, eepromvar->_addrEprom, I2C_MEMADD_SIZE_16BIT, (uint8_t *)buffer3, 8, 200);
+			    break;
 			}
 		}
 	}
@@ -211,6 +251,7 @@ void EepromDownloadValores(Eeprom *eeprom)
 {
 	uint8_t buffer1[2];
 	uint8_t buffer2[4];
+	uint8_t buffer3[8];
 
 //	return (uchCRCHi << 8 | uchCRCLo)
 	for(uint8_t i = 0; i < eeprom->_EepromVarCount; i++){
@@ -238,6 +279,26 @@ void EepromDownloadValores(Eeprom *eeprom)
 					*eeprom->_EepromVarArr[i]->ptr32 = eeprom->_EepromVarArr[i]->valor;
 				}
 				break;
+			case DATADOUBLE:
+			    HAL_I2C_Mem_Read(eeprom->i2cHandle, EEPROM_READ_ADDR, eeprom->_EepromVarArr[i]->_addrEprom, I2C_MEMADD_SIZE_16BIT, (uint8_t *) buffer3, 8, 200);
+			    uint64_t valAsUInt = ((uint64_t)buffer3[0] << 56) |
+			                         ((uint64_t)buffer3[1] << 48) |
+			                         ((uint64_t)buffer3[2] << 40) |
+			                         ((uint64_t)buffer3[3] << 32) |
+			                         ((uint64_t)buffer3[4] << 24) |
+			                         ((uint64_t)buffer3[5] << 16) |
+			                         ((uint64_t)buffer3[6] << 8)  |
+			                         (uint64_t)buffer3[7];
+			    union {
+			        uint64_t asUInt;
+			        double asDouble;
+			    } uintToDouble;
+			    uintToDouble.asUInt = valAsUInt;
+			    double val = uintToDouble.asDouble;
+			    if (eeprom->_EepromVarArr[i]->ptrDouble != 0) {
+			        *eeprom->_EepromVarArr[i]->ptrDouble = val;
+			    }
+			    break;
 			}
 		}
 

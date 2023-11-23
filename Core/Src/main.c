@@ -101,6 +101,7 @@ extern void taskBluetooth1sec(void);
 void leTempInterna(void);
 void controleCooler(void);
 void timeoutAquecimento (void);
+void timeoutDesligaLampada(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -146,10 +147,12 @@ int main(void)
 	 * 6  - FEITO - Contador de ciclos
 	 * 7  - FEITO - CONFERIR - assegurar contagem de minutimetro e horimetro
 	 * 8  - FEITO - implementar classe digitalOutPut
-	 * 9  - incluir no aplicativo alteracoes, consultar taskBluetooth.c
-	 * 10 - FEITO -  revisar a metodologia de envio de informacoes via serial, testar sem utilizar o _IT ps.:possivelmente retornar o osDelay
-	 *
+	 * 9  - FEITO - incluir no aplicativo alteracoes, consultar taskBluetooth.c
+	 * 10 - FEITO - revisar a metodologia de envio de informacoes via serial, testar sem utilizar o _IT ps.:possivelmente retornar o osDelay
+	 * 11 - FEITO - histerese de state pwm configuravel
+	 * 12 - FEITO - comunicacao do PID
 	 * */
+
 
 	/* USER CODE END 1 */
 
@@ -185,16 +188,15 @@ int main(void)
 	HAL_TIM_PWM_Start		(&htim3,TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start		(&htim3,TIM_CHANNEL_4);
 
-	OutputAddComp(&PrimitiveStates.outPuts,&PrimitiveStates.Lampada		,Digital	,RELE_5_Pin	,RELE_5_GPIO_Port	,0	,0	,0);
-	OutputAddComp(&PrimitiveStates.outPuts,&PrimitiveStates.Cooler		,Digital	,RELE_4_Pin	,RELE_4_GPIO_Port	,0	,0	,0);
+	OutputAddDigital(&PrimitiveStates.outPuts,&PrimitiveStates.Lampada		,RELE_5_Pin	,RELE_5_GPIO_Port	,timeoutDesligaLampada	,45	,0);
+	OutputAddDigital(&PrimitiveStates.outPuts,&PrimitiveStates.Cooler		,RELE_4_Pin	,RELE_4_GPIO_Port	,0	,0	,0);
+	OutputAddDigital(&PrimitiveStates.outPuts,&PrimitiveStates.Cooler		,RELE_4_Pin	,RELE_4_GPIO_Port	,0	,0	,0);
+	OutputAddDigital(&PrimitiveStates.outPuts,&PrimitiveStates.LedLastro	,RELE_3_Pin	,RELE_3_GPIO_Port	,0	,0	,0);
+	OutputAddDigital(&PrimitiveStates.outPuts,&PrimitiveStates.LedTeto		,RELE_2_Pin	,RELE_2_GPIO_Port	,0	,0	,0);
+	OutputAddDigital(&PrimitiveStates.outPuts,&PrimitiveStates.LedVerde		,RELE_1_Pin	,RELE_1_GPIO_Port	,0	,0	,0);
 
-	OutputAddComp(&PrimitiveStates.outPuts,&PrimitiveStates.Cooler		,Digital	,RELE_4_Pin	,RELE_4_GPIO_Port	,0	,0	,0);
-	OutputAddComp(&PrimitiveStates.outPuts,&PrimitiveStates.pwmTeto		,PIDVal		,0			,0					,timeoutAquecimento	,TIME_MAX_AQUECIMENTO	,0);
-	OutputAddComp(&PrimitiveStates.outPuts,&PrimitiveStates.pwmLastro	,PIDVal		,0			,0					,timeoutAquecimento	,TIME_MAX_AQUECIMENTO	,0);
-
-	OutputAddComp(&PrimitiveStates.outPuts,&PrimitiveStates.LedLastro	,Digital	,RELE_3_Pin	,RELE_3_GPIO_Port	,0	,0	,0);
-	OutputAddComp(&PrimitiveStates.outPuts,&PrimitiveStates.LedTeto		,Digital	,RELE_2_Pin	,RELE_2_GPIO_Port	,0	,0	,0);
-	OutputAddComp(&PrimitiveStates.outPuts,&PrimitiveStates.LedVerde	,Digital	,RELE_1_Pin	,RELE_1_GPIO_Port	,0	,0	,0);
+	OutputAddPID(&PrimitiveStates.outPuts,&PrimitiveStates.Teto		,&htim3	,TIM_CHANNEL_3	,STD_KP	,STD_KI	,STD_KD	,STD_HISTERESE	,TIME_MAX_AQUECIMENTO	,timeoutAquecimento);
+	OutputAddPID(&PrimitiveStates.outPuts,&PrimitiveStates.Lastro	,&htim3	,TIM_CHANNEL_4	,STD_KP	,STD_KI	,STD_KD	,STD_HISTERESE	,TIME_MAX_AQUECIMENTO	,timeoutAquecimento);
 
 	/* USER CODE END 2 */
 
@@ -269,6 +271,7 @@ int main(void)
 	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
 
+	osThreadSuspend(TaskTemperaturaHandle); //só é liberada após taskeeprom
 	osTimerStart(timer10msHandle,10);
 	osTimerStart(timer1000msHandle,1000);
 	/* USER CODE END RTOS_THREADS */
@@ -779,8 +782,8 @@ static void MX_GPIO_Init(void)
 void desligaForno(void){
 	PrimitiveStates.RTTimerMinutos 	= 0;
 	PrimitiveStates.RTTimerSegundos = 0;
-	PrimitiveStates.SetPointLastro 	= 0;
-	PrimitiveStates.SetPointTeto 	= 0;
+	PrimitiveStates.Lastro.setPoint	= 0;
+	PrimitiveStates.Teto.setPoint 	= 0;
 	PrimitiveStates.stateTimer 		= TIMER_idle;
 }
 
@@ -793,10 +796,10 @@ void leTempInterna(void){
 }
 
 void controleCooler(void){
-	if(PrimitiveStates.RealtimeLastro>200 || PrimitiveStates.RealtimeTeto>200){
-		onOutput(&PrimitiveStates.Cooler);
-	}else 	if(PrimitiveStates.RealtimeLastro<195 && PrimitiveStates.RealtimeTeto<195){
-		offOutput(&PrimitiveStates.Cooler);
+	if(PrimitiveStates.Lastro.realtime>200 || PrimitiveStates.Teto.realtime>200){
+		onDigital(&PrimitiveStates.Cooler);
+	}else 	if(PrimitiveStates.Lastro.realtime<195 && PrimitiveStates.Teto.realtime<195){
+		offDigital(&PrimitiveStates.Cooler);
 	}
 }
 
@@ -833,30 +836,27 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 		TempLastro=(double)Temp1;
 		TempTeto=(double)Temp2;
 
-		PrimitiveStates.RealtimeTeto = TempTeto;
-		PrimitiveStates.RealtimeLastro = TempLastro;
+		PrimitiveStates.Teto.realtime = TempTeto;
+		PrimitiveStates.Lastro.realtime = TempLastro;
 		i=0;
 	}
-
-
-	//	//	TempInterna
-	//	TempInterna = (   (buffer_ADC[2]*(3.3/4095)-V25)   /   (AVG_SLOPE*1000) )         + 35;
-	//
-	//	// Handles the IRQ of ADC1. EOC flag is cleared by reading data register
-	//	static uint32_t temp = 0;
-	//	temp = ADC1->DR;
-	//	TempInterna = (temp-V25)/(AVG_SLOPE)+25;
-
 }
+
 void timeoutAquecimento (void){
 	//verifica erro temperatura lastro
-	if(PrimitiveStates.RealtimeLastro < PrimitiveStates.SetPointLastro-5)
+	if(PrimitiveStates.Lastro.realtime < PrimitiveStates.Lastro.setPoint-5)
 		PrimitiveStates.Erro.bit.IdleLastro=1;
 
 	//verifica erro temperatura teto
-	if(PrimitiveStates.RealtimeTeto < PrimitiveStates.SetPointTeto-5)
+	if(PrimitiveStates.Teto.realtime < PrimitiveStates.Teto.setPoint-5)
 		PrimitiveStates.Erro.bit.IdleTeto=1;
 }
+
+void timeoutDesligaLampada(void){
+
+	offDigital(&PrimitiveStates.Lampada);
+}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartBluetooth */
@@ -972,7 +972,7 @@ void CBTimer1000ms(void const * argument)
 
 	controleCooler();
 
-	//contadores de todas as saidas
+	//contadores de todas as saidas digitais
 	contadorOutput(&PrimitiveStates.outPuts);
 
 	//se existir erros do tipo abaixo, o forno é desligado

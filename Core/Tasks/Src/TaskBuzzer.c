@@ -29,15 +29,15 @@ void StartBuzzer(void const * argument)
 
 void sequencia1Buzzer(void){
 	M_BUZZER_ON
-	onOutput(&PrimitiveStates.Lampada);
+	onDigital(&PrimitiveStates.Lampada);
 	osDelay(300);
 	M_BUZZER_OFF
-	offOutput(&PrimitiveStates.Lampada);
+	offDigital(&PrimitiveStates.Lampada);
 	osDelay(50);
 	M_BUZZER_ON
-	onOutput(&PrimitiveStates.Lampada);
+	onDigital(&PrimitiveStates.Lampada);
 	osDelay(250);
 	M_BUZZER_OFF
-	offOutput(&PrimitiveStates.Lampada);
+	offDigital(&PrimitiveStates.Lampada);
 
 }
