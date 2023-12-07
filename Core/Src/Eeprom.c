@@ -161,7 +161,7 @@ bool EepromSetVar	(Eeprom *eeprom, EepromVariaveis *_var, uint32_t valor){
 	uint32AsBytes	buffer4b;
 
 	LIBERA_EEPROM
-	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,30,HAL_MAX_DELAY);
+	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,50,HAL_MAX_DELAY);
 	if (result==HAL_OK)
 	{
 		switch (_var->_sizeType) {
@@ -202,47 +202,20 @@ bool EepromSetVarFloating	(Eeprom *eeprom, EepromVarFloating *_var, double valor
 	__IO doubleAsBytes 	doubleBuff;
 
 	LIBERA_EEPROM
-	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,30,HAL_MAX_DELAY);
+	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,50,HAL_MAX_DELAY);
 	if (result==HAL_OK)
 	{
 		switch (_var->_sizeType) {
 
 		case DATAFLOAT:
-
-			//			if(valor!=0){
-			//				//---valor externo---
-			//				_var->valorFloat = (float)valor;
-			//			}else{
-			//				//nao contem valores a serem carregados
-			//				if(!_var->ptrFloat)
-			//					break;
-			//
-			//				//---valor interno---
-			//				_var->valorFloat = *_var->ptrFloat;
-			//			}
-
 			_var->valorFloat = *_var->ptrFloat;
 
 			//grava na memoria
 			floatBuff.value = (float)_var->valorFloat;
 			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,_var->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)floatBuff.bytes, 4, 200);
 
-
 			break;
 		case DATADOUBLE:
-
-			//			if(valor!=0){
-			//				//---valor externo---
-			//				_var->valorDouble = (double)valor;
-			//			}else{
-			//				//nao contem valores a serem carregados
-			//				if(!_var->ptrFloat)
-			//					break;
-			//
-			//				//---valor interno---
-			//				_var->valorDouble = *_var->ptrDouble;
-			//			}
-
 			_var->valorDouble = *_var->ptrDouble;
 
 			//grava na memoria
@@ -252,7 +225,7 @@ bool EepromSetVarFloating	(Eeprom *eeprom, EepromVarFloating *_var, double valor
 			break;
 		}
 	}
-	osDelay(20);
+	osDelay(30);
 	TRAVA_EEPROM
 	return 1;
 }
@@ -267,7 +240,7 @@ void EepromDownloadValores	(Eeprom *eeprom){
 	//for para variaveis normais
 	for(uint8_t i = 0; i < eeprom->_EepromVarCount; i++){
 
-		if (HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_READ_ADDR,300,HAL_MAX_DELAY)==HAL_OK){
+		if (HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_READ_ADDR,50,HAL_MAX_DELAY)==HAL_OK){
 
 			switch (eeprom->_EepromVarArr[i]->_sizeType) {
 			case DATA8BITS:
@@ -387,14 +360,14 @@ void RestauraEeprom			(Eeprom *eeprom ,TypeRestauracao tipo){
 					break;
 				}
 			}
-			osDelay(20);
+			osDelay(40);
 		}
 
 		//grava valor padrao standart
 		buffer1b.value					= (uint8_t)STD_REF_MEM;
 		eeprom->RefFlag.valor			= buffer1b.value;
 		HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->RefFlag._addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer1b.bytes, 1, 200);
-		osDelay(20);
+		osDelay(40);
 	}
 	TRAVA_EEPROM
 }
