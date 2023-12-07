@@ -40,6 +40,8 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
+//SENHA: uK9--Pj8
+
 //---ESTRUTURA AGRUPAMENTO DE 8 BITS EM 1 BYTE-------------------------------------
 typedef union BIT_TO_BYTE_ERROS
 {
@@ -126,12 +128,44 @@ typedef struct
 	BIT_TO_BYTE_ERROS		Erro;
 
 }GlobalPrimitiveIOStates;
+
+
+typedef union {
+    struct {
+        uint8_t part1;
+        uint8_t part2;
+        uint8_t part3;
+        uint8_t part4;
+    } parts;
+    float floatValue;
+} FloatContainer;
+
+//typedef union {
+//    float value; // Valor de ponto flutuante
+//    uint8_t bytes[4]; // Representação em bytes do ponto flutuante
+//} FloatAsBytes;
+//
+//typedef union {
+//    uint16_t value; // Valor de ponto flutuante
+//    uint8_t bytes[2]; // Representação em bytes do ponto flutuante
+//} shortAsBytes;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
-//-----------------DEFINES DE FABRICA------------------------------
+
+//----SINAIS DE BUZZER -------
+#define SINAL_TEMP_REACH	0b00000001
+#define SINAL_NEGADO		0b00000010
+#define SINAL_COMFIRMA		0b00000100
+#define SINAL_PRONTO		0b00001000
+//#define SINAL_TEMP_REACH	0x01
+//#define SINAL_NEGADO		0x20
+//#define SINAL_COMFIRMA		0x30
+//#define SINAL_PRONTO		0x40
+
 //-----------------DEFINES DE FABRICA------------------------------
 #define ERRO_CRITICO 0x0f
 
@@ -141,8 +175,8 @@ typedef struct
 
 //tunning PID
 #define STD_KP		30
-#define STD_KI		0.01
-#define STD_KD		0.3
+#define STD_KI		(0.01)
+#define STD_KD		(0.3)
 #define STD_HISTERESE	3
 #define STD_LIMITE		450
 

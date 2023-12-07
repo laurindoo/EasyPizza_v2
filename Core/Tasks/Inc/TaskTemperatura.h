@@ -22,6 +22,7 @@ void taskTemperatura1sec(void);
 
 
 extern osMessageQId FilaEepromHandle;
+extern osThreadId TaskBuzzerHandle;
 
 //---CALDEIRA
 #define MACRO_LIGA_CALDEIRA		HAL_GPIO_WritePin 	(GPIOB,	GPIO_PIN_1,	GPIO_PIN_SET);

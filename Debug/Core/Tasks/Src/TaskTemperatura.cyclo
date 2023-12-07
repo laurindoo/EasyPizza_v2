@@ -1,7 +1,8 @@
-../Core/Tasks/Src/TaskTemperatura.c:41:6:initPID	1
-../Core/Tasks/Src/TaskTemperatura.c:55:6:computaPID	1
-../Core/Tasks/Src/TaskTemperatura.c:26:6:StartTemperatura	1
-../Core/Tasks/Src/TaskTemperatura.c:77:6:WatchDogLimitesTemperatura	9
-../Core/Tasks/Src/TaskTemperatura.c:103:6:SaidasLeds	5
-../Core/Tasks/Src/TaskTemperatura.c:127:6:Horimetro	3
-../Core/Tasks/Src/TaskTemperatura.c:65:6:taskTemperatura1sec	1
+../Core/Tasks/Src/TaskTemperatura.c:44:6:initPID	1
+../Core/Tasks/Src/TaskTemperatura.c:58:6:computaPID	1
+../Core/Tasks/Src/TaskTemperatura.c:27:6:StartTemperatura	1
+../Core/Tasks/Src/TaskTemperatura.c:81:6:WatchDogLimitesTemperatura	17
+../Core/Tasks/Src/TaskTemperatura.c:120:6:SaidasLeds	5
+../Core/Tasks/Src/TaskTemperatura.c:143:6:Horimetro	3
+../Core/Tasks/Src/TaskTemperatura.c:157:6:sinalizacaoReachTemp	5
+../Core/Tasks/Src/TaskTemperatura.c:67:6:taskTemperatura1sec	1

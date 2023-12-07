@@ -19,9 +19,6 @@
 #include "cmsis_os.h"
 
 
-
-
-
 /*
 --------------->>M24C64
  	 	 	 -total de memoria 64KBit = 8KBytes
@@ -29,44 +26,46 @@
 
  	 	 	 datas serao armazenadas cada uma em uma página, sendo apartir da página 10
 
- 	 	 	 	 **eeprom shift será feito por página, trazendo todas as paginas(10 até a 24) da PAGINA*N -> PAGINA*(N-1)
+ **eeprom shift será feito por página, trazendo todas as paginas(10 até a 24) da PAGINA*N -> PAGINA*(N-1)
 
 //TAMANHO DA PAGINA
 #define PAGE_SIZE 0d32
 
-*/
+ */
 //TAMANHO DA PAGINA
+#define STD_REF_MEM	0x25
 #define PAGE_SIZE 32
 
-#define EEPROM_MAX_COMP_COUNT 45
+#define EEPROM_MAX_COMP_COUNT 30
 
 //ENDEREÇO EEPROM  1010 E2 E1 E0 RW
 #define EEPROM_READ_ADDR 	0b10100011
 #define EEPROM_WRITE_ADDR 	0b10100010
 
 //VARIAVEIS DE CONFIGURACAO    pagina 1
-#define addrTEMPO_LUZ			0x0004	// 8-bits
-#define addrHORIMETRO			0x0005	// 8-bits
-#define addrMINUTIMETRO			0x0006	// 8-bits
-#define addrINST_DIA			0x000c	// 8-bits
-#define addrINST_MES			0x000d	// 8-bits
-#define addrINST_ANO			0x000e	// 8-bits
-#define addrTOTAL_GERAL			0x000f	// 16-bits
-#define addrLIMITE_TEMP			0x0011	// 16-bits
-#define addrCONT_MAX_TETO		0x0013	// 16-bits
-#define addrCONT_MAX_LASTRO		0x0015	// 16-bits
+#define addrTEMPO_LUZ			1	// 8-bits
+#define addrHORIMETRO			2	// 8-bits
+#define addrMINUTIMETRO			4	// 8-bits
+#define addrINST_DIA			5	// 8-bits
+#define addrINST_MES			6	// 8-bits
+#define addrINST_ANO			7	// 8-bits
+#define addrTOTAL_GERAL			8	// 16-bits
+#define addrCONT_MAX_TETO		10	// 16-bits
+#define addrCONT_MAX_LASTRO		12	// 16-bits
 
-#define addrTETO_KP				0x0017	// 64-bits
-#define addrTETO_KI				0x0021	// 64-bits
-#define addrTETO_KD				0x0025	// 64-bits
-#define addrTETO_HIST			0x0029	// 64-bits
-#define addrTETO_LIMIT			0x002D	// 64-bits
+#define addrTETO_KP				14	// 64-bits
+#define addrTETO_KI				22	// 64-bits
+#define addrTETO_KD				33	// 64-bits
+#define addrTETO_HIST			41	// 16-bits
+#define addrTETO_LIMIT			43	// 16-bits
 
-#define addrLASTRO_KP			0x0031	// 64-bits
-#define addrLASTRO_KI			0x0035	// 64-bits
-#define addrLASTRO_KD			0x0039	// 64-bits
-#define addrLASTRO_HIST			0x0041	// 64-bits
-#define addrLASTRO_LIMIT		0x0045	// 64-bits
+#define addrLASTRO_KP			45	// 64-bits
+#define addrLASTRO_KI			53	// 64-bits
+#define addrLASTRO_KD			65	// 64-bits
+#define addrLASTRO_HIST			73	// 16-bits
+#define addrLASTRO_LIMIT		75	// 16-bits
+
+#define addrREF_MEM_FLAG		77 // 8-bits
 
 
 
@@ -75,11 +74,11 @@
 #define LIBERA_EEPROM  		HAL_GPIO_WritePin		(EEPROM_EN_GPIO_Port,	EEPROM_EN_Pin	,GPIO_PIN_RESET);\
 		HAL_Delay(5);
 #define TRAVA_EEPROM		HAL_Delay(5);\
-	HAL_GPIO_WritePin		(EEPROM_EN_GPIO_Port,	EEPROM_EN_Pin	,GPIO_PIN_SET);
+		HAL_GPIO_WritePin		(EEPROM_EN_GPIO_Port,	EEPROM_EN_Pin	,GPIO_PIN_SET);
 #define I2C_READ_MEMORY_1B(OFFSET,VARIAVEL) 	HAL_I2C_Mem_Read(&hi2c1	, EEPROM_READ_ADDR	, OFFSET, I2C_MEMADD_SIZE_16BIT,(uint8_t *) 	&VARIAVEL	, 1, 100);
 #define I2C_WRITE_MEMORY_1BB(OFFSET,VARIAVEL) 	HAL_I2C_Mem_Write(&hi2c1, EEPROM_WRITE_ADDR	, OFFSET, I2C_MEMADD_SIZE_16BIT,(uint8_t *) 	&VARIAVEL	, 1, 100);
 #define I2C_READ_MEMORY_2B(OFFSET ,VAR) 		HAL_I2C_Mem_Read(&hi2c1	, EEPROM_READ_ADDR	, OFFSET, I2C_MEMADD_SIZE_16BIT,(uint8_t *)  buffer		, 2, 100);\
-	VAR = ( (buffer[0] << 8) | buffer[1]);
+		VAR = ( (buffer[0] << 8) | buffer[1]);
 
 
 //---tamanhos
@@ -87,32 +86,71 @@ typedef enum{
 	DATA8BITS  = 1,
 	DATA16BITS = 2,
 	DATA32BITS = 4,
-	DATADOUBLE = 8,
-}	TypeTamData;
+}	TypeData;
+
+typedef enum{
+	DATAFLOAT 	= 32,
+	DATADOUBLE 	= 64,
+}	TypeDataFloating;
+
+typedef enum{
+	softReset 	= 0,
+	hardReset 	= 1,
+}	TypeRestauracao;
 
 /*
  * EepromVariaveis Struct
  */
 typedef struct
 {
-	//Variables Proprio endereco e endereco na eeprom
+	//sinal que bloqueia softreset
+	bool flagResetavel;
+
+	//Variable for storing object name
+	char *objname;
+
+	//endereco na eeprom
 	uint16_t _addrEprom;
 
 	uint32_t valor;
 	uint32_t defaultValue; //valor de default
 	uint32_t minValue;
 	uint32_t maxValue;
+
+	//tamanho_tipo
+	TypeData _sizeType;
+
+	//ponteiros digitalTwins
+	uint8_t  *ptr8;
+	uint16_t *ptr16;
+	uint32_t *ptr32;
+
+}EepromVariaveis;
+typedef struct
+{
+	//sinal que bloqueia softreset
+	bool flagResetavel;
+
 	//Variable for storing object name
 	char *objname;
 
-	TypeTamData _sizeType;
+	//endereco na eeprom
+	uint16_t _addrEprom;
 
-	uint8_t *ptr8;
-	uint16_t *ptr16;
-	uint32_t *ptr32;
-	double *ptrDouble;
+	double  valorDouble;
+	float   valorFloat;
+	double  defaultValue; //valor de default
+	double 	minValue;
+	double  maxValue;
 
-}EepromVariaveis;
+	//tamanho_tipo
+	TypeDataFloating _sizeType;
+
+	//ponteiros digitalTwins
+	float 	 *ptrFloat;
+	double 	 *ptrDouble;
+
+}EepromVarFloating;
 
 
 /*
@@ -120,6 +158,9 @@ typedef struct
  */
 typedef struct
 {
+	//flag de referencia
+	EepromVariaveis RefFlag;
+
 	//Handle para o i2c consultar a eeprom
 	I2C_HandleTypeDef *i2cHandle;
 
@@ -128,7 +169,10 @@ typedef struct
 
 	//Variables for component list
 	EepromVariaveis* _EepromVarArr[EEPROM_MAX_COMP_COUNT];
+	EepromVarFloating* _EepromVarFloatingArr[EEPROM_MAX_COMP_COUNT];
+
 	uint8_t _EepromVarCount;
+	uint8_t _EepromVarFloatingCount;
 
 
 	//todo:devo importar a fila de eeprom
@@ -137,14 +181,16 @@ typedef struct
 }Eeprom;
 
 //prototipos das funcoes da eeprom
-uint8_t EepromInit(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila);
-void EepromUpdateMes(Eeprom *eeprom, uint16_t __addMes, uint16_t __addItem, uint32_t valor, TypeTamData _sizeType);
-uint8_t EepromAddVar(Eeprom *eeprom, EepromVariaveis* _eepromvar, char* objectname, uint8_t __addreeprom,TypeTamData tamanho,uint32_t minimo,uint32_t padrao,uint32_t maximo,void *addrVar);
-__IO bool EepromSetVar(Eeprom *eeprom, EepromVariaveis *eepromvar,uint32_t valor);
-void EepromDownloadValores(Eeprom *eeprom);
-void RestauraPadraoTudo(Eeprom *eeprom);
-void EepromReadVal(Eeprom *eeprom, uint16_t addr, uint8_t *var, uint16_t size);
-void Write_1_byte(Eeprom *eeprom, uint16_t addr, uint8_t * ptr);
+uint8_t EepromInit	(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila);
+void EepromUpdateMes(Eeprom *eeprom, uint16_t addMes, uint16_t addItem, uint32_t valor, TypeData _sizeType);
+uint8_t EepromAddVar(Eeprom *eeprom			, bool resetavel, EepromVariaveis* _var, char* _name, uint16_t addr, TypeData tipo, uint32_t minimo, uint32_t padrao,uint32_t maximo, void *_addrVar);
+uint8_t EepromAddVarFloating(Eeprom *eeprom	, bool resetavel, EepromVarFloating* _eepromvar, char* _name,uint16_t addr,TypeDataFloating tipo,double minimo,double padrao,double maximo, void *_addrVar);
+bool EepromSetVar	(Eeprom *eeprom, EepromVariaveis *_var, uint32_t valor);
+bool EepromSetVarFloating	(Eeprom *eeprom, EepromVarFloating *_var, double valor);
+void EepromDownloadValores	(Eeprom *eeprom);
+void RestauraEeprom			(Eeprom *eeprom ,TypeRestauracao tipo);
+void EepromReadVal			(Eeprom *eeprom, uint16_t addr, uint8_t *_var, uint16_t size);
+void Write_1_byte			(Eeprom *eeprom, uint16_t addr, uint8_t * _ptr);
 
 
 

@@ -12,15 +12,15 @@ EepromVariaveis horimetroHoras,horimetroMinutos;
 EepromVariaveis instalacaoDia,instalacaoMes,instalacaoAno;
 EepromVariaveis totalCiclos,LimiteTemperatura;
 EepromVariaveis tempoDelayLuz,ContTetoMax,ContLastroMax;
-EepromVariaveis hitereseStateTeto,kPTeto,kITeto,kDTeto,limiteTeto;
-EepromVariaveis hitereseStateLastro,kPLastro,kILastro,kDLastro,limiteLastro;
+EepromVariaveis hitereseStateTeto,limiteTeto;
+EepromVariaveis hitereseStateLastro,limiteLastro;
+
+EepromVarFloating kPTeto,kITeto,kDTeto,kPLastro,kILastro,kDLastro;
+EepromVariaveis FlagMemoria;
 
 
 RTC_DateTypeDef datetoUpdate;
 RTC_TimeTypeDef timeToUpdate;
-
-
-
 
 
 void StartEeprom(void const * argument)
@@ -36,39 +36,50 @@ void StartEeprom(void const * argument)
 }
 
 void initEeprom(void){
-//	taskENTER_CRITICAL();
 
 	//inicializacao ad eeprom
 	EepromInit(&eeprom, &hi2c1 ,&FilaEepromHandle);
 
 	//criacao dos objetos variaveis
-	EepromAddVar(&eeprom, &tempoDelayLuz, 			"addrTEMPO_LUZ", 		addrTEMPO_LUZ,		DATA8BITS,	5,		45,		250		,(uint32_t *)&PrimitiveStates.Lampada.limitOn);
-	EepromAddVar(&eeprom, &horimetroHoras, 			"addrHORIMETRO", 		addrHORIMETRO,		DATA16BITS,	0,		0,		0		,(uint32_t *)&Calendario.Horimetro_horas);
-	EepromAddVar(&eeprom, &horimetroMinutos, 		"addrMINUTIMETRO", 		addrMINUTIMETRO,	DATA8BITS,	0,		0,		0		,(uint32_t *)&Calendario.Horimetro_parcial_min);
-	EepromAddVar(&eeprom, &instalacaoDia, 			"addrINST_DIA", 		addrINST_DIA,		DATA8BITS,	1,		0,		31		,(uint32_t *)&Calendario.Data_instalacao.Date);
-	EepromAddVar(&eeprom, &instalacaoMes, 			"addrINST_MES", 		addrINST_MES,		DATA8BITS,	1,		1,		12		,(uint32_t *)&Calendario.Data_instalacao.Month);
-	EepromAddVar(&eeprom, &instalacaoAno, 			"addrINST_ANO", 		addrINST_ANO,		DATA8BITS,	23,		23,		99		,(uint32_t *)&Calendario.Data_instalacao.Year);
-	EepromAddVar(&eeprom, &totalCiclos, 			"addrTOTAL_GERAL", 		addrTOTAL_GERAL,	DATA16BITS,	0,		0,		0		,(uint32_t *)&Calendario.TotalCiclos);
-	EepromAddVar(&eeprom, &ContTetoMax, 			"addrCONT_MAX_TETO", 	addrCONT_MAX_TETO,	DATA16BITS,	0,		0,		700		,(uint32_t *)&Calendario.ContMaxTeto);
-	EepromAddVar(&eeprom, &ContLastroMax, 			"addrCONT_MAX_LASTRO", 	addrCONT_MAX_LASTRO,DATA16BITS,	0,		0,		700		,(uint32_t *)&Calendario.ContMaxLastro);
+	EepromAddVar(&eeprom,0,&tempoDelayLuz, 		"addrTEMPO_LUZ", 		addrTEMPO_LUZ,		DATA16BITS,	0,		45,		60000	,&PrimitiveStates.Lampada.limitOn);
+	EepromAddVar(&eeprom,1,&horimetroHoras, 	"addrHORIMETRO", 		addrHORIMETRO,		DATA16BITS,	0,		0,		60000	,&Calendario.Horimetro_horas);
+	EepromAddVar(&eeprom,1,&horimetroMinutos, 	"addrMINUTIMETRO", 		addrMINUTIMETRO,	DATA8BITS,	0,		0,		254		,&Calendario.Horimetro_parcial_min);
+	EepromAddVar(&eeprom,1,&instalacaoDia, 		"addrINST_DIA", 		addrINST_DIA,		DATA8BITS,	1,		0,		31		,&Calendario.Data_instalacao.Date);
+	EepromAddVar(&eeprom,1,&instalacaoMes, 		"addrINST_MES", 		addrINST_MES,		DATA8BITS,	1,		1,		12		,&Calendario.Data_instalacao.Month);
+	EepromAddVar(&eeprom,1,&instalacaoAno, 		"addrINST_ANO", 		addrINST_ANO,		DATA8BITS,	23,		23,		99		,&Calendario.Data_instalacao.Year);
+	EepromAddVar(&eeprom,1,&totalCiclos, 		"addrTOTAL_GERAL", 		addrTOTAL_GERAL,	DATA16BITS,	0,		0,		60000	,&Calendario.TotalCiclos);
+	EepromAddVar(&eeprom,1,&ContTetoMax, 		"addrCONT_MAX_TETO", 	addrCONT_MAX_TETO,	DATA16BITS,	0,		0,		60000	,&Calendario.ContMaxTeto);
+	EepromAddVar(&eeprom,1,&ContLastroMax, 		"addrCONT_MAX_LASTRO", 	addrCONT_MAX_LASTRO,DATA16BITS,	0,		0,		60000	,&Calendario.ContMaxLastro);
 
-	EepromAddVar(&eeprom, &hitereseStateTeto, 		"addrTETO_HIST", 		addrTETO_HIST,		DATA16BITS,	0,		STD_HISTERESE,0	,(uint32_t *)&PrimitiveStates.Teto.histerese);
-	EepromAddVar(&eeprom, &kPTeto, 					"addrTETO_KP", 			addrTETO_KP,		DATADOUBLE,	0,		STD_KP		,0	,(uint32_t *)&PrimitiveStates.Teto.kp);
-	EepromAddVar(&eeprom, &kITeto, 					"addrTETO_KI", 			addrTETO_KI,		DATADOUBLE,	0,		STD_KI		,0	,(uint32_t *)&PrimitiveStates.Teto.ki);
-	EepromAddVar(&eeprom, &kDTeto, 					"addrTETO_KD", 			addrTETO_KD,		DATADOUBLE,	0,		STD_KD		,0	,(uint32_t *)&PrimitiveStates.Teto.kd);
-	EepromAddVar(&eeprom, &limiteTeto, 				"addrTETO_LIMIT", 		addrTETO_LIMIT,		DATADOUBLE,	0,		STD_LIMITE	,0	,(uint32_t *)&PrimitiveStates.Teto.limite);
+	EepromAddVar(&eeprom,0,&hitereseStateTeto, 	"addrTETO_HIST", 		addrTETO_HIST,		DATA16BITS,	0,		STD_HISTERESE,10	,&PrimitiveStates.Teto.histerese);
+	EepromAddVar(&eeprom,0,&limiteTeto, 		"addrTETO_LIMIT", 		addrTETO_LIMIT,		DATA16BITS,	0,		475			,500	,&PrimitiveStates.Teto.limite);
+	EepromAddVar(&eeprom,0,&hitereseStateLastro,"addrLASTRO_HIST", 		addrLASTRO_HIST,	DATA16BITS,	0,		STD_HISTERESE,10	,&PrimitiveStates.Lastro.histerese);
+	EepromAddVar(&eeprom,0,&limiteLastro,		"addrLASTRO_LIMIT", 	addrLASTRO_LIMIT,	DATA16BITS,	0,		STD_LIMITE	,500	,&PrimitiveStates.Lastro.limite);
 
-	EepromAddVar(&eeprom, &hitereseStateLastro,		"addrLASTRO_HIST", 		addrLASTRO_HIST,	DATA16BITS,	0,		STD_HISTERESE,0	,(uint32_t *)&PrimitiveStates.Lastro.histerese);
-	EepromAddVar(&eeprom, &kPLastro,				"addrLASTRO_KP", 		addrLASTRO_KP,		DATADOUBLE,	0,		STD_KP		,0	,(uint32_t *)&PrimitiveStates.Lastro.kp);
-	EepromAddVar(&eeprom, &kILastro,				"addrLASTRO_KI", 		addrLASTRO_KI,		DATADOUBLE,	0,		STD_KI		,0	,(uint32_t *)&PrimitiveStates.Lastro.ki);
-	EepromAddVar(&eeprom, &kDLastro,				"addrLASTRO_KD", 		addrLASTRO_KD,		DATADOUBLE,	0,		STD_KD		,0	,(uint32_t *)&PrimitiveStates.Lastro.kd);
-	EepromAddVar(&eeprom, &limiteLastro,			"addrLASTRO_LIMIT", 	addrLASTRO_LIMIT,	DATADOUBLE,	0,		STD_LIMITE	,0	,(uint32_t *)&PrimitiveStates.Lastro.limite);
+	EepromAddVarFloating(&eeprom, 0, &kPTeto, 	"addrTETO_KP", 			addrTETO_KP,		DATADOUBLE,	0,		STD_KP		,1000	,&PrimitiveStates.Teto.kp);
+	EepromAddVarFloating(&eeprom, 0, &kITeto, 	"addrTETO_KI", 			addrTETO_KI,		DATADOUBLE,	0,		STD_KI		,1000	,&PrimitiveStates.Teto.ki);
+	EepromAddVarFloating(&eeprom, 0, &kDTeto, 	"addrTETO_KD", 			addrTETO_KD,		DATADOUBLE,	0,		STD_KD		,1000	,&PrimitiveStates.Teto.kd);
+	EepromAddVarFloating(&eeprom, 0, &kPLastro,	"addrLASTRO_KP", 		addrLASTRO_KP,		DATADOUBLE,	0,		STD_KP		,1000	,&PrimitiveStates.Lastro.kp);
+	EepromAddVarFloating(&eeprom, 0, &kILastro,	"addrLASTRO_KI", 		addrLASTRO_KI,		DATADOUBLE,	0,		STD_KI		,1000	,&PrimitiveStates.Lastro.ki);
+	EepromAddVarFloating(&eeprom, 0, &kDLastro,	"addrLASTRO_KD", 		addrLASTRO_KD,		DATADOUBLE,	0,		STD_KD		,1000	,&PrimitiveStates.Lastro.kd);
 
-//	RestauraPadraoTudo(&eeprom);
+	//todo primeiro testar se realmente ele salva o valro com virgula - feito
+	//todo altera funcao setavar e retirar possibilidade de alterar o valor por ela
+	//todo criar uma funcao que restaure tudo
+
+	//	RestauraSoft(&eeprom);
+
+	__NOP();
+
 	//faz o download dos objetos
 	EepromDownloadValores(&eeprom);
 
-//	taskEXIT_CRITICAL();
+	__NOP();
+
+	//	RestauraSoft(&eeprom);
+
+	__NOP();
+
 	osThreadResume(TaskTemperaturaHandle);
 }
 
@@ -105,14 +116,21 @@ void processaEeprom(void){
 				Error_Handler();
 			}
 			break;
-		case CEepromHardReset:
-			taskENTER_CRITICAL();
-			RestauraPadraoTudo(&eeprom);
-			taskEXIT_CRITICAL();
-			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
-
-			break;
 		case CEepromSoftReset:
+			RestauraEeprom(&eeprom,softReset);
+			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
+			osDelay(100);
+			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
+			osDelay(100);
+			EepromDownloadValores(&eeprom);
+			break;
+		case CEepromHardReset:
+			RestauraEeprom(&eeprom,hardReset);
+			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
+			osDelay(100);
+			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
+			osDelay(100);
+			EepromDownloadValores(&eeprom);
 			break;
 		case CEepromAtualizaHora:
 
@@ -139,20 +157,20 @@ void processaEeprom(void){
 			EepromSetVar(&eeprom, &ContLastroMax, 	0);
 			break;
 		case CEepromTunning:
-			//atualizacao de valores de teto
+			//atualizacao de valores de teto9
 			EepromSetVar(&eeprom, &hitereseStateTeto, 	0);
-			EepromSetVar(&eeprom, &kPTeto, 	0);
-			EepromSetVar(&eeprom, &kITeto, 	0);
-			EepromSetVar(&eeprom, &kDTeto, 	0);
+			EepromSetVarFloating(&eeprom, &kPTeto, 	0);
+			EepromSetVarFloating(&eeprom, &kITeto, 	0);
+			EepromSetVarFloating(&eeprom, &kDTeto, 	0);
 			EepromSetVar(&eeprom, &limiteTeto, 	0);
 			PID_SetTunings(&TPIDTeto, PrimitiveStates.Teto.kp, PrimitiveStates.Teto.ki, PrimitiveStates.Teto.kd);
 
 			//atualizacao de valores de lastro
-			EepromSetVar(&eeprom, &hitereseStateTeto, 	0);
-			EepromSetVar(&eeprom, &kPTeto, 	0);
-			EepromSetVar(&eeprom, &kITeto, 	0);
-			EepromSetVar(&eeprom, &kDTeto, 	0);
-			EepromSetVar(&eeprom, &limiteTeto, 	0);
+			EepromSetVar(&eeprom, &hitereseStateLastro, 0);
+			EepromSetVarFloating(&eeprom, &kPLastro, 	0);
+			EepromSetVarFloating(&eeprom, &kILastro, 	0);
+			EepromSetVarFloating(&eeprom, &kDLastro, 	0);
+			EepromSetVar(&eeprom, &limiteLastro, 	0);
 			PID_SetTunings(&TPIDLastro, PrimitiveStates.Lastro.kp, PrimitiveStates.Lastro.ki, PrimitiveStates.Lastro.kd);
 
 			break;

@@ -84,7 +84,7 @@ typedef struct
 	//var values
 	double 			realtime;
 	double			setPoint;
-	double			limite;
+	uint16_t		limite;
 	uint16_t		histerese;
 	GenericPwmState _PWMstate;
 

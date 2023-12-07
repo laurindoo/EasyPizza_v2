@@ -33,9 +33,7 @@ void StartTimer(void const * argument)
 	for(;;)
 	{
 		verificaErro();
-
 		funcionamentoTimer();
-
 		osThreadYield();
 		osDelayUntil(&xLastWakeTime,1000);
 	}
@@ -53,12 +51,13 @@ void funcionamentoTimer(void){
 		//chegou ao zero --- ROTINA DE FIM DE CICLO
 		if(PrimitiveStates.RTTimerSegundos==0 && PrimitiveStates.RTTimerMinutos==0 && PrimitiveStates.stateTimer != TIMER_idle){
 			osMessagePut(FilaEepromHandle, CEepromNewCile, 0);
+			//notifica buzzer
+			osSignalSet(TaskBuzzerHandle, SINAL_PRONTO);
 			PrimitiveStates.stateTimer = TIMER_idle;
 			osThreadResume(TaskBuzzerHandle);
 		}
 	}
 }
-
 
 
 void verificaErro(void){

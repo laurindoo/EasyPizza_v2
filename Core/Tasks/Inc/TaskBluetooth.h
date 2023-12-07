@@ -21,6 +21,7 @@
 //#define VERSAO 	1// versao salva no dia 31/05/2023 -
 #define VERSAO 	2// versao salva no dia 23/11/2023 -
 
+extern osThreadId TaskBuzzerHandle;
 extern osMessageQId FilaRXBluetoothHandle,FilaTXBluetoothHandle,FilaEepromHandle;
 extern int recorrencia;
 extern Bluetooth bluetooth;
@@ -29,6 +30,7 @@ extern Bluetooth bluetooth;
 typedef enum
 {
 	RX_ATUALIZA_HORA 		= 0x03,
+	RX_RESTAURA_HARD		= 0x09,
 	RX_RESTAURA 			= 0x10,
 	RX_SOLICITA_REALTIME 	= 0x15,
 	RX_SOLICITA_SINCRONIA 	= 0x17,
@@ -42,6 +44,8 @@ typedef enum
 	RX_DESLIGA_LAMPADA	 	= 0x28,
 	RX_CANCELA_PROCESSO	 	= 0x29,
 	RX_LIMITE_LAMPADA	 	= 0x30,
+	RX_TUNNING_TETO 		= 0x33,
+	RX_TUNNING_LASTRO	 	= 0x34,
 
 } ComandosBleRX;
 

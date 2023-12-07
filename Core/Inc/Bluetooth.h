@@ -57,6 +57,19 @@
 		bluetooth.TXBuffer[1] = 0xFF;\
 		bluetooth.TXBuffer[2] = val;\
 		Envia_bytes_UART(bluetooth.TXBuffer, 3);
+#define MACRO_DEFINE_INTERRUPT \
+		__HAL_UART_ENABLE_IT 	(UARTHandle, UART_IT_IDLE);\
+		__HAL_DMA_ENABLE_IT 	(UARTDMAHandle, DMA_IT_TC);	\
+		HAL_UART_Receive_DMA 	(UARTHandle, ble->_RxDataArr, DMA_RX_BUFFER_SIZE);	// STARTA O UART1 EM DMA MODE
+
+typedef enum
+{   inicio = 0,
+	verificaNome=1,
+	redefineBle=2,
+	capturaAddr=3,
+	final=4,
+	erro=5,
+} sequenciaBle;
 
 //---MAQUINA CONEXAO
 typedef enum{
@@ -145,8 +158,8 @@ typedef struct
 	//contadores
 	uint8_t 	JanelaConexao		;	//contador decrescente de janela de conexao
 	uint8_t     msDesconectado    	;    //Contador crescente de tempo de desconectado em milisegundos
-	uint8_t     msIdle    			;    //Contador crescente sem troca mensagens em milisegundos
-		//flags
+	uint16_t     msIdle    			;    //Contador crescente sem troca mensagens em milisegundos
+	//flags
 	bool 		StatusSenha			;	//FLAG QUE ARMAZENA VALIDACAO DE CHAVE DE ACESSO
 	bool 		StatusConexao		;	//depois de conectado e sincronizado
 	bool 		SistemaInit			;	//indica que sistema ja esta inicializado
@@ -160,6 +173,9 @@ typedef struct
 	long 	PontoExato;
 	char 	*ss;
 	char 	*tt;
+
+	//maquina de inicializacao
+	sequenciaBle sequenciaBLE;
 
 	//Variavel para receber lista de comandos
 	BleComando* _BleCommArr[BLUETOOTH_MAX_COMANDOS_COUNT];

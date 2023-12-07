@@ -16,6 +16,9 @@
 #include "task.h"
 #include "cmsis_os.h"
 
+
+extern osThreadId TaskBuzzerHandle;
+
 //---WARMER SUPERIOR
 #define MACRO_LIGA_WARMER_SUP		HAL_GPIO_WritePin 	(WARMER_SUP_GPIO_Port,	WARMER_SUP_Pin,	GPIO_PIN_SET);
 #define MACRO_DESLIGA_WARMER_SUP	HAL_GPIO_WritePin 	(WARMER_SUP_GPIO_Port,	WARMER_SUP_Pin,	GPIO_PIN_RESET);

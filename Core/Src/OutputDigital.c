@@ -30,7 +30,6 @@ uint8_t OutputAddDigital(OutputDigital* Output,IndviduoOutput* _individ, uint16_
 	//Return OK
 	return 0;
 }
-
 uint8_t OutputAddPID(OutputDigital* Output,IndviduoPID* _individ, TIM_HandleTypeDef *htim, uint32_t Channel, double Kp, double Ki, double Kd, uint16_t histerese,
 		uint16_t limit_on,void (*callback)()){
 
@@ -54,19 +53,16 @@ uint8_t OutputAddPID(OutputDigital* Output,IndviduoPID* _individ, TIM_HandleType
 	//Return OK
 	return 0;
 }
-
 void onDigital(IndviduoOutput* outPut) {
 	// Implementação do método ON.
 	HAL_GPIO_WritePin(outPut->GPIOx, outPut->GPIO_Pin, GPIO_PIN_SET);
 	outPut->_state = on; // Exemplo hipotético
 }
-
 void offDigital(IndviduoOutput* outPut) {
 	// Implementação do método OFF.
 	HAL_GPIO_WritePin(outPut->GPIOx, outPut->GPIO_Pin, GPIO_PIN_RESET);
 	outPut->_state = off; // Exemplo hipotético
 }
-
 void contadorOutput(OutputDigital* Output){
 	//chamar essa funcao em um timer com passo de 1 segundo
 
@@ -103,12 +99,12 @@ void contadorOutput(OutputDigital* Output){
 	//Varregura pelas saidas -------------PID----------------
 	for(uint8_t i = 0; i < Output->_PidCount; i++)	{
 
-//#define CALCULA_POR_PWMOUT
+		//#define CALCULA_POR_PWMOUT
 
 #ifdef CALCULA_POR_PWMOUT
 		//---CATEGORIZA STATE
 		if(Output->_OutPidArr[i]->PWMOut == 0 ){
-					Output->_OutPidArr[i]->_PWMstate = idle;
+			Output->_OutPidArr[i]->_PWMstate = idle;
 		}else if(Output->_OutPidArr[i]->PWMOut <= Output->_OutPidArr[i]->histerese){
 			Output->_OutPidArr[i]->_PWMstate = mantendo;
 		}else
@@ -117,7 +113,7 @@ void contadorOutput(OutputDigital* Output){
 #ifndef CALCULA_POR_PWMOUT
 		//---CATEGORIZA STATE
 		if(Output->_OutPidArr[i]->realtime >=  Output->_OutPidArr[i]->setPoint ){
-					Output->_OutPidArr[i]->_PWMstate = idle;
+			Output->_OutPidArr[i]->_PWMstate = idle;
 		}else if(Output->_OutPidArr[i]->realtime + Output->_OutPidArr[i]->histerese >  Output->_OutPidArr[i]->setPoint ){
 			Output->_OutPidArr[i]->_PWMstate = mantendo;
 		}else
@@ -140,26 +136,24 @@ void contadorOutput(OutputDigital* Output){
 		}
 	}
 }
-
 void IndviduoPID_SetPWMValue(IndviduoPID *pid, double pwmValue) {
-    TIM_OC_InitTypeDef sConfigOC = {0};
-    sConfigOC.OCMode = TIM_OCMODE_PWM1;
-    sConfigOC.Pulse = pwmValue; // O valor do duty cycle
-    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+	TIM_OC_InitTypeDef sConfigOC = {0};
+	sConfigOC.OCMode = TIM_OCMODE_PWM1;
+	sConfigOC.Pulse = pwmValue; // O valor do duty cycle
+	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 
-    if (HAL_TIM_PWM_ConfigChannel(pid->TimHandle, &sConfigOC, pid->Channel) != HAL_OK) {
-        // Tratamento de erro
-    }
+	if (HAL_TIM_PWM_ConfigChannel(pid->TimHandle, &sConfigOC, pid->Channel) != HAL_OK) {
+		// Tratamento de erro
+	}
 
-    if (HAL_TIM_PWM_Start(pid->TimHandle, pid->Channel) != HAL_OK) {
-        // Tratamento de erro
-    }
+	if (HAL_TIM_PWM_Start(pid->TimHandle, pid->Channel) != HAL_OK) {
+		// Tratamento de erro
+	}
 }
-
 void IndviduoPID_SetPWMValueDirect(IndviduoPID *pid, uint32_t pwmValue) {
-    // diretamente acessando o registro de comparação do canal apropriado
-    // Esta é uma abordagem mais arriscada e assume que você sabe o que está fazendo
-    volatile uint32_t *ccrAddress = &pid->TimHandle->Instance->CCR1 + (pid->Channel >> 2);
-    *ccrAddress = pwmValue;
+	// diretamente acessando o registro de comparação do canal apropriado
+	// Esta é uma abordagem mais arriscada e assume que você sabe o que está fazendo
+	volatile uint32_t *ccrAddress = &pid->TimHandle->Instance->CCR1 + (pid->Channel >> 2);
+	*ccrAddress = pwmValue;
 }
