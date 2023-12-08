@@ -33,7 +33,7 @@
 #define COMANDO_BUFFER_SIZE (50) // Escolha um tamanho que seja suficiente
 
 //---DEFINICOES---TEMPOS DE CONEXAO
-#define DEF_TEMPO_MAX_S_MSG_LOW			300	//x*10ms
+#define DEF_TEMPO_MAX_S_MSG_LOW			120	//x*10ms
 #define DEF_TEMPO_MAX_S_MSG_HIGH		300	//x*10ms
 
 
@@ -200,5 +200,6 @@ void BluetoothErroCRC(void);
 void BluetoothDescon(Bluetooth* ble);
 void bluetooth10ms(Bluetooth* ble);
 void bluetooth1000ms(Bluetooth* ble);
+void cancelaAntecipacao(Bluetooth* ble);
 
 #endif /* INC_BLUETOOTH_H_ */

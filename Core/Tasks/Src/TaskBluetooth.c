@@ -12,13 +12,21 @@ void txBluetooth(void);
 void rxBluetooth(void);
 void taskBluetooth1sec(void);
 
+
+
+
 BleComando BLEAtualizaRealtime;
 BleComando BLESolicitaSincronia;
-BleComando BLEAtualizaDataHora,BLEAlteraLimiteTemp,BLERestaura,BLESPTeto,BLESPLastro,BLESPtempo,BLEToggleTempo,BLEReceita,BLESPTempo,BLELightOn,BLELightOff;
+BleComando BLEAtualizaDataHora,BLEAlteraLimiteTemp,BLERestaura,BLERestauraHard,BLESPTeto,BLESPLastro,BLESPtempo,BLEToggleTempo,BLEReceita,BLESPTempo,BLELightOn,BLELightOff;
 BleComando BLESetaLampada,BLECancelaProcesso,BLETunningTeto,BLETunningLastro;
 
 void verificaLimiteSetpoint(IndviduoPID	*canal);
-
+bool sincAutomatico(void);
+typedef struct{
+	bool 	flag;
+	uint8_t cont;
+} valuesSincronia;
+valuesSincronia FlagSincronia;
 
 void StartBluetooth(void const * argument)
 {
@@ -32,21 +40,30 @@ void StartBluetooth(void const * argument)
 		txBluetooth();
 
 		osThreadYield();
-		osDelay(50);
+		osDelay(40);
 	}
 }
-
 static uint16_t tempoSemAtividade;
 #define MACRO_ANULA_INATIVIDADE tempoSemAtividade = 0;
-
 void taskBluetooth1sec(void){
+
+	//---monitor de inatividade
 	if(tempoSemAtividade>=TIME_INATIVO_SETUP){
 		desligaForno();
 	}else if(PrimitiveStates.stateTimer != TIMER_decrementando){
 		tempoSemAtividade++;
 	}
-}
 
+	//---sequenciamento de envio de sincronia
+	if(bluetooth.MaquinaConexao == RX_DESCONECTADO){
+		FlagSincronia.cont=0;
+		FlagSincronia.flag=0;
+	}
+	/*
+	 * ao conectar, seta a FlagSincronia
+	 * ao desconectar, reseta a FlagSincronia
+	 * */
+}
 void initBluetooth(void){
 	//	taskENTER_CRITICAL();
 	//inicializacao do bluetooth
@@ -61,6 +78,7 @@ void initBluetooth(void){
 	BluetoothAddComp(&bluetooth, &BLEAlteraLimiteTemp, 	"RX_ALTERA_VALOR_LIMITE", 	RX_LIMITE_TEMPERATURA,		ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLEAtualizaDataHora, 	"RX_ATUALIZA_HORA", 		RX_ATUALIZA_HORA,			ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLERestaura, 			"RX_RESTAURA", 				RX_RESTAURA,				ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLERestauraHard, 		"RX_RESTAURA_HARD", 		RX_RESTAURA_HARD,			ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLESPTeto,     		"RX_SP_TEMP_TETO",        	RX_SP_TEMP_TETO,          	ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLESPLastro,     		"RX_SP_TEMP_LASTRO",       	RX_SP_TEMP_LASTRO,          ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLESPTempo,     		"RX_SP_TEMPO",       		RX_SP_TEMPO,        		ComandoBasico);
@@ -74,14 +92,12 @@ void initBluetooth(void){
 	BluetoothAddComp(&bluetooth, &BLETunningLastro,  	"RX_TUNNING_LASTRO",    	RX_TUNNING_LASTRO,  		ComandoBasico);
 	//	taskEXIT_CRITICAL();
 
-
 }
-
 void txBluetooth(void){
 	// Usamos um ponteiro para uint8_t para copiar byte a byte
 	unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];
 	osEvent  evttx;
-	evttx = osMessageGet(FilaTXBluetoothHandle, 100);
+	evttx = osMessageGet(FilaTXBluetoothHandle, 10);
 	if (evttx.status == osEventMessage) {
 		switch ((unsigned int)evttx.value.p) {
 		case TX_REALTIME_DATA:
@@ -100,8 +116,6 @@ void txBluetooth(void){
 			Buffer[12] 	= (uint16_t)PrimitiveStates.Lastro.setPoint 	& 0x00FF;
 
 			BluetoothEnviaComando(Buffer, 12);
-			osDelay(10);
-			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA2, 0);
 			break;
 		case TX_REALTIME_DATA2:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
@@ -118,10 +132,6 @@ void txBluetooth(void){
 			Buffer[11] 	= (uint16_t)Calendario.TotalCiclos >> 8;
 			Buffer[12] 	= (uint16_t)Calendario.TotalCiclos & 0x00FF;
 			BluetoothEnviaComando(Buffer, 12);
-
-			osDelay(10);
-			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA, 0);
-
 			break;
 		case TX_SINCRONIA:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
@@ -137,10 +147,6 @@ void txBluetooth(void){
 			Buffer[10] 	= (uint16_t)Calendario.ContMaxLastro >> 8;
 			Buffer[11] 	= (uint16_t)Calendario.ContMaxLastro & 0x00FF;
 			BluetoothEnviaComando(Buffer, 11);
-
-			osDelay(10);
-			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA2, 0);
-
 			break;
 		case TX_SINCRONIA2:
 			// Endereço
@@ -162,9 +168,6 @@ void txBluetooth(void){
 			Buffer[17] 	= (uint16_t)PrimitiveStates.Teto.limite 		& 0x00FF;
 
 			BluetoothEnviaComando(Buffer, 17);
-
-			osDelay(10);
-			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA3, 0);
 
 			break;
 		case TX_SINCRONIA3:
@@ -195,22 +198,35 @@ void txBluetooth(void){
 
 			break;
 		case TX_RESETADO_OK:
+			FlagSincronia.flag=0;
 			Buffer[0] 	= 0x01;									// ENDEREÇO
 			Buffer[1] 	= 0x30;									// FUNÇÃO -
 			Buffer[2] 	= 0x30;									// FUNÇÃO -
 			BluetoothEnviaComando(Buffer, 2);
+
 			break;
 		}
 	}
 }
-
 void rxBluetooth(void){
+
+	//refazer todos os envios de respostas de comando e reconexao em forma de sinal vindo do interrupt e executado aqui
+	//ou fazer uma outra fila apenas para comandosConexao
+
+
 	osEvent  evtrx;
-	evtrx = osMessageGet(FilaRXBluetoothHandle, 100);
+	evtrx = osMessageGet(FilaRXBluetoothHandle, 10);
 	if (evtrx.status == osEventMessage) {
 		switch (bluetooth._RxDataArr[1]) {
 		case RX_SOLICITA_REALTIME:
 			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA, 0);
+			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA2, 0);
+			if(sincAutomatico()){
+				osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA,  0);
+				osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA2, 0);
+				osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA3, 0);
+			}
+
 			break;
 		case RX_SOLICITA_SINCRONIA:
 			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA, 0);
@@ -236,13 +252,11 @@ void rxBluetooth(void){
 			//---------ENDEREÇO | 0x09 | 0x09 | CRC | CRC
 			osMessagePut(FilaEepromHandle, CEepromHardReset, 0);
 			osMessagePut(FilaTXBluetoothHandle, TX_RESETANDO, 0);
-			osDelay(50);
 			break;
 		case RX_RESTAURA:
 			//---------ENDEREÇO | 0x10 | 0x10 | CRC | CRC
 			osMessagePut(FilaEepromHandle, CEepromSoftReset, 0);
 			osMessagePut(FilaTXBluetoothHandle, TX_RESETANDO, 0);
-			osDelay(50);
 			break;
 		case RX_SP_TEMP_TETO:
 			//---------ENDEREÇO | 0x21 | SP_Teto.high | SP_Teto.low | CRC | CRC
@@ -372,9 +386,13 @@ void rxBluetooth(void){
 			//---------ENDEREÇO | 0x30 | 0x30 | SPLampada | CRC | CRC
 			PrimitiveStates.Lampada.limitOn = bluetooth._RxDataArr[3];
 			osMessagePut(FilaEepromHandle, CEepromLimiteLuz, 0);
+
+			//responde sincronia
+			FlagSincronia.cont=0;
 			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA, 0);
+
+			//sinal sonoro
 			osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
-			//			MACRO_ENVIA_AKNOLADGE_(RX_LIMITE_LAMPADA)
 			break;
 		case RX_CANCELA_PROCESSO:
 			//---------ENDEREÇO | 0x29 | 0x29 | CRC | CRC
@@ -398,9 +416,13 @@ void rxBluetooth(void){
 
 			//grava
 			osMessagePut(FilaEepromHandle, CEepromTunning, 0);
+
+			//responde sincronia
+			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA2, 0);
+
+			//sinal sonoro
 			osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
 
-			MACRO_ENVIA_AKNOLADGE_(RX_TUNNING_TETO)
 			break;
 		case RX_TUNNING_LASTRO:
 			//---------ENDEREÇO | 0x34 | Lastro.kp[4] | Lastro.ki[4] | Lastro.kd[4] | Lastro.histerese[2] | Lastro.limite[2] | CRC | CRC
@@ -418,9 +440,13 @@ void rxBluetooth(void){
 
 			//grava
 			osMessagePut(FilaEepromHandle, CEepromTunning, 0);
+
+			//responde sincronia
+			osMessagePut(FilaTXBluetoothHandle, TX_SINCRONIA3, 0);
+
+			//sinal sonoro
 			osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
 
-			MACRO_ENVIA_AKNOLADGE_(RX_TUNNING_LASTRO)
 			break;
 		}
 	}
@@ -431,4 +457,19 @@ void verificaLimiteSetpoint(IndviduoPID	*canal){
 
 	canal->setPoint = canal->limite;
 	return;
+}
+bool sincAutomatico(void){ //1==permite 0==recusa
+
+	//envia sincronia junto do realtime apenas 3 vezes por reconexao
+	if(!FlagSincronia.flag){
+		if(FlagSincronia.cont<3){
+			FlagSincronia.cont++; //permite 3 envios antes de resetar a flag
+			return 1;
+		}else{
+			FlagSincronia.cont = 0; //zera o contador
+			FlagSincronia.flag = 1; //reseta a flag
+			return 0;
+		}
+	}
+	return 0;
 }

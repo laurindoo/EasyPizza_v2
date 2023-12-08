@@ -330,14 +330,17 @@ void RestauraEeprom			(Eeprom *eeprom ,TypeRestauracao tipo){
 			if(!eeprom->_EepromVarArr[i]->flagResetavel || tipo == hardReset){
 				switch (eeprom->_EepromVarArr[i]->_sizeType) {
 				case DATA8BITS:
+					buffer1b.value					=0x00;
 					buffer1b.value 					= (uint8_t)eeprom->_EepromVarArr[i]->defaultValue;
 					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarArr[i]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer1b.bytes, 1, 200);
 					break;
 				case DATA16BITS:
+					buffer2b.value					=0x0000;
 					buffer2b.value 					= (uint16_t)eeprom->_EepromVarArr[i]->defaultValue;
 					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarArr[i]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer2b.bytes, 2, 200);
 					break;
 				case DATA32BITS:
+					buffer4b.value					=0x00000000;
 					buffer4b.value 					= (uint32_t)eeprom->_EepromVarArr[i]->defaultValue;
 					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarArr[i]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer4b.bytes, 4, 200);
 					break;
@@ -351,10 +354,12 @@ void RestauraEeprom			(Eeprom *eeprom ,TypeRestauracao tipo){
 			if(!eeprom->_EepromVarFloatingArr[k]->flagResetavel || tipo == hardReset){
 				switch (eeprom->_EepromVarFloatingArr[k]->_sizeType) {
 				case DATAFLOAT:
+					floatBuff.value 							= 0x0000;
 					floatBuff.value 							= (float)eeprom->_EepromVarFloatingArr[k]->defaultValue;
 					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarFloatingArr[k]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)floatBuff.bytes, 4, 200);
 					break;
 				case DATADOUBLE:
+					doubleBuff.value 							= 0x00000000;
 					doubleBuff.value 							= (double)eeprom->_EepromVarFloatingArr[k]->defaultValue;
 					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarFloatingArr[k]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)doubleBuff.bytes, 8, 200);
 					break;

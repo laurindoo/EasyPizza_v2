@@ -117,20 +117,17 @@ void processaEeprom(void){
 			}
 			break;
 		case CEepromSoftReset:
-			RestauraEeprom(&eeprom,softReset);
+			RestauraEeprom(&eeprom,softReset);	// restaura
+			EepromDownloadValores(&eeprom);		//le
+
 			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
-			osDelay(100);
-			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
-			osDelay(100);
-			EepromDownloadValores(&eeprom);
 			break;
 		case CEepromHardReset:
-			RestauraEeprom(&eeprom,hardReset);
+			RestauraEeprom(&eeprom,hardReset); 	// restaura
+			EepromDownloadValores(&eeprom);		// le
+
 			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
-			osDelay(100);
-			osMessagePut(FilaTXBluetoothHandle, TX_RESETADO_OK, 0);
-			osDelay(100);
-			EepromDownloadValores(&eeprom);
+
 			break;
 		case CEepromAtualizaHora:
 

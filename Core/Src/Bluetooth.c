@@ -78,26 +78,27 @@ void BluetoothPutFila(Bluetooth* ble){
 				return; //ENCERRA
 			}
 
-			if(ble->_BleCommArr[i]->_tipo == ComandoBasico && ble->MaquinaConexao == RX_VALIDADO ){
+			//Comandos de conexao--------------------------------
+			if(ble->_BleCommArr[i]->_tipo == ComandoConexao ){
 
-				osMessagePut(*ble->filaComandosRX, ble->_BleCommArr[i]->_comando, 1000);
-				return;
-
-			}else if(ble->_BleCommArr[i]->_tipo == ComandoConexao ){
+				cancelaAntecipacao(ble);
 
 				switch (ble->_RxDataArr[1]) {
 				case RX_PEDE_SENHA:
-					if(ble->JanelaConexao >0)
-						solicitacaoSenhaBluetooh(ble);
-					else
-						BluetoothDescon(ble);
+					solicitacaoSenhaBluetooh(ble);
 					break;
 				case RX_RECEBEU_SENHA:
-
 					avaliaSenhaRecebidaBluetooh(ble);
 					break;
 				}
-			}else{
+			}else if(ble->_BleCommArr[i]->_tipo == ComandoBasico && ble->MaquinaConexao == RX_VALIDADO ){
+
+				cancelaAntecipacao(ble);
+
+				//Comandos normais (EXIGE SENHA E VALIDACAO-----------------
+				osMessagePut(*ble->filaComandosRX, ble->_BleCommArr[i]->_comando, 0);
+			}
+			else{
 				BluetoothDescon(ble);
 			}
 		}
@@ -171,8 +172,6 @@ void BLEDMA_IrqHandler (Bluetooth *ble)
 {
 	if(__HAL_DMA_GET_IT_SOURCE(UARTDMAHandle, DMA_IT_TC) != RESET){   // if the source is TC
 
-		UBaseType_t uxSavedInterruptStatus;
-//				uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 		/* Clear the transfer complete flag */
 		__HAL_DMA_CLEAR_FLAG(UARTDMAHandle, __HAL_DMA_GET_TC_FLAG_INDEX(UARTDMAHandle));
 
@@ -187,7 +186,6 @@ void BLEDMA_IrqHandler (Bluetooth *ble)
 
 		//zera contador de mensagem, pois recebeu mensagem
 		ble->msDesconectado = 0;
-
 
 		//-------------------------MAQUINA CONEXAO--------------------------
 		switch(ble->MaquinaConexao){
@@ -230,18 +228,10 @@ void BLEDMA_IrqHandler (Bluetooth *ble)
 				ble->StatusSenha 		= false;//chave de validacao
 				ble->MaquinaConexao 	= RX_DESCONECTADO;
 				ble->StatusConexao 		= false;
-			}
-
-			if(ble->SistemaInit){
+			}else if(ble->SistemaInit){
 				BluetoothPutFila(ble);
-			}else{
-				//Cancela antecipitacao
-				BluetoothDescon(ble);
 			}
 
-			break;
-
-		default:
 			break;
 		}
 
@@ -250,7 +240,6 @@ void BLEDMA_IrqHandler (Bluetooth *ble)
 		UARTDMAHandle->Instance->CMAR = (uint32_t)ble->_RxDataArr;   /* Set memory address for DMA again */
 		UARTDMAHandle->Instance->CNDTR = DMA_RX_BUFFER_SIZE;    /* Set number of bytes to receive */
 		UARTDMAHandle->Instance->CCR |= DMA_CCR_EN;            /* Start DMA transfer */
-		//		taskEXIT_CRITICAL_FROM_ISR(uxSavedInterruptStatus);
 	}
 }
 void BluetoothEnviaComando(unsigned char _out[], int size)
@@ -358,7 +347,7 @@ void iniciaBleHm10(Bluetooth* ble){
 			BluetoothDescon(ble);
 			MACRO_DEFINE_INTERRUPT
 
-//			ble->sequenciaBLE = verificaNome;
+			//			ble->sequenciaBLE = verificaNome;
 			ble->sequenciaBLE = redefineBle;
 
 			break;
@@ -394,39 +383,6 @@ void iniciaBleHm10(Bluetooth* ble){
 
 			break;
 		case redefineBle:
-
-			//			stepBle=5;
-			//			MACRO_RESET_BLE		//HARDRESET NO BLE_HM10
-			//			Envia_texto_UART("AT+ADTY3",200);	//BLOQUEIA CONEXAO
-			//			//seta em 115200
-			//			SETUP_UART(115200)
-			//			BluetoothDescon(ble);
-			//			Envia_texto_UART("AT+RENEW",1000);	//RESTAURA PADRAO FABRICA
-			//			//seta em 9600
-			//			SETUP_UART(9600)
-			//			Envia_texto_UART("AT+ADTY3",300);	//BLOQUEIA CONEXAO
-			//			BluetoothDescon(ble);
-			//			Envia_texto_UART("AT+BAUD4",300);	//COLOCA BAUD EM 115200
-			//			SETUP_UART(115200)
-			//			MACRO_RESET_BLE
-			//			stepBle = 6;
-			//			//CONFIGURA CENTRAL
-			//			BluetoothDescon(ble);
-			//			Envia_texto_UART("AT+ADTY3",300);	//BLOQUEIA CONEXAO
-			//			Envia_texto_UART("AT+POWE3",300);	//POTENCIA MAXIMA
-			//			Envia_texto_UART("AT+SHOW3",300);	//MOSTRA O NOME e rssi
-			//			Envia_texto_UART("AT+GAIN1",300);	//INSERE GANHO
-			//			Envia_texto_UART("AT+NOTI1",300);	//NOTIFICA QUE CONECTOU
-			//			Envia_texto_UART("AT+PIO11",300);	//1 - CONECT = 1  \  DISC = 0
-			//			M_BLE_RESET
-			//			stepBle = 7;
-			//			char comando[COMANDO_BUFFER_SIZE]; // Buffer para o comando AT
-			//			snprintf(comando, sizeof(comando), "AT+NAME%s", BLE_DEVICE_NAME);
-			//			Envia_texto_UART(comando, 400); // Configura o nome no dispositivo
-			//			Envia_texto_UART("AT+ADTY0",300);	//DESBLOQUEIA CONEXA
-			//			M_BLE_RESET
-			//
-
 
 			//seta em 115200
 			SETUP_UART(115200)
@@ -471,7 +427,7 @@ void iniciaBleHm10(Bluetooth* ble){
 				stepBle = 9;
 				Envia_texto_UART("AT+ADDR?",300);//pede addr
 				MACRO_DEFINE_INTERRUPT
-//				osDelay(800);
+				//				osDelay(800);
 
 				if (ble->chave != 0){
 					ble->sequenciaBLE = final;
@@ -492,7 +448,7 @@ void iniciaBleHm10(Bluetooth* ble){
 			stepBle  =10;
 			Envia_texto_UART("AT+ADTY0",300);	//DESBLOQUEIA CONEXA
 			MACRO_RESET_BLE
-//			osDelay(50);
+			//			osDelay(50);
 			/*---HABILITA INTERRUPÇÃO---*/
 			__HAL_UART_ENABLE_IT 	(UARTHandle, UART_IT_IDLE);						// HABILITA idle line INTERRUPT
 			__HAL_DMA_ENABLE_IT 	(UARTDMAHandle, DMA_IT_TC);					// HABILITA O DMA Tx cplt INTERRUPT
@@ -520,25 +476,14 @@ void BluetoothErroCRC(void)
 void BluetoothDescon(Bluetooth* ble){
 	unsigned char	Buffer		[20];
 
-//	if(ble->MaquinaConexao	== RX_CONECTADO){
-//		//--->	CHAVE ERRADA
-//		Buffer[0] 	= 0x01;									// ENDEREÇO
-//		Buffer[1] 	= 0x52;									// FUNÇÃO -
-//		Buffer[2] 	= 0x52;									// FUNÇÃO -
-//		Buffer[3] 	= 0x00;									//resultado ok
-//		BluetoothEnviaComando(Buffer, 3);
-//	}
 	Envia_texto_UART("AT",50);//DESCONECTA
 	Envia_texto_UART("AT",50);//DESCONECTA
-	//	Envia_texto_UART("AT",50);//DESCONECTA
-	//	M_BLE_RESET
 
 	/* Prepare DMA for next transfer */
 	/* Important! DMA stream won't start if all flags are not cleared first */
 	UARTDMAHandle->Instance->CMAR = (uint32_t)ble->_RxDataArr;   /* Set memory address for DMA again */
 	UARTDMAHandle->Instance->CNDTR = DMA_RX_BUFFER_SIZE;    /* Set number of bytes to receive */
 	UARTDMAHandle->Instance->CCR |= DMA_CCR_EN;            /* Start DMA transfer */
-	//	taskEXIT_CRITICAL();
 }
 void bluetooth10ms(Bluetooth* ble){
 
@@ -562,4 +507,8 @@ void bluetooth10ms(Bluetooth* ble){
 void bluetooth1000ms(Bluetooth* ble){
 	if(ble->JanelaConexao>0)
 		ble->JanelaConexao--;
+}
+void cancelaAntecipacao(Bluetooth* ble){
+	if(!ble->SistemaInit)
+		BluetoothDescon(ble);
 }
