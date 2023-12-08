@@ -19,7 +19,7 @@ CRC_short 			CRCReceive;
 extern osThreadId TaskBluetoothHandle;
 
 BleComando BLEPedeSenha,BLERecebeuSenha;
-uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, DMA_HandleTypeDef *bluetoothUARTDMAHandle, osMessageQId *filaRX, osMessageQId *filaTX){
+uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, DMA_HandleTypeDef *bluetoothUARTDMAHandle, osMessageQId *filaRX, osMessageQId *filaTX, osMessageQId *filaComandoInternoTX){
 	//Pass the used UART handle to the struct
 	ble->UARTHandle 	= bluetoothUARTHandle;
 	ble->UARTDMAHandle 	= bluetoothUARTDMAHandle;
@@ -28,8 +28,9 @@ uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, D
 	UARTDMAHandle 		= ble->UARTDMAHandle;
 
 	//Pass the used queue to the struct
-	ble->filaComandosRX = filaRX;
-	ble->filaComandosTX = filaTX;
+	ble->filaComandosRX 		= filaRX;
+	ble->filaComandosTX 		= filaTX;
+	ble->filaComandoInternoTX 	= filaComandoInternoTX;
 
 	//Start the component count variable from zero
 	ble->_BleCommCount  = 0;
@@ -85,10 +86,10 @@ void BluetoothPutFila(Bluetooth* ble){
 
 				switch (ble->_RxDataArr[1]) {
 				case RX_PEDE_SENHA:
-					solicitacaoSenhaBluetooh(ble);
+					osMessagePut(*ble->filaComandoInternoTX, COMANDO_SOLICITACAO_SENHA, 0);
 					break;
 				case RX_RECEBEU_SENHA:
-					avaliaSenhaRecebidaBluetooh(ble);
+					osMessagePut(*ble->filaComandoInternoTX, COMANDO_AVALIACAO_CHAVE, 0);
 					break;
 				}
 			}else if(ble->_BleCommArr[i]->_tipo == ComandoBasico && ble->MaquinaConexao == RX_VALIDADO ){
@@ -102,55 +103,6 @@ void BluetoothPutFila(Bluetooth* ble){
 				BluetoothDescon(ble);
 			}
 		}
-	}
-}
-void solicitacaoSenhaBluetooh(Bluetooth* ble){
-	unsigned char	Buffer		[20];
-
-	if(ble->JanelaConexao > 0){
-
-		/*----DENTRO DO TEMPO, ENTAO RESPONDE----*/
-		Buffer[0] 	= 0x01;									// ENDEREÇO
-		Buffer[1] 	= 0x51;									// FUNÇÃO -
-		Buffer[2] 	= 0x51;									// FUNÇÃO -
-		Buffer[3] 	= 0x01;
-		Buffer[4] 	= ble->chave >> 8 		;
-		Buffer[5] 	= ble->chave & 0x00ff	;
-		BluetoothEnviaComando(Buffer, 5);
-
-	}else{
-		/*----FORA DO TEMPO DE RESPOSTA ----*/
-		Buffer[0] 	= 0x01;									// ENDEREÇO
-		Buffer[1] 	= 0x51;									// FUNÇÃO -
-		Buffer[2] 	= 0x51;									// FUNÇÃO -
-		Buffer[3] 	= 0x00;
-		Buffer[4] 	= 0x00;
-		Buffer[5] 	= 0x00;
-		BluetoothEnviaComando(Buffer, 5);
-	}
-}
-void avaliaSenhaRecebidaBluetooh(Bluetooth* ble){
-	unsigned char	Buffer		[20];
-
-	if(		ble->_RxDataArr[3] == (ble->chave >> 8) &&
-			ble->_RxDataArr[4] == (ble->chave & 0x00ff) ){
-		//--->	CHAVE CORRETA
-		ble->MaquinaConexao	= RX_VALIDADO;
-		Buffer[0] 	= 0x01;									// ENDEREÇO
-		Buffer[1] 	= 0x52;									// FUNÇÃO -
-		Buffer[2] 	= 0x52;									// FUNÇÃO -
-		Buffer[3] 	= 0x01;									//resultado ok
-		BluetoothEnviaComando(Buffer, 3);
-
-	}else{
-		//--->	CHAVE ERRADA
-		Buffer[0] 	= 0x01;									// ENDEREÇO
-		Buffer[1] 	= 0x52;									// FUNÇÃO -
-		Buffer[2] 	= 0x52;									// FUNÇÃO -
-		Buffer[3] 	= 0x00;									//resultado ok
-		BluetoothEnviaComando(Buffer, 3);
-
-		BluetoothDescon(ble);
 	}
 }
 void BLEUSART_IrqHandler(Bluetooth *ble)
@@ -240,6 +192,62 @@ void BLEDMA_IrqHandler (Bluetooth *ble)
 		UARTDMAHandle->Instance->CMAR = (uint32_t)ble->_RxDataArr;   /* Set memory address for DMA again */
 		UARTDMAHandle->Instance->CNDTR = DMA_RX_BUFFER_SIZE;    /* Set number of bytes to receive */
 		UARTDMAHandle->Instance->CCR |= DMA_CCR_EN;            /* Start DMA transfer */
+	}
+}
+void txBleComando(Bluetooth *ble){
+	// Usamos um ponteiro para uint8_t para copiar byte a byte
+	unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];
+	osEvent  evttx;
+	evttx = osMessageGet(*ble->filaComandoInternoTX, 0);
+	if (evttx.status == osEventMessage) {
+		switch ((unsigned int)evttx.value.p) {
+		case COMANDO_SOLICITACAO_SENHA:
+			if(ble->JanelaConexao > 0){
+
+				/*----DENTRO DO TEMPO, ENTAO RESPONDE----*/
+				Buffer[0] 	= 0x01;									// ENDEREÇO
+				Buffer[1] 	= 0x51;									// FUNÇÃO -
+				Buffer[2] 	= 0x51;									// FUNÇÃO -
+				Buffer[3] 	= 0x01;
+				Buffer[4] 	= ble->chave >> 8 		;
+				Buffer[5] 	= ble->chave & 0x00ff	;
+				BluetoothEnviaComando(Buffer, 5);
+
+			}else{
+				/*----FORA DO TEMPO DE RESPOSTA ----*/
+				Buffer[0] 	= 0x01;									// ENDEREÇO
+				Buffer[1] 	= 0x51;									// FUNÇÃO -
+				Buffer[2] 	= 0x51;									// FUNÇÃO -
+				Buffer[3] 	= 0x00;
+				Buffer[4] 	= 0x00;
+				Buffer[5] 	= 0x00;
+				BluetoothEnviaComando(Buffer, 5);
+			}
+			break;
+		case COMANDO_AVALIACAO_CHAVE:
+			if(		ble->_RxDataArr[3] == (ble->chave >> 8) &&
+					ble->_RxDataArr[4] == (ble->chave & 0x00ff) ){
+				//--->	CHAVE CORRETA
+				ble->MaquinaConexao	= RX_VALIDADO;
+				Buffer[0] 	= 0x01;									// ENDEREÇO
+				Buffer[1] 	= 0x52;									// FUNÇÃO -
+				Buffer[2] 	= 0x52;									// FUNÇÃO -
+				Buffer[3] 	= 0x01;									//resultado ok
+				BluetoothEnviaComando(Buffer, 3);
+
+			}else{
+				//--->	CHAVE ERRADA
+				Buffer[0] 	= 0x01;									// ENDEREÇO
+				Buffer[1] 	= 0x52;									// FUNÇÃO -
+				Buffer[2] 	= 0x52;									// FUNÇÃO -
+				Buffer[3] 	= 0x00;									//resultado ok
+				BluetoothEnviaComando(Buffer, 3);
+
+				BluetoothDescon(ble);
+			}
+			break;
+
+		}
 	}
 }
 void BluetoothEnviaComando(unsigned char _out[], int size)
@@ -474,7 +482,6 @@ void BluetoothErroCRC(void)
 	Envia_bytes_UART(TXCRC,3);
 }
 void BluetoothDescon(Bluetooth* ble){
-	unsigned char	Buffer		[20];
 
 	Envia_texto_UART("AT",50);//DESCONECTA
 	Envia_texto_UART("AT",50);//DESCONECTA

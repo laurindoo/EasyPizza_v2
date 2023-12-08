@@ -12,8 +12,8 @@ void txBluetooth(void);
 void rxBluetooth(void);
 void taskBluetooth1sec(void);
 
-
-
+#define MACRO_ANULA_INATIVIDADE tempoSemAtividade = 0; 	//variaveis do forno
+static uint16_t tempoSemAtividade;						//variaveis do forno
 
 BleComando BLEAtualizaRealtime;
 BleComando BLESolicitaSincronia;
@@ -30,47 +30,27 @@ valuesSincronia FlagSincronia;
 
 void StartBluetooth(void const * argument)
 {
-	osDelay(400);
 	initBluetooth();
 
 	for(;;)
 	{
+		//executado internamente no bluetooth
+		txBleComando(&bluetooth);
+
+		//lista de funcoes RECEBIDAS
 		rxBluetooth();
 
+		//lista de funcoes a serem ENVIADAS
 		txBluetooth();
 
 		osThreadYield();
 		osDelay(40);
 	}
 }
-static uint16_t tempoSemAtividade;
-#define MACRO_ANULA_INATIVIDADE tempoSemAtividade = 0;
-void taskBluetooth1sec(void){
-
-	//---monitor de inatividade
-	if(tempoSemAtividade>=TIME_INATIVO_SETUP){
-		desligaForno();
-	}else if(PrimitiveStates.stateTimer != TIMER_decrementando){
-		tempoSemAtividade++;
-	}
-
-	//---sequenciamento de envio de sincronia
-	if(bluetooth.MaquinaConexao == RX_DESCONECTADO){
-		FlagSincronia.cont=0;
-		FlagSincronia.flag=0;
-	}
-	/*
-	 * ao conectar, seta a FlagSincronia
-	 * ao desconectar, reseta a FlagSincronia
-	 * */
-}
 void initBluetooth(void){
-	//	taskENTER_CRITICAL();
-	//inicializacao do bluetooth
-	BluetoothInit(&bluetooth, &huart1, &hdma_usart1_rx, &FilaRXBluetoothHandle,FilaTXBluetoothHandle);
 
-	//	//inicializacao do hardware
-	//	iniciaBleHm10(&bluetooth);
+	//inicializacao do bluetooth
+	BluetoothInit(&bluetooth, &huart1, &hdma_usart1_rx, &FilaRXBluetoothHandle,&FilaTXBluetoothHandle,&FilaBleComandoHandle);
 
 	//possiveis comandos a serem recebidos pelo bluetooth
 	BluetoothAddComp(&bluetooth, &BLEAtualizaRealtime, 	"RX_SOLICITA_REALTIME", 	RX_SOLICITA_REALTIME, 		ComandoBasico);
@@ -90,11 +70,28 @@ void initBluetooth(void){
 	BluetoothAddComp(&bluetooth, &BLECancelaProcesso,  	"RX_CANCELA_PROCESSO",    	RX_CANCELA_PROCESSO,  		ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLETunningTeto,     	"RX_TUNNING_TETO",    		RX_TUNNING_TETO,  			ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLETunningLastro,  	"RX_TUNNING_LASTRO",    	RX_TUNNING_LASTRO,  		ComandoBasico);
-	//	taskEXIT_CRITICAL();
 
 }
+void taskBluetooth1sec(void){
+
+	//---monitor de inatividade
+	if(tempoSemAtividade>=TIME_INATIVO_SETUP){
+		desligaForno();
+	}else if(PrimitiveStates.stateTimer != TIMER_decrementando){
+		tempoSemAtividade++;
+	}
+
+	//---sequenciamento de envio de sincronia
+	if(bluetooth.MaquinaConexao == RX_DESCONECTADO){
+		FlagSincronia.cont=0;
+		FlagSincronia.flag=0;
+	}
+	/*
+	 * ao conectar, seta a FlagSincronia
+	 * ao desconectar, reseta a FlagSincronia
+	 * */
+}
 void txBluetooth(void){
-	// Usamos um ponteiro para uint8_t para copiar byte a byte
 	unsigned char	Buffer		[BLUETOOTH_MAX_BUFF_LEN];
 	osEvent  evttx;
 	evttx = osMessageGet(FilaTXBluetoothHandle, 10);
@@ -209,11 +206,6 @@ void txBluetooth(void){
 	}
 }
 void rxBluetooth(void){
-
-	//refazer todos os envios de respostas de comando e reconexao em forma de sinal vindo do interrupt e executado aqui
-	//ou fazer uma outra fila apenas para comandosConexao
-
-
 	osEvent  evtrx;
 	evtrx = osMessageGet(FilaRXBluetoothHandle, 10);
 	if (evtrx.status == osEventMessage) {

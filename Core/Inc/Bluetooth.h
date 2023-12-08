@@ -111,12 +111,10 @@ typedef enum
 //---Comandos Ble
 typedef enum
 {
-	TX_ULTIMO_CODIGO 		= 0x01,
-	TX_COMANDO_NEGADO 		= 0x89,
-	TX_RESULTADO_CHAVE_OK	,
-	TX_RESULTADO_CHAVE_ERRO	,
-	TX_CHAVE				,
-	TX_CHAVE_ERRO			,
+	COMANDO_ULTIMO_CODIGO 		= 0x01,
+	COMANDO_COMANDO_NEGADO 		= 0x89,
+	COMANDO_SOLICITACAO_SENHA	,
+	COMANDO_AVALIACAO_CHAVE		,
 } ConexaoBleTX;
 
 
@@ -148,6 +146,7 @@ typedef struct
 	//Handle da fila de comandos
 	osMessageQId	*filaComandosRX;//Handle da fila de comandos
 	osMessageQId	*filaComandosTX;
+	osMessageQId	*filaComandoInternoTX;
 
 	//Variables for parsing the received data
 	uint8_t _RxDataArr[BLUETOOTH_MAX_BUFF_LEN], _RxData,RxSize;
@@ -183,12 +182,11 @@ typedef struct
 
 }Bluetooth;
 
-uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, DMA_HandleTypeDef *bluetoothUARTDMAHandle, osMessageQId *filaRX, osMessageQId *filaTX);
+uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, DMA_HandleTypeDef *bluetoothUARTDMAHandle, osMessageQId *filaRX, osMessageQId *filaTX, osMessageQId *filaComandoInternoTX);
 uint8_t BluetoothAddComp(Bluetooth* ble, BleComando* _blecomm, char* objectname, uint8_t __comando, TypeComandoBle __tipo);
 void BluetoothPutFila(Bluetooth* ble);
-void solicitacaoSenhaBluetooh(Bluetooth* ble);
-void avaliaSenhaRecebidaBluetooh(Bluetooth* ble);
 void BLEUSART_IrqHandler(Bluetooth *ble);
+void txBleComando(Bluetooth *ble);
 void BLEDMA_IrqHandler (Bluetooth *ble);
 void BluetoothEnviaComando(unsigned char _out[], int size);
 void Envia_bytes_UART(unsigned char _out[], uint8_t size);
