@@ -46,6 +46,7 @@ typedef enum
 	RX_LIMITE_LAMPADA	 	= 0x30,
 	RX_TUNNING_TETO 		= 0x33,
 	RX_TUNNING_LASTRO	 	= 0x34,
+	RX_TOGGLE_BUZZER	 	= 0x35,
 
 } ComandosBleRX;
 

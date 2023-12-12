@@ -55,6 +55,7 @@ void waitBuzzerSignal(void){
 
 	// Verifique os sinais
 	if (evt.status == osEventSignal) {
+
 		if (evt.value.signals & SINAL_TEMP_REACH) {
 			// execute o padrão de buzzer para SINAL_TEMP_REACH
 			for (int i = 0; i < 5; ++i) {
@@ -68,6 +69,12 @@ void waitBuzzerSignal(void){
 		}
 
 		if (evt.value.signals & SINAL_COMFIRMA) {
+			//retorna caso buzzer desabilitado
+			if(!PrimitiveStates.Buzzer){
+				M_BUZZER_OFF
+				return;
+			}
+
 			// execute o padrão de buzzer para SINAL_COMFIRMA
 			M_BUZZER_ON
 			osDelay(70);
@@ -76,6 +83,12 @@ void waitBuzzerSignal(void){
 		}
 
 		if (evt.value.signals & SINAL_NEGADO) {
+			//retorna caso buzzer desabilitado
+			if(!PrimitiveStates.Buzzer){
+				M_BUZZER_OFF
+				return;
+			}
+
 			// execute o padrão de buzzer para SINAL_NEGADO
 			for (int i = 0; i < 2; ++i) {
 				M_BUZZER_ON

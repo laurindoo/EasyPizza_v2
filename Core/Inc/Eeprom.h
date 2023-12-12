@@ -43,17 +43,17 @@
 #define EEPROM_WRITE_ADDR 	0b10100010
 
 //VARIAVEIS DE CONFIGURACAO    pagina 1
-#define addrTEMPO_LUZ			1	// 8-bits
-#define addrHORIMETRO			2	// 8-bits
-#define addrMINUTIMETRO			4	// 8-bits
-#define addrINST_DIA			5	// 8-bits
-#define addrINST_MES			6	// 8-bits
-#define addrINST_ANO			7	// 8-bits
-#define addrTOTAL_GERAL			8	// 16-bits
-#define addrCONT_MAX_TETO		10	// 16-bits
-#define addrCONT_MAX_LASTRO		12	// 16-bits
+#define addrTEMPO_LUZ			1	// 16-bits
+#define addrHORIMETRO			3	// 16-bits
+#define addrMINUTIMETRO			5	// 8-bits
+#define addrINST_DIA			6	// 8-bits
+#define addrINST_MES			7	// 8-bits
+#define addrINST_ANO			8	// 8-bits
+#define addrTOTAL_GERAL			9	// 16-bits
+#define addrCONT_MAX_TETO		11	// 16-bits
+#define addrCONT_MAX_LASTRO		13	// 16-bits
 
-#define addrTETO_KP				14	// 64-bits
+#define addrTETO_KP				15	// 64-bits
 #define addrTETO_KI				22	// 64-bits
 #define addrTETO_KD				33	// 64-bits
 #define addrTETO_HIST			41	// 16-bits
@@ -61,6 +61,7 @@
 
 #define addrLASTRO_KP			45	// 64-bits
 #define addrLASTRO_KI			53	// 64-bits
+#define addrBUZZER				61	// 8-bits
 #define addrLASTRO_KD			65	// 64-bits
 #define addrLASTRO_HIST			73	// 16-bits
 #define addrLASTRO_LIMIT		75	// 16-bits

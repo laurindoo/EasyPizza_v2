@@ -18,7 +18,7 @@ static uint16_t tempoSemAtividade;						//variaveis do forno
 BleComando BLEAtualizaRealtime;
 BleComando BLESolicitaSincronia;
 BleComando BLEAtualizaDataHora,BLEAlteraLimiteTemp,BLERestaura,BLERestauraHard,BLESPTeto,BLESPLastro,BLESPtempo,BLEToggleTempo,BLEReceita,BLESPTempo,BLELightOn,BLELightOff;
-BleComando BLESetaLampada,BLECancelaProcesso,BLETunningTeto,BLETunningLastro;
+BleComando BLESetaLampada,BLECancelaProcesso,BLEToggleBuzzer,BLETunningTeto,BLETunningLastro;
 
 void verificaLimiteSetpoint(IndviduoPID	*canal);
 bool sincAutomatico(void);
@@ -70,6 +70,7 @@ void initBluetooth(void){
 	BluetoothAddComp(&bluetooth, &BLECancelaProcesso,  	"RX_CANCELA_PROCESSO",    	RX_CANCELA_PROCESSO,  		ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLETunningTeto,     	"RX_TUNNING_TETO",    		RX_TUNNING_TETO,  			ComandoBasico);
 	BluetoothAddComp(&bluetooth, &BLETunningLastro,  	"RX_TUNNING_LASTRO",    	RX_TUNNING_LASTRO,  		ComandoBasico);
+	BluetoothAddComp(&bluetooth, &BLEToggleBuzzer,  	"RX_TOGGLE_BUZZER",    		RX_TOGGLE_BUZZER,  			ComandoBasico);
 
 }
 void taskBluetooth1sec(void){
@@ -111,8 +112,9 @@ void txBluetooth(void){
 			Buffer[10] 	= (uint16_t)PrimitiveStates.Lastro.realtime 	& 0x00FF;
 			Buffer[11] 	= (uint16_t)PrimitiveStates.Lastro.setPoint 	>>8;
 			Buffer[12] 	= (uint16_t)PrimitiveStates.Lastro.setPoint 	& 0x00FF;
+			Buffer[13] 	= PrimitiveStates.Buzzer;
 
-			BluetoothEnviaComando(Buffer, 12);
+			BluetoothEnviaComando(Buffer, 13);
 			break;
 		case TX_REALTIME_DATA2:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
@@ -134,16 +136,17 @@ void txBluetooth(void){
 			Buffer[0] 	= 0x01;									// ENDEREÇO
 			Buffer[1] 	= 0x18;									// FUNÇÃO -
 			Buffer[2] 	= 0x01;									// Modelo
-			Buffer[3] 	= (uint8_t)PrimitiveStates.Lampada.limitOn;
-			Buffer[4] 	= (uint8_t)instalacaoDia.valor;
-			Buffer[5] 	= (uint8_t)instalacaoMes.valor;
-			Buffer[6] 	= (uint8_t)instalacaoAno.valor;
-			Buffer[7]	= VERSAO;
-			Buffer[8] 	= (uint16_t)Calendario.ContMaxTeto >> 8;
-			Buffer[9] 	= (uint16_t)Calendario.ContMaxTeto & 0x00FF;
-			Buffer[10] 	= (uint16_t)Calendario.ContMaxLastro >> 8;
-			Buffer[11] 	= (uint16_t)Calendario.ContMaxLastro & 0x00FF;
-			BluetoothEnviaComando(Buffer, 11);
+			Buffer[3] 	= (uint16_t)PrimitiveStates.Lampada.limitOn >> 8;
+			Buffer[4] 	= (uint16_t)PrimitiveStates.Lampada.limitOn & 0x00FF;
+			Buffer[5] 	= (uint8_t)instalacaoDia.valor;
+			Buffer[6] 	= (uint8_t)instalacaoMes.valor;
+			Buffer[7] 	= (uint8_t)instalacaoAno.valor;
+			Buffer[8]	= VERSAO;
+			Buffer[9] 	= (uint16_t)Calendario.ContMaxTeto >> 8;
+			Buffer[10] 	= (uint16_t)Calendario.ContMaxTeto & 0x00FF;
+			Buffer[11] 	= (uint16_t)Calendario.ContMaxLastro >> 8;
+			Buffer[12] 	= (uint16_t)Calendario.ContMaxLastro & 0x00FF;
+			BluetoothEnviaComando(Buffer, 12);
 			break;
 		case TX_SINCRONIA2:
 			// Endereço
@@ -438,6 +441,18 @@ void rxBluetooth(void){
 
 			//sinal sonoro
 			osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
+
+			break;
+		case RX_TOGGLE_BUZZER:
+			//---------ENDEREÇO | 0x35 | 0x35 | CRC | CRC
+			MACRO_ANULA_INATIVIDADE
+			osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
+			PrimitiveStates.Buzzer = !PrimitiveStates.Buzzer;
+			if(PrimitiveStates.Buzzer){
+				osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
+			}
+			//grava
+			osMessagePut(FilaEepromHandle, CEepromToogleBuzzer, 0);
 
 			break;
 		}

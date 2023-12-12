@@ -85,6 +85,7 @@ typedef enum
 	CEepromTempMaxTetoAgain,
 	CEepromTempMaxLastroAgain,
 	CEepromTunning,
+	CEepromToogleBuzzer,
 } ComandosEeprom;
 
 //---Estados maquina
@@ -117,6 +118,7 @@ typedef struct
 	IndviduoPID		Lastro;
 
 	bool 		ConectionBle;
+	uint8_t		Buzzer;
 
 	uint8_t		SPTimerMinutos;
 	uint8_t		SPTimerSegundos;

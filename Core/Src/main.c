@@ -174,11 +174,13 @@ int main(void)
 	 * 24 - FEITO - Desflagear o cont teto ao fim das receitas
 	 * 25 - FEITO - Ler referencia de eeprom, nao foi feito
 	 * 26 - Revisar momento de incremento de horimetro
-	 * 27 - *TESTAR* - tempo relativo para desconexao
-	 * 28 - *NAO DEU* - reset de fila na desconexao
-	 * 29 - *TESTAR* - relativizar envio de sincronias
+	 * 27 - FEITO - tempo relativo para desconexao
+	 * 28 - NAO NECESSARIO - reset de fila na desconexao
+	 * 29 - FEITO - relativizar envio de sincronias
 	 * 30 - FEITO - alterar resposta de "resetando" de TaskEeprom para TaskBluetooth->TXQueue
 	 * 31 - FEITO - desconectar ou resetar FlagSincronia ao finalizar restauracao
+	 * 32 - FEITO - reestruturacao completa de sequencia de senhas e primeiras conexoes
+	 * 33 - testar leitura eeprom do buzzer
 	 * */
 
   /* USER CODE END 1 */

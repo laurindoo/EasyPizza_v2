@@ -16,7 +16,7 @@ EepromVariaveis hitereseStateTeto,limiteTeto;
 EepromVariaveis hitereseStateLastro,limiteLastro;
 
 EepromVarFloating kPTeto,kITeto,kDTeto,kPLastro,kILastro,kDLastro;
-EepromVariaveis FlagMemoria;
+EepromVariaveis FlagMemoria,FlagBuzzer;
 
 
 RTC_DateTypeDef datetoUpdate;
@@ -55,6 +55,7 @@ void initEeprom(void){
 	EepromAddVar(&eeprom,0,&limiteTeto, 		"addrTETO_LIMIT", 		addrTETO_LIMIT,		DATA16BITS,	0,		475			,500	,&PrimitiveStates.Teto.limite);
 	EepromAddVar(&eeprom,0,&hitereseStateLastro,"addrLASTRO_HIST", 		addrLASTRO_HIST,	DATA16BITS,	0,		STD_HISTERESE,10	,&PrimitiveStates.Lastro.histerese);
 	EepromAddVar(&eeprom,0,&limiteLastro,		"addrLASTRO_LIMIT", 	addrLASTRO_LIMIT,	DATA16BITS,	0,		STD_LIMITE	,500	,&PrimitiveStates.Lastro.limite);
+	EepromAddVar(&eeprom,0,&FlagBuzzer,			"addrBUZZER", 			addrBUZZER,			DATA8BITS,	0,		1			,1  	,&PrimitiveStates.Buzzer);
 
 	EepromAddVarFloating(&eeprom, 0, &kPTeto, 	"addrTETO_KP", 			addrTETO_KP,		DATADOUBLE,	0,		STD_KP		,1000	,&PrimitiveStates.Teto.kp);
 	EepromAddVarFloating(&eeprom, 0, &kITeto, 	"addrTETO_KI", 			addrTETO_KI,		DATADOUBLE,	0,		STD_KI		,1000	,&PrimitiveStates.Teto.ki);
@@ -170,6 +171,9 @@ void processaEeprom(void){
 			EepromSetVar(&eeprom, &limiteLastro, 	0);
 			PID_SetTunings(&TPIDLastro, PrimitiveStates.Lastro.kp, PrimitiveStates.Lastro.ki, PrimitiveStates.Lastro.kd);
 
+			break;
+		case CEepromToogleBuzzer:
+			EepromSetVar(&eeprom, &FlagBuzzer, 0);
 			break;
 		default:
 			break;
