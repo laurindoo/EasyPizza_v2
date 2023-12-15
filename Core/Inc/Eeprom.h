@@ -54,7 +54,7 @@
 #define addrCONT_MAX_LASTRO		13	// 16-bits
 
 #define addrTETO_KP				15	// 64-bits
-#define addrTETO_KI				22	// 64-bits
+#define addrTETO_KI				23	// 64-bits
 #define addrTETO_KD				33	// 64-bits
 #define addrTETO_HIST			41	// 16-bits
 #define addrTETO_LIMIT			43	// 16-bits

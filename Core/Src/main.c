@@ -126,8 +126,6 @@ GlobalPrimitiveIOStates PrimitiveStates;
 
 TYPE_CALENDARIO Calendario;
 
-uint8_t stepBle;
-
 
 /* USER CODE END 0 */
 
@@ -165,22 +163,22 @@ int main(void)
 	 * 15 - FEITO - revisar tempos de senha
 	 * 16 - FEITO - reset de ki kd
 	 * 17 - FEITO - nova funcao de envio de valores paara eeprom
-	 * 18 - A_D_I_A_N_T_A_D_O - Alterar tempo de lampada para uint16_t
+	 * 18 - FEITO - Alterar tempo de lampada para uint16_t
 	 * 19 - FEITO -Revisar Ki do lastro que esta vindo zerado ?????
 	 * 20 - FEITO - revisar restruturacao automatico
-	 * 21 - A_D_I_A_N_T_A_D_O - on/off de beep
+	 * 21 - FEITO - on/off de beep
 	 * 22 - pulsar leds ao conectar
 	 * 23 - FEITO - habilitar soft e hard reset, deixando de fora ciclos e contagem de tetoTempMax e lastroTempMax
 	 * 24 - FEITO - Desflagear o cont teto ao fim das receitas
 	 * 25 - FEITO - Ler referencia de eeprom, nao foi feito
-	 * 26 - Revisar momento de incremento de horimetro
+	 * 26 - FEITO - Revisar momento de incremento de horimetro
 	 * 27 - FEITO - tempo relativo para desconexao
 	 * 28 - NAO NECESSARIO - reset de fila na desconexao
 	 * 29 - FEITO - relativizar envio de sincronias
 	 * 30 - FEITO - alterar resposta de "resetando" de TaskEeprom para TaskBluetooth->TXQueue
 	 * 31 - FEITO - desconectar ou resetar FlagSincronia ao finalizar restauracao
 	 * 32 - FEITO - reestruturacao completa de sequencia de senhas e primeiras conexoes
-	 * 33 - testar leitura eeprom do buzzer
+	 * 33 - FEITO - testar leitura eeprom do buzzer
 	 * */
 
   /* USER CODE END 1 */

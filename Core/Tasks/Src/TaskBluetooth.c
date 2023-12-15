@@ -114,7 +114,7 @@ void txBluetooth(void){
 			Buffer[12] 	= (uint16_t)PrimitiveStates.Lastro.setPoint 	& 0x00FF;
 			Buffer[13] 	= PrimitiveStates.Buzzer;
 
-			BluetoothEnviaComando(Buffer, 13);
+			BluetoothEnviaComando(&bluetooth,Buffer, 13);
 			break;
 		case TX_REALTIME_DATA2:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
@@ -130,7 +130,7 @@ void txBluetooth(void){
 			Buffer[10]	= PrimitiveStates.Lampada._state;
 			Buffer[11] 	= (uint16_t)Calendario.TotalCiclos >> 8;
 			Buffer[12] 	= (uint16_t)Calendario.TotalCiclos & 0x00FF;
-			BluetoothEnviaComando(Buffer, 12);
+			BluetoothEnviaComando(&bluetooth,Buffer, 12);
 			break;
 		case TX_SINCRONIA:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
@@ -146,7 +146,7 @@ void txBluetooth(void){
 			Buffer[10] 	= (uint16_t)Calendario.ContMaxTeto & 0x00FF;
 			Buffer[11] 	= (uint16_t)Calendario.ContMaxLastro >> 8;
 			Buffer[12] 	= (uint16_t)Calendario.ContMaxLastro & 0x00FF;
-			BluetoothEnviaComando(Buffer, 12);
+			BluetoothEnviaComando(&bluetooth,Buffer, 12);
 			break;
 		case TX_SINCRONIA2:
 			// Endereço
@@ -167,7 +167,7 @@ void txBluetooth(void){
 			Buffer[16] 	= (uint16_t)PrimitiveStates.Teto.limite 		>>8;
 			Buffer[17] 	= (uint16_t)PrimitiveStates.Teto.limite 		& 0x00FF;
 
-			BluetoothEnviaComando(Buffer, 17);
+			BluetoothEnviaComando(&bluetooth,Buffer, 17);
 
 			break;
 		case TX_SINCRONIA3:
@@ -187,14 +187,14 @@ void txBluetooth(void){
 			Buffer[16] 	= (uint16_t)PrimitiveStates.Lastro.limite 		>>8;
 			Buffer[17] 	= (uint16_t)PrimitiveStates.Lastro.limite 		& 0x00FF;
 
-			BluetoothEnviaComando(Buffer, 17);
+			BluetoothEnviaComando(&bluetooth,Buffer, 17);
 
 			break;
 		case TX_RESETANDO:
 			Buffer[0] 	= 0x01;									// ENDEREÇO
 			Buffer[1] 	= 0x29;									// FUNÇÃO -
 			Buffer[2] 	= 0x29;									// FUNÇÃO -
-			BluetoothEnviaComando(Buffer, 2);
+			BluetoothEnviaComando(&bluetooth,Buffer, 2);
 
 			break;
 		case TX_RESETADO_OK:
@@ -202,7 +202,7 @@ void txBluetooth(void){
 			Buffer[0] 	= 0x01;									// ENDEREÇO
 			Buffer[1] 	= 0x30;									// FUNÇÃO -
 			Buffer[2] 	= 0x30;									// FUNÇÃO -
-			BluetoothEnviaComando(Buffer, 2);
+			BluetoothEnviaComando(&bluetooth,Buffer, 2);
 
 			break;
 		}
@@ -368,6 +368,7 @@ void rxBluetooth(void){
 			MACRO_ANULA_INATIVIDADE
 			osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
 			onDigital(&PrimitiveStates.Lampada);
+			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA2, 0);
 			MACRO_ENVIA_AKNOLADGE_(RX_LIGA_LAMPADA)
 			break;
 		case RX_DESLIGA_LAMPADA:
@@ -375,6 +376,7 @@ void rxBluetooth(void){
 			MACRO_ANULA_INATIVIDADE
 			osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
 			offDigital(&PrimitiveStates.Lampada);
+			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA2, 0);
 			MACRO_ENVIA_AKNOLADGE_(RX_DESLIGA_LAMPADA)
 			break;
 		case RX_LIMITE_LAMPADA:

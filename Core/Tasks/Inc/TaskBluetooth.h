@@ -22,6 +22,7 @@
 #define VERSAO 	2// versao salva no dia 23/11/2023 -
 
 extern osThreadId TaskBuzzerHandle;
+extern osThreadId TaskBluetoothHandle;
 extern osMessageQId FilaRXBluetoothHandle,FilaTXBluetoothHandle,FilaEepromHandle, FilaBleComandoHandle;
 extern int recorrencia;
 extern Bluetooth bluetooth;

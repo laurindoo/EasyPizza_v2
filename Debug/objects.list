@@ -2,6 +2,7 @@
 "./Core/Src/Conversoes.o"
 "./Core/Src/Eeprom.o"
 "./Core/Src/OutputDigital.o"
+"./Core/Src/dwin.o"
 "./Core/Src/freertos.o"
 "./Core/Src/main.o"
 "./Core/Src/pid.o"

@@ -21,13 +21,17 @@
 //Include HAL Library from main header file :/
 #include "main.h"
 
-//Include libraries
+//Include libraries //todo revisar todas as bibliotecas
 #include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
+
+
+
+#include "errorcodes.h"
 
 #define BLE_DEVICE_NAME "EasyPizza" // Substitua por um nome apropriado
 #define COMANDO_BUFFER_SIZE (50) // Escolha um tamanho que seja suficiente
@@ -56,11 +60,11 @@
 #define MACRO_ENVIA_AKNOLADGE_(val) 		bluetooth.TXBuffer[0] = 0x01;\
 		bluetooth.TXBuffer[1] = 0xFF;\
 		bluetooth.TXBuffer[2] = val;\
-		Envia_bytes_UART(bluetooth.TXBuffer, 3);
+		Envia_bytes_UART(&bluetooth,bluetooth.TXBuffer, 3);
 #define MACRO_DEFINE_INTERRUPT \
-		__HAL_UART_ENABLE_IT 	(UARTHandle, UART_IT_IDLE);\
-		__HAL_DMA_ENABLE_IT 	(UARTDMAHandle, DMA_IT_TC);	\
-		HAL_UART_Receive_DMA 	(UARTHandle, ble->_RxDataArr, DMA_RX_BUFFER_SIZE);	// STARTA O UART1 EM DMA MODE
+		__HAL_UART_ENABLE_IT 	(ble->UARTHandle, UART_IT_IDLE);\
+		__HAL_DMA_ENABLE_IT 	(ble->UARTDMAHandle, DMA_IT_TC);	\
+		HAL_UART_Receive_DMA 	(ble->UARTHandle, ble->_RxDataArr, DMA_RX_BUFFER_SIZE);	// STARTA O UART1 EM DMA MODE
 
 typedef enum
 {   inicio = 0,
@@ -132,7 +136,7 @@ typedef struct
 }BleComando;
 
 /*
- * Bluetooth Struct
+ * Bluetooth Struct -- classe do objeto
  */
 typedef struct
 {
@@ -143,7 +147,7 @@ typedef struct
 	//bufer's
 	unsigned char	TXBuffer	[BLUETOOTH_MAX_BUFF_LEN]		;	//BUFFER AUXILIAR DO "DMA_CIRCULAR.C" de uint8 -> uchar
 
-	//Handle da fila de comandos
+	//Handle da filas
 	osMessageQId	*filaComandosRX;//Handle da fila de comandos
 	osMessageQId	*filaComandosTX;
 	osMessageQId	*filaComandoInternoTX;
@@ -176,11 +180,20 @@ typedef struct
 	//maquina de inicializacao
 	sequenciaBle sequenciaBLE;
 
+	//Objetos de conexao
+	BleComando BLEPedeSenha,BLERecebeuSenha;
+
 	//Variavel para receber lista de comandos
 	BleComando* _BleCommArr[BLUETOOTH_MAX_COMANDOS_COUNT];
 	uint8_t _BleCommCount;
 
 }Bluetooth;
+
+
+uint8_t bleConstrutora(Bluetooth *ble,  UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle, osMessageQId *_filaRX, osMessageQId *_filaTX, osMessageQId *_filaComandoInternoTX);
+uint8_t bleAddComp(Bluetooth* ble, uint8_t _comando, TypeComandoBle _tipo);
+
+
 
 uint8_t BluetoothInit(Bluetooth *ble, UART_HandleTypeDef *bluetoothUARTHandle, DMA_HandleTypeDef *bluetoothUARTDMAHandle, osMessageQId *filaRX, osMessageQId *filaTX, osMessageQId *filaComandoInternoTX);
 uint8_t BluetoothAddComp(Bluetooth* ble, BleComando* _blecomm, char* objectname, uint8_t __comando, TypeComandoBle __tipo);
@@ -188,13 +201,13 @@ void BluetoothPutFila(Bluetooth* ble);
 void BLEUSART_IrqHandler(Bluetooth *ble);
 void txBleComando(Bluetooth *ble);
 void BLEDMA_IrqHandler (Bluetooth *ble);
-void BluetoothEnviaComando(unsigned char _out[], int size);
-void Envia_bytes_UART(unsigned char _out[], uint8_t size);
-void Envia_texto_UART(char _out[], uint16_t delay);
+void BluetoothEnviaComando(Bluetooth *ble, unsigned char _out[], int size);
+void Envia_bytes_UART(Bluetooth *ble, unsigned char _out[], uint8_t size);
+void Envia_texto_UART(Bluetooth *ble, char _out[], uint16_t delay);
 unsigned short CRC16 (unsigned char *puchMsg, unsigned short usDataLen);
-void iniciaBleHm10(Bluetooth* ble);
+uint8_t iniciaBleHm10(Bluetooth* ble);
 void redefineBluetooth(Bluetooth* ble);
-void BluetoothErroCRC(void);
+void BluetoothErroCRC(Bluetooth* ble);
 void BluetoothDescon(Bluetooth* ble);
 void bluetooth10ms(Bluetooth* ble);
 void bluetooth1000ms(Bluetooth* ble);
