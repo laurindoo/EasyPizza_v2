@@ -1,5 +1,6 @@
 "./Core/Src/Bluetooth.o"
 "./Core/Src/Conversoes.o"
+"./Core/Src/Crc.o"
 "./Core/Src/Eeprom.o"
 "./Core/Src/OutputDigital.o"
 "./Core/Src/dwin.o"

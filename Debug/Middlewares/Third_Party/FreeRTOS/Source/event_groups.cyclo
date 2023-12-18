@@ -1,6 +1,7 @@
+../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c:656:19:prvTestWaitCondition	4
 ../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c:93:21:xEventGroupCreateStatic	3
 ../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c:142:21:xEventGroupCreate	2
-../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c:296:13:xEventGroupWaitBits	19
+../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c:296:13:xEventGroupWaitBits	16
 ../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c:446:13:xEventGroupClearBits	3
 ../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c:488:13:xEventGroupGetBitsFromISR	1
 ../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c:504:13:xEventGroupSetBits	8

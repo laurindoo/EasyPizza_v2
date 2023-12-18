@@ -58,8 +58,6 @@ DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart3_rx;
 
 osThreadId TaskBluetoothHandle;
-uint32_t TaskBluetoothBuffer[ 1024 ];
-osStaticThreadDef_t TaskBluetoothControlBlock;
 osThreadId TaskTemperaturaHandle;
 osThreadId TaskBuzzerHandle;
 uint32_t TaskBuzzerBuffer[ 128 ];
@@ -70,10 +68,10 @@ osStaticThreadDef_t TaskTimerControlBlock;
 osThreadId TaskEepromHandle;
 osMessageQId FilaBleComandoHandle;
 osMessageQId FilaTXBluetoothHandle;
-uint8_t FilaTXBluetoothBuffer[ 16 * sizeof( uint32_t ) ];
+uint8_t FilaTXBluetoothBuffer[ 5 * sizeof( uint8_t ) ];
 osStaticMessageQDef_t FilaTXBluetoothControlBlock;
 osMessageQId FilaRXBluetoothHandle;
-uint8_t FilaRXBluetoothBuffer[ 10 * sizeof( uint8_t ) ];
+uint8_t FilaRXBluetoothBuffer[ 5 * sizeof( uint8_t ) ];
 osStaticMessageQDef_t FilaRXBluetoothControlBlock;
 osMessageQId FilaEepromHandle;
 osTimerId timer10msHandle;
@@ -105,7 +103,6 @@ void CBTimer1000ms(void const * argument);
 /* USER CODE BEGIN PFP */
 extern void taskTemperatura1sec(void);
 extern void taskBluetooth1sec(void);
-void leTempInterna(void);
 void controleCooler(void);
 void timeoutAquecimento (void);
 void timeoutDesligaLampada(void);
@@ -179,6 +176,7 @@ int main(void)
 	 * 31 - FEITO - desconectar ou resetar FlagSincronia ao finalizar restauracao
 	 * 32 - FEITO - reestruturacao completa de sequencia de senhas e primeiras conexoes
 	 * 33 - FEITO - testar leitura eeprom do buzzer
+	 * 34 - criar uma funcao de log para minhas classes
 	 * */
 
   /* USER CODE END 1 */
@@ -261,15 +259,15 @@ int main(void)
   FilaBleComandoHandle = osMessageCreate(osMessageQ(FilaBleComando), NULL);
 
   /* definition and creation of FilaTXBluetooth */
-  osMessageQStaticDef(FilaTXBluetooth, 16, uint32_t, FilaTXBluetoothBuffer, &FilaTXBluetoothControlBlock);
+  osMessageQStaticDef(FilaTXBluetooth, 5, uint8_t, FilaTXBluetoothBuffer, &FilaTXBluetoothControlBlock);
   FilaTXBluetoothHandle = osMessageCreate(osMessageQ(FilaTXBluetooth), NULL);
 
   /* definition and creation of FilaRXBluetooth */
-  osMessageQStaticDef(FilaRXBluetooth, 10, uint8_t, FilaRXBluetoothBuffer, &FilaRXBluetoothControlBlock);
+  osMessageQStaticDef(FilaRXBluetooth, 5, uint8_t, FilaRXBluetoothBuffer, &FilaRXBluetoothControlBlock);
   FilaRXBluetoothHandle = osMessageCreate(osMessageQ(FilaRXBluetooth), NULL);
 
   /* definition and creation of FilaEeprom */
-  osMessageQDef(FilaEeprom, 10, uint16_t);
+  osMessageQDef(FilaEeprom, 5, uint8_t);
   FilaEepromHandle = osMessageCreate(osMessageQ(FilaEeprom), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -278,7 +276,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of TaskBluetooth */
-  osThreadStaticDef(TaskBluetooth, StartBluetooth, osPriorityHigh, 0, 1024, TaskBluetoothBuffer, &TaskBluetoothControlBlock);
+  osThreadDef(TaskBluetooth, StartBluetooth, osPriorityHigh, 0, 256);
   TaskBluetoothHandle = osThreadCreate(osThread(TaskBluetooth), NULL);
 
   /* definition and creation of TaskTemperatura */
@@ -818,14 +816,6 @@ void desligaForno(void){
 	PrimitiveStates.stateTimer 		= TIMER_idle;
 }
 
-void leTempInterna(void){
-#define Avg_slope .0043
-#define V25_	1.43
-#define VSENSE 3.3/4096 //12bit
-
-	tempInterna = ((V25_ - VSENSE*buffer_ADC[2])/Avg_slope)+25;
-}
-
 void controleCooler(void){
 	if(PrimitiveStates.Lastro.realtime>200 || PrimitiveStates.Teto.realtime>200){
 		onDigital(&PrimitiveStates.Cooler);
@@ -844,9 +834,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	double TempTeto, TempLastro;
 	static long somatorio1,somatorio2;
 	static uint16_t i = 0;
-
-
-	leTempInterna();
 
 	if(i<TAM){
 		somatorio1+=buffer_ADC[1]; // somatorio

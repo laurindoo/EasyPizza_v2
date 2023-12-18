@@ -34,7 +34,7 @@ extern "C" {
 #include "OutputDigital.h"
 #include "pid.h"
 #include "stdbool.h"
-
+#include "Crc.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
