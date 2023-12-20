@@ -35,19 +35,21 @@ BLE_ErrorCode 	bleConstrutora(Bluetooth *ble, UART_HandleTypeDef *UARTHandle, DM
 	ble->contComandos 	= 0; 	// Renomeado para ter um nome mais explícito e sem _ inicial.
 	ble->JanelaConexao 	= 120; 	// 120 segundos.
 
-	// Inicialização do hardware
+	// Inicialização do hardware.
 	if (iniciaBleHm10(ble) == BLE_EXTRAPOLOU_TRY) {
 		// Faça o log do erro ou tome uma ação apropriada aqui.
+		bleError_Handler(BLE_EXTRAPOLOU_TRY);
 		return BLE_EXTRAPOLOU_TRY;
 	}
 
 	// Inicialização de objetos de conexão.
 	if (bleAddCompConexao(ble, &ble->BLEPedeSenha, RX_PEDE_SENHA) != BLE_SUCCESS ||
 			bleAddCompConexao(ble, &ble->BLERecebeuSenha, RX_RECEBEU_SENHA) != BLE_SUCCESS) {
+		bleError_Handler(BLE_OBJETO_NAO_CRIADO);
 		return BLE_OBJETO_NAO_CRIADO; // Use a constante apropriada para erro.
 	}
 
-	//funcoes de respostas
+	//funcoes de respostas.
 	ble->aknowladge	= sendAknowladge;
 
 	// Se tudo correu bem, retorne sucesso.
@@ -66,12 +68,15 @@ BLE_ErrorCode 	bleAddComp(Bluetooth* ble, BleComando* _blecomm, uint8_t __comand
 
 	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
 	if (ble == NULL || _blecomm == NULL) {
+		bleError_Handler(BLE_OBJETO_NULO);
 		return BLE_OBJETO_NULO;
 	}
 
 	// Verifica tamanho.
-	if(ble->contComandos>=BLUETOOTH_MAX_COMANDOS_COUNT)
+	if(ble->contComandos>=BLUETOOTH_MAX_COMANDOS_COUNT){
+		bleError_Handler(BLE_COMANDO_NAO_CRIADO);
 		return BLE_COMANDO_NAO_CRIADO;
+	}
 
 	// Pass the corresponding data from component to component struct.
 	_blecomm->_comando 	= __comando;
@@ -97,12 +102,15 @@ BLE_ErrorCode 	bleAddCompConexao(Bluetooth* ble, BleComando* _blecomm, uint8_t _
 
 	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
 	if (ble == NULL || _blecomm == NULL) {
+		bleError_Handler(BLE_OBJETO_NULO);
 		return BLE_OBJETO_NULO;
 	}
 
 	// Verifica tamanho.
-	if(ble->contComandos>=BLUETOOTH_MAX_COMANDOS_COUNT)
+	if(ble->contComandos>=BLUETOOTH_MAX_COMANDOS_COUNT){
+		bleError_Handler(BLE_COMANDOCON_NAO_CRIADO);
 		return BLE_COMANDOCON_NAO_CRIADO;
+	}
 
 	// Pass the corresponding data from component to component struct.
 	_blecomm->_comando 	= __comando;
@@ -521,6 +529,30 @@ BLE_ErrorCode 	bluetoothErroCRC(Bluetooth* ble)
 	}
 }
 /**
+ * \brief 	Envia mensagens em buffer via HM-10 com CRC implementado ao fim da string.
+ * \param 	*ble - Ponteiro para o objeto pai.
+ * \param 	_out[] - Buffer com mensagem a ser enviada.
+ * \param 	size - Tamanho da mensagem original.
+ * \return 	Retorna HAL status.
+ */
+HAL_StatusTypeDef bluetoothEnviaComando(Bluetooth *ble,unsigned char _out[], int size)
+{
+	uint8_t	TX_Buffer		[size+3];
+	CRC_short CRCVar;
+
+	//varredura para local.
+	for (int i = 0; i <= size; ++i) {
+		TX_Buffer[i]=_out[i];
+	}
+
+	//calculo e atribuicao do crc.
+	CRCVar = CRC16(_out,size+1);
+	TX_Buffer[size+2] = (unsigned char) CRCVar.byte.lo;
+	TX_Buffer[size+1] = (unsigned char) CRCVar.byte.hi;
+
+	return HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TX_Buffer, size+3,50);
+}
+/**
  * \brief 	Processa contadores internos a passo de 10 milisegundos
  * \param 	*ble - Ponteiro para o objeto pai.
  */
@@ -571,30 +603,6 @@ void 			BLEUSART_IrqHandler(Bluetooth *ble)
 	}
 }
 /**
- * \brief 	Envia mensagens em buffer via HM-10 com CRC implementado ao fim da string.
- * \param 	*ble - Ponteiro para o objeto pai.
- * \param 	_out[] - Buffer com mensagem a ser enviada.
- * \param 	size - Tamanho da mensagem original.
- * \return 	Retorna HAL status.
- */
-HAL_StatusTypeDef bluetoothEnviaComando(Bluetooth *ble,unsigned char _out[], int size)
-{
-	uint8_t	TX_Buffer		[size+3];
-	CRC_short CRCVar;
-
-	//varredura para local.
-	for (int i = 0; i <= size; ++i) {
-		TX_Buffer[i]=_out[i];
-	}
-
-	//calculo e atribuicao do crc.
-	CRCVar = CRC16(_out,size+1);
-	TX_Buffer[size+2] = (unsigned char) CRCVar.byte.lo;
-	TX_Buffer[size+1] = (unsigned char) CRCVar.byte.hi;
-
-	return HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TX_Buffer, size+3,50);
-}
-/**
  * \brief 	Funcao exclusiva para envio de comandos ao HM10.
  * \param 	*ble - Ponteiro para o objeto pai.
  * \param 	_out[] - Buffer com mensagem a ser enviada.
@@ -625,6 +633,20 @@ void 			sendAknowladge(Bluetooth* ble,uint8_t Cmd){
 	TXCRC[1] = 0xFF;
 	TXCRC[2] = Cmd;
 	HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TXCRC, 3,50);
+}
+/**
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void 			bleError_Handler(BLE_ErrorCode erro)
+{
+	/* USER CODE BEGIN Error_Handler_Debug */
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1)
+	{
+	}
+	/* USER CODE END Error_Handler_Debug */
 }
 //
 //

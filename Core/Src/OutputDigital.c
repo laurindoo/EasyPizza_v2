@@ -6,70 +6,77 @@
  */
 #include "OutputDigital.h"
 
-uint8_t OutputAddDigital(OutputDigital* Output,IndviduoOutput* _individ, uint16_t _pinoOUT,GPIO_TypeDef *_portaOUT,
+OUTPUT_ErrorCode OutputAddDigital(OutputDigital* Output,IndviduoOutput* _individ, uint16_t _pinoOUT,GPIO_TypeDef *_portaOUT,
 		void (*callback)(),uint16_t limitOn,uint16_t limitOff){
 
-	//montando a fila
+	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
+	if (Output == NULL || _individ == NULL || _portaOUT == NULL ) {
+		outputError_Handler(OUTPUT_OBJETO_NULO);
+		return OUTPUT_OBJETO_NULO;
+	}
+
+	// apenas um limite aceitavel.
+	if(limitOn && limitOff){
+		outputError_Handler(OUTPUT_MORE_LIMITS);
+		return OUTPUT_MORE_LIMITS;
+	}
+
+	// preenchendo objeto.
+	_individ->GPIO_Pin	= _pinoOUT;		// pino a ser controlado.
+	_individ->GPIOx		= _portaOUT;	// porta a ser controlada.
+	_individ->timeOut 	= callback;		// callback caso extrapole qualquer um dos limites.
+	_individ->limitOn 	= limitOn;		// se houver limite ligado.
+	_individ->limitOff 	= limitOff;		// se houver limite desligado.
+
+	// montando lista.
 	Output->_OutDigitalArr[Output->_DigitalCount] = _individ;
 	Output->_DigitalCount++;
 
-	//definicao dos pinos
-	_individ->GPIO_Pin	=	_pinoOUT;
-	_individ->GPIOx		=	_portaOUT;
-
-	//Bind the correct callback functions together
-	_individ->timeOut = callback;
-
-	//se houver limite ligado
-	_individ->limitOn = limitOn;
-
-	//se houver limite desligado
-	_individ->limitOff = limitOff;
-
-
-	//Return OK
-	return 0;
+	return OUTPUT_SUCCESS;
 }
 uint8_t OutputAddPID(OutputDigital* Output,IndviduoPID* _individ, TIM_HandleTypeDef *htim, uint32_t Channel, double Kp, double Ki, double Kd, uint16_t histerese,
 		uint16_t limit_on,void (*callback)()){
 
-	//montando a fila
-	Output->_OutPidArr[Output->_PidCount] = _individ;
-	Output->_PidCount++;
+	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
+	if (Output == NULL || _individ == NULL || htim == NULL ) {
+		outputError_Handler(OUTPUT_OBJETO_NULO);
+		return OUTPUT_OBJETO_NULO;
+	}
 
-	//definicao do timer
-	_individ->TimHandle = htim;
-	_individ->Channel   = Channel;
-
-	//tunning de PID
+	// preenchendo objeto.
+	_individ->TimHandle = htim;		// definicao do timer.
+	_individ->Channel   = Channel;	// channel do timer.
 	_individ->kp	= Kp;
 	_individ->ki	= Ki;
 	_individ->kd	= Kd;
-	_individ->histerese	= histerese;
+	_individ->histerese	= histerese;// histerese dada em graus.
+	_individ->timeOut = callback;	// callback caso extrapole tempo de acionamento.
 
-	//Bind the correct callback functions together
-	_individ->timeOut = callback;
+	// montando lista.
+	Output->_OutPidArr[Output->_PidCount] = _individ;
+	Output->_PidCount++;
 
-	//Return OK
-	return 0;
+	IndviduoPID_SetPWMValue(_individ, 0);
+
+	return OUTPUT_SUCCESS;
 }
 void onDigital(IndviduoOutput* outPut) {
 	// Implementação do método ON.
 	HAL_GPIO_WritePin(outPut->GPIOx, outPut->GPIO_Pin, GPIO_PIN_SET);
-	outPut->_state = on; // Exemplo hipotético
+	outPut->_state = on;
 }
 void offDigital(IndviduoOutput* outPut) {
 	// Implementação do método OFF.
 	HAL_GPIO_WritePin(outPut->GPIOx, outPut->GPIO_Pin, GPIO_PIN_RESET);
-	outPut->_state = off; // Exemplo hipotético
+	outPut->_state = off;
 }
 void contadorOutput(OutputDigital* Output){
-	//chamar essa funcao em um timer com passo de 1 segundo
+	// todo criar arquivo de instruçoes: chamar essa funcao em um timer com passo de 1 segundo.
 
-	//Varregura pelas saidas -------------DIGITAIS----------------
+	// varredura saidas digitais.
 	for(uint8_t i = 0; i < Output->_DigitalCount; i++)	{
 
-		//--- CONTADORES DIGITAIS
+		// processamento dos contadores digitais.
 		if(Output->_OutDigitalArr[i]->_state == on){
 			Output->_OutDigitalArr[i]->timeOff = 0;
 			(Output->_OutDigitalArr[i]->timeOn<UINT16_MAX)?Output->_OutDigitalArr[i]->timeOn++:0;
@@ -78,31 +85,27 @@ void contadorOutput(OutputDigital* Output){
 			(Output->_OutDigitalArr[i]->timeOff<UINT16_MAX)?Output->_OutDigitalArr[i]->timeOff++:0;
 		}
 
-		//## --- ANALISE DE POSSIVEIS TIMEOUT ---
-		//------ possui limite ligado
+		// verifica se atingiu timeout ligado.
 		if(Output->_OutDigitalArr[i]->limitOn != 0){
 			if(Output->_OutDigitalArr[i]->timeOn >= Output->_OutDigitalArr[i]->limitOn){
-				//chama callback de timeout
-				Output->_OutDigitalArr[i]->timeOut();
+				Output->_OutDigitalArr[i]->timeOut();//chama callback de timeout.
 			}
 		}
 
-		//------ possui limite desligado
+		// verifica se atingiu timeout desligado.
 		if(Output->_OutDigitalArr[i]->limitOff != 0){
 			if(Output->_OutDigitalArr[i]->timeOff >= Output->_OutDigitalArr[i]->limitOff){
-				//chama callback de timeout
-				Output->_OutDigitalArr[i]->timeOut();
+				Output->_OutDigitalArr[i]->timeOut();//chama callback de timeout.
 			}
 		}
 	}
 
-	//Varregura pelas saidas -------------PID----------------
+	// varredura saidas PID.
 	for(uint8_t i = 0; i < Output->_PidCount; i++)	{
 
 		//#define CALCULA_POR_PWMOUT
-
 #ifdef CALCULA_POR_PWMOUT
-		//---CATEGORIZA STATE
+		// processa state do item.
 		if(Output->_OutPidArr[i]->PWMOut == 0 ){
 			Output->_OutPidArr[i]->_PWMstate = idle;
 		}else if(Output->_OutPidArr[i]->PWMOut <= Output->_OutPidArr[i]->histerese){
@@ -111,7 +114,7 @@ void contadorOutput(OutputDigital* Output){
 			Output->_OutPidArr[i]->_PWMstate = buscando;
 #endif
 #ifndef CALCULA_POR_PWMOUT
-		//---CATEGORIZA STATE
+		// processa state do item.
 		if(Output->_OutPidArr[i]->realtime >=  Output->_OutPidArr[i]->setPoint ){
 			Output->_OutPidArr[i]->_PWMstate = idle;
 		}else if(Output->_OutPidArr[i]->realtime + Output->_OutPidArr[i]->histerese >  Output->_OutPidArr[i]->setPoint ){
@@ -119,19 +122,17 @@ void contadorOutput(OutputDigital* Output){
 		}else
 			Output->_OutPidArr[i]->_PWMstate = buscando;
 #endif
-		//---CONTADORES PID
+		// processamento dos contadores PID.
 		if(Output->_OutPidArr[i]->_PWMstate == mantendo){
 			(Output->_OutPidArr[i]->timeOn<UINT16_MAX)?Output->_OutPidArr[i]->timeOn++:0;
 		}else{
 			Output->_OutPidArr[i]->timeOn=0;
 		}
 
-		//## --- ANALISE DE POSSIVEIS TIMEOUT ---
-		//------ possui limite ligado
+		// verifica se atingiu timeout ligado.
 		if(Output->_OutPidArr[i]->limiteOn != 0){
 			if(Output->_OutPidArr[i]->timeOn >= Output->_OutPidArr[i]->limiteOn){
-				//chama callback de timeout
-				Output->_OutPidArr[i]->timeOut();
+				Output->_OutPidArr[i]->timeOut();//chama callback de timeout
 			}
 		}
 	}
@@ -145,15 +146,32 @@ void IndviduoPID_SetPWMValue(IndviduoPID *pid, double pwmValue) {
 
 	if (HAL_TIM_PWM_ConfigChannel(pid->TimHandle, &sConfigOC, pid->Channel) != HAL_OK) {
 		// Tratamento de erro
+		outputError_Handler(OUTPUT_TIMERSET_ERROR);
 	}
 
 	if (HAL_TIM_PWM_Start(pid->TimHandle, pid->Channel) != HAL_OK) {
 		// Tratamento de erro
+		outputError_Handler(OUTPUT_TIMERSTART_ERROR);
 	}
 }
 void IndviduoPID_SetPWMValueDirect(IndviduoPID *pid, uint32_t pwmValue) {
 	// diretamente acessando o registro de comparação do canal apropriado
-	// Esta é uma abordagem mais arriscada e assume que você sabe o que está fazendo
 	volatile uint32_t *ccrAddress = &pid->TimHandle->Instance->CCR1 + (pid->Channel >> 2);
 	*ccrAddress = pwmValue;
+}
+
+
+/**
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void outputError_Handler(OUTPUT_ErrorCode erro)
+{
+	/* USER CODE BEGIN Error_Handler_Debug */
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1)
+	{
+	}
+	/* USER CODE END Error_Handler_Debug */
 }

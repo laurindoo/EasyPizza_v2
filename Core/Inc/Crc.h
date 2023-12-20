@@ -12,6 +12,10 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "string.h"
+
+// Defina o tamanho máximo do seu log
+#define MAX_LOG_SIZE 28
+
 /*
  * Estrutura CRC calculation
  */
@@ -24,8 +28,21 @@ typedef union CRC_short
 	}byte;
 	short hilo;
 }CRC_short;
+/*
+ * Estrutura Para armazenagem do log
+ */
+typedef struct {
+    uint8_t logs[MAX_LOG_SIZE]; // Array de bytes para salvar os logs
+    size_t currentPos;          // Posição atual no array
+} LogSystem;
+
+
+
 
 CRC_short CRC16 (unsigned char *puchMsg, unsigned short usDataLen);
 uint8_t validaCRC(CRC_short referencia, CRC_short chave);
+
+
+
 
 #endif /* INC_CRC_H_ */

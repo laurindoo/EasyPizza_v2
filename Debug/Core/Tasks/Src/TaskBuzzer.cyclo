@@ -1,4 +1,4 @@
 ../Core/Tasks/Src/TaskBuzzer.c:32:6:sequencia1Buzzer	2
 ../Core/Tasks/Src/TaskBuzzer.c:42:6:sequencia2Buzzer	1
-../Core/Tasks/Src/TaskBuzzer.c:49:6:waitBuzzerSignal	11
+../Core/Tasks/Src/TaskBuzzer.c:49:6:waitBuzzerSignal	10
 ../Core/Tasks/Src/TaskBuzzer.c:15:6:StartBuzzer	1

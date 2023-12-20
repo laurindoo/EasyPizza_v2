@@ -57,13 +57,12 @@ void waitBuzzerSignal(void){
 	if (evt.status == osEventSignal) {
 
 		if (evt.value.signals & SINAL_TEMP_REACH) {
+			onDigital(&PrimitiveStates.Lampada);
 			// execute o padrão de buzzer para SINAL_TEMP_REACH
 			for (int i = 0; i < 5; ++i) {
 				M_BUZZER_ON
-				onDigital(&PrimitiveStates.Lampada);
 				osDelay(50);
 				M_BUZZER_OFF
-				offDigital(&PrimitiveStates.Lampada);
 				osDelay(30);
 			}
 		}
@@ -90,7 +89,7 @@ void waitBuzzerSignal(void){
 			}
 
 			// execute o padrão de buzzer para SINAL_NEGADO
-			for (int i = 0; i < 2; ++i) {
+			for (int i = 0; i < N_REP_SINAL_NEGADO; ++i) {
 				M_BUZZER_ON
 				osDelay(70);
 				M_BUZZER_OFF
@@ -100,7 +99,7 @@ void waitBuzzerSignal(void){
 
 		if (evt.value.signals & SINAL_PRONTO) {
 			// execute o padrão de buzzer para SINAL_PRONTO
-			for (int i = 0; i < 10; ++i) {
+			for (int i = 0; i < N_REP_SINAL_PRONTO; ++i) {
 				M_BUZZER_ON
 				onDigital(&PrimitiveStates.Lampada);
 				osDelay(250);

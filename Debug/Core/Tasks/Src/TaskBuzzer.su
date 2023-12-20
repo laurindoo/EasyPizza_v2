@@ -1,4 +1,4 @@
 ../Core/Tasks/Src/TaskBuzzer.c:32:6:sequencia1Buzzer	16	static
 ../Core/Tasks/Src/TaskBuzzer.c:42:6:sequencia2Buzzer	16	static
-../Core/Tasks/Src/TaskBuzzer.c:49:6:waitBuzzerSignal	40	static
+../Core/Tasks/Src/TaskBuzzer.c:49:6:waitBuzzerSignal	32	static
 ../Core/Tasks/Src/TaskBuzzer.c:15:6:StartBuzzer	8	static

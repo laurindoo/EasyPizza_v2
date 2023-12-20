@@ -61,8 +61,9 @@ void computaPID(void){
 	PID_Compute(&TPIDLastro);
 
 	//transformar para a classe realizar isso //
-	IndviduoPID_SetPWMValue(&PrimitiveStates.Teto, PrimitiveStates.Teto.PWMOut);
-	IndviduoPID_SetPWMValue(&PrimitiveStates.Lastro, PrimitiveStates.Lastro.PWMOut);
+	IndviduoPID_SetPWMValueDirect(&PrimitiveStates.Teto, (uint32_t)PrimitiveStates.Teto.PWMOut);
+	IndviduoPID_SetPWMValueDirect(&PrimitiveStates.Lastro, (uint32_t)PrimitiveStates.Lastro.PWMOut);
+
 }
 void taskTemperatura1sec(void){
 

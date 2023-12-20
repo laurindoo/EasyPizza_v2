@@ -62,7 +62,6 @@ CRC_short CRC16 (unsigned char *puchMsg, unsigned short usDataLen)
 		uchCRCHi = auchCRCLo[uIndex] ;
 	}
 	ret.hilo = (uchCRCHi << 8 | uchCRCLo);
-//	ret.byte.lo = uchCRCHi << 8;
 
 	return ret ;
 }
@@ -73,11 +72,6 @@ uint8_t validaCRC(CRC_short referencia, CRC_short chave){
 	}
 	return 0;
 }
-
-
-
-
-
 
 
 

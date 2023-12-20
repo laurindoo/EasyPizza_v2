@@ -21,6 +21,16 @@
 #include "stdlib.h"
 #include "string.h"
 
+/*
+ * Erros da classe
+ */
+typedef enum {
+    OUTPUT_SUCCESS 		  = 0x00,
+	OUTPUT_OBJETO_NULO 			,
+	OUTPUT_MORE_LIMITS 			,
+	OUTPUT_TIMERSET_ERROR		,
+	OUTPUT_TIMERSTART_ERROR		,
+} OUTPUT_ErrorCode;
 
 /*
  * Tipos de saida
@@ -109,13 +119,15 @@ typedef struct
 
 }OutputDigital;
 
-uint8_t OutputAddDigital(OutputDigital* Output, IndviduoOutput* _individ, uint16_t _pinoOUT, GPIO_TypeDef *_portaOUT, void (*callback)(),uint16_t limitOn,uint16_t limitOff);
+OUTPUT_ErrorCode OutputAddDigital(OutputDigital* Output, IndviduoOutput* _individ, uint16_t _pinoOUT, GPIO_TypeDef *_portaOUT, void (*callback)(),uint16_t limitOn,uint16_t limitOff);
 uint8_t OutputAddPID(OutputDigital* Output,IndviduoPID* _individ, TIM_HandleTypeDef *htim, uint32_t Channel, double Kp, double Ki, double Kd, uint16_t histerese,uint16_t limit_on,void (*callback)());
 void onDigital(IndviduoOutput* outPut);
 void offDigital(IndviduoOutput* outPut);
 void contadorOutput(OutputDigital* Output);
 void IndviduoPID_SetPWMValue(IndviduoPID *pid, double pwmValue);
 void IndviduoPID_SetPWMValueDirect(IndviduoPID *pid, uint32_t pwmValue) ;
+
+void outputError_Handler(OUTPUT_ErrorCode erro);
 
 //extern OutputDigital outPuts;
 

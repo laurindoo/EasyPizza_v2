@@ -35,6 +35,7 @@ extern "C" {
 #include "pid.h"
 #include "stdbool.h"
 #include "Crc.h"
+#include <errno.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -42,35 +43,6 @@ extern "C" {
 
 //SENHA: uK9--Pj8
 
-//---ESTRUTURA AGRUPAMENTO DE 8 BITS EM 1 BYTE-------------------------------------
-typedef union BIT_TO_BYTE_ERROS
-{
-	struct
-	{
-		unsigned char TimeoutTeto		: 1;
-		unsigned char TimeoutLastro		: 1;
-		unsigned char IdleTeto			: 1;
-		unsigned char IdleLastro		: 1;
-		unsigned char eeprom			: 1;
-		unsigned char aux2				: 1;
-		unsigned char aux3	 			: 1;
-		unsigned char aux4				: 1;
-
-	}bit;
-	unsigned char byte;
-}BIT_TO_BYTE_ERROS;
-
-//---ESTRUTURA VARIAVEIS Calendario ------------------------------------
-typedef struct TYPE_CALENDARIO{
-
-	RTC_DateTypeDef 		Data_instalacao;
-	uint16_t				Horimetro_horas;		//total de horas da maquina
-	uint8_t					Horimetro_parcial_min; 	//a cada minuto eu incremento, comparo com o gravado, e hora++ se for o caso
-	uint16_t				TotalCiclos;
-	uint16_t				ContMaxTeto;
-	uint16_t				ContMaxLastro;
-}
-TYPE_CALENDARIO;//
 
 //---Comandos Eeprom
 typedef enum
@@ -95,36 +67,53 @@ typedef enum
 	TIMER_pausado		,
 } Stimer;
 
+//---ESTRUTURA AGRUPAMENTO DE 8 BITS EM 1 BYTE-------------------------------------
+typedef union BIT_TO_BYTE_ERROS
+{
+	struct
+	{
+		unsigned char TimeoutTeto		: 1;
+		unsigned char TimeoutLastro		: 1;
+		unsigned char IdleTeto			: 1;
+		unsigned char IdleLastro		: 1;
+		unsigned char eeprom			: 1;
+		unsigned char aux2				: 1;
+		unsigned char aux3	 			: 1;
+		unsigned char aux4				: 1;
 
-//---Estados aquecimento
-typedef enum
-{   PID_idle = 0		,
-	PID_buscandoTemp	,
-	PID_mantendoTemp	,
-} Sheat;
+	}bit;
+	unsigned char byte;
+}BIT_TO_BYTE_ERROS;
+
+// estrutura Calendario, salvamento de eventos
+typedef struct TYPE_CALENDARIO{
+
+	RTC_DateTypeDef Data_instalacao;
+	uint16_t		Horimetro_horas;		//total de horas da maquina
+	uint8_t			Horimetro_parcial_min; 	//a cada minuto eu incremento, comparo com o gravado, e hora++ se for o caso
+	uint16_t		TotalCiclos;
+	uint16_t		ContMaxTeto;
+	uint16_t		ContMaxLastro;
+}
+TYPE_CALENDARIO;//
 
 //---Estrutura variaveis principais
 typedef struct
 {
-
-	OutputDigital 				outPuts;
-
 	//saidas digitais
 	IndviduoOutput 	Lampada, Cooler; 	//saidas digitais
 	IndviduoOutput	LedVerde;			//Led verde sinalizando ok
 	IndviduoOutput	LedTeto, LedLastro;	//Leds das resistencias
+
 	//saidas pid
 	IndviduoPID		Teto;
 	IndviduoPID		Lastro;
 
-	bool 		ConectionBle;
 	uint8_t		Buzzer;
-
 	uint8_t		SPTimerMinutos;
 	uint8_t		SPTimerSegundos;
 	uint8_t		RTTimerMinutos;
 	uint8_t		RTTimerSegundos;
-
 	Stimer		stateTimer;
 
 	BIT_TO_BYTE_ERROS		Erro;
@@ -132,90 +121,49 @@ typedef struct
 }GlobalPrimitiveIOStates;
 
 
-typedef union {
-    struct {
-        uint8_t part1;
-        uint8_t part2;
-        uint8_t part3;
-        uint8_t part4;
-    } parts;
-    float floatValue;
-} FloatContainer;
 
-//typedef union {
-//    float value; // Valor de ponto flutuante
-//    uint8_t bytes[4]; // Representação em bytes do ponto flutuante
-//} FloatAsBytes;
-//
-//typedef union {
-//    uint16_t value; // Valor de ponto flutuante
-//    uint8_t bytes[2]; // Representação em bytes do ponto flutuante
-//} shortAsBytes;
+
 
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
+//--- defines de fabrica
+#define STD_REF_EEPROM			0x25		// valor aleatorio para referencia e auto-reset.
+#define ON_FAN_TEMPERATURA 		200  		// temperatura de acionamento do cooler.
+#define TIME_INATIVO_SETUP 		1800 		// tempo de inatividade limite.
+#define TIME_MAX_AQUECIMENTO 	600  		// tempo maximo permitido para nao entrar em erro de aquecimento.
+#define TIME_LAMPADA 			45   		// tempo padrao de lampada acionada antes de desligamento auto.
+#define NOME_DEVICE 			"EasyPizza" // nome que irá aparece nas pesquisas de bluetooth devices.
+#define ENVIO_DE_SINCRONIAS		3			// repeticao de sincronia ao re-conectar.
+#define N_REP_SINAL_PRONTO		10			// repeticoes de sinal pronto ao fim receita.
+#define N_REP_SINAL_NEGADO		2			// repeticoes de sinal negado.
+#define STD_BUZZER				1			// configuracao do buzzer (1-on / 0-off).
 
-//----SINAIS DE BUZZER -------
+//--- defines de PID
+#define STD_KP				30
+#define STD_KI				(0.01)
+#define STD_KD				(0.3)
+#define STD_HISTERESE		3
+#define STD_LIMITE			450
+#define STD_LIMITETETO		450
+#define STD_LIMITELASTRO	475
+
+
+//--- sinais de buzzer notify
 #define SINAL_TEMP_REACH	0b00000001
 #define SINAL_NEGADO		0b00000010
 #define SINAL_COMFIRMA		0b00000100
 #define SINAL_PRONTO		0b00001000
-//#define SINAL_TEMP_REACH	0x01
-//#define SINAL_NEGADO		0x20
-//#define SINAL_COMFIRMA		0x30
-//#define SINAL_PRONTO		0x40
 
-//-----------------DEFINES DE FABRICA------------------------------
-#define ERRO_CRITICO 0x0f
-
-#define ON_FAN_TEMPERATURA 		200 	// graus celcius
-#define TIME_INATIVO_SETUP 		1800 // tempo de inatividade limite
-#define TIME_MAX_AQUECIMENTO 	600  // tempo maximo permitido para nao entrar em erro de aquecimento
-
-//tunning PID
-#define STD_KP		30
-#define STD_KI		(0.01)
-#define STD_KD		(0.3)
-#define STD_HISTERESE	3
-#define STD_LIMITE		450
-
+//--- sinal de erro.
+#define ERRO_CRITICO 			0x0f
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 
-#define RELE_1_ON 	HAL_GPIO_WritePin		(RELE_1_GPIO_Port,	RELE_1_Pin	,GPIO_PIN_SET);
-#define RELE_1_OFF 	HAL_GPIO_WritePin		(RELE_1_GPIO_Port,	RELE_1_Pin	,GPIO_PIN_RESET);
-#define TESTE_RELE_1	  RELE_1_ON \
-		HAL_Delay(100);\
-		RELE_1_OFF
-
-#define RELE_2_ON 	HAL_GPIO_WritePin		(RELE_2_GPIO_Port,	RELE_2_Pin	,GPIO_PIN_SET);
-#define RELE_2_OFF 	HAL_GPIO_WritePin		(RELE_2_GPIO_Port,	RELE_2_Pin	,GPIO_PIN_RESET);
-#define TESTE_RELE_2	  RELE_2_ON \
-		HAL_Delay(100);\
-		RELE_2_OFF
-
-#define RELE_3_ON 	HAL_GPIO_WritePin		(RELE_3_GPIO_Port,	RELE_3_Pin	,GPIO_PIN_SET);
-#define RELE_3_OFF 	HAL_GPIO_WritePin		(RELE_3_GPIO_Port,	RELE_3_Pin	,GPIO_PIN_RESET);
-#define TESTE_RELE_3	  RELE_3_ON \
-		HAL_Delay(100);\
-		RELE_3_OFF
-
-#define RELE_4_ON 	HAL_GPIO_WritePin		(RELE_4_GPIO_Port,	RELE_4_Pin	,GPIO_PIN_SET);
-#define RELE_4_OFF 	HAL_GPIO_WritePin		(RELE_4_GPIO_Port,	RELE_4_Pin	,GPIO_PIN_RESET);
-#define TESTE_RELE_4	  RELE_4_ON \
-		HAL_Delay(100);\
-		RELE_4_OFF
-
-#define RELE_5_ON 	HAL_GPIO_WritePin		(RELE_5_GPIO_Port,	RELE_5_Pin	,GPIO_PIN_SET);
-#define RELE_5_OFF 	HAL_GPIO_WritePin		(RELE_5_GPIO_Port,	RELE_5_Pin	,GPIO_PIN_RESET);
-#define TESTE_RELE_5	  RELE_5_ON \
-		HAL_Delay(100);\
-		RELE_5_OFF
 
 
 /* USER CODE END EM */
@@ -264,6 +212,8 @@ extern GlobalPrimitiveIOStates PrimitiveStates;
 extern BIT_TO_BYTE_ERROS		Erro;
 extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro;
 extern TYPE_CALENDARIO Calendario;
+//abaixo daqui é otimizado todo------------------------------------------
+
 
 /* USER CODE END Private defines */
 

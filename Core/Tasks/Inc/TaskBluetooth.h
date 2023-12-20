@@ -26,6 +26,7 @@ extern osThreadId TaskBluetoothHandle;
 extern osMessageQId FilaRXBluetoothHandle,FilaTXBluetoothHandle,FilaEepromHandle, FilaBleComandoHandle;
 extern int recorrencia;
 extern Bluetooth bluetooth;
+extern OutputDigital 	outPuts;
 
 //---Comandos Ble
 typedef enum

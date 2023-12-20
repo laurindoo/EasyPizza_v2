@@ -33,7 +33,7 @@
 
  */
 //TAMANHO DA PAGINA
-#define STD_REF_MEM	0x25
+#define STD_REF_MEM	 STD_REF_EEPROM
 #define PAGE_SIZE 32
 
 #define EEPROM_MAX_COMP_COUNT 30
@@ -81,6 +81,15 @@
 #define I2C_READ_MEMORY_2B(OFFSET ,VAR) 		HAL_I2C_Mem_Read(&hi2c1	, EEPROM_READ_ADDR	, OFFSET, I2C_MEMADD_SIZE_16BIT,(uint8_t *)  buffer		, 2, 100);\
 		VAR = ( (buffer[0] << 8) | buffer[1]);
 
+
+/*
+ * Erros da classe
+ */
+typedef enum {
+    EEPROM_SUCCESS 		  = 0x00,
+    EEPROM_OBJETO_NULO 			,
+    EEPROM_TIPO_ERRADO 			,
+ } EEPROM_ErrorCode;
 
 //---tamanhos
 typedef enum{
@@ -182,16 +191,17 @@ typedef struct
 }Eeprom;
 
 //prototipos das funcoes da eeprom
-uint8_t EepromInit	(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila);
+EEPROM_ErrorCode EepromInit	(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila);
 void EepromUpdateMes(Eeprom *eeprom, uint16_t addMes, uint16_t addItem, uint32_t valor, TypeData _sizeType);
-uint8_t EepromAddVar(Eeprom *eeprom			, bool resetavel, EepromVariaveis* _var, char* _name, uint16_t addr, TypeData tipo, uint32_t minimo, uint32_t padrao,uint32_t maximo, void *_addrVar);
+EEPROM_ErrorCode EepromAddVar(Eeprom *eeprom			, bool resetavel, EepromVariaveis* _var, char* _name, uint16_t addr, TypeData tipo, uint32_t minimo, uint32_t padrao,uint32_t maximo, void *_addrVar);
 uint8_t EepromAddVarFloating(Eeprom *eeprom	, bool resetavel, EepromVarFloating* _eepromvar, char* _name,uint16_t addr,TypeDataFloating tipo,double minimo,double padrao,double maximo, void *_addrVar);
-bool EepromSetVar	(Eeprom *eeprom, EepromVariaveis *_var, uint32_t valor);
-bool EepromSetVarFloating	(Eeprom *eeprom, EepromVarFloating *_var, double valor);
+bool EepromSetVar	(Eeprom *eeprom, EepromVariaveis *_var);
+bool EepromSetVarFloating	(Eeprom *eeprom, EepromVarFloating *_var);
 void EepromDownloadValores	(Eeprom *eeprom);
 void RestauraEeprom			(Eeprom *eeprom ,TypeRestauracao tipo);
 void EepromReadVal			(Eeprom *eeprom, uint16_t addr, uint8_t *_var, uint16_t size);
 void Write_1_byte			(Eeprom *eeprom, uint16_t addr, uint8_t * _ptr);
+void eepromError_Handler(EEPROM_ErrorCode erro);
 
 
 

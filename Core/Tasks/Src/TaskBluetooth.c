@@ -161,7 +161,6 @@ void txBluetooth(void){
 			float_TO_vetor4b(PrimitiveStates.Teto.kd, Buffer, 10);
 
 			// Histerese e limite, assumindo que são 16 bits (2 bytes)
-			// Histerese e limite, assumindo que são 16 bits (2 bytes)
 			Buffer[14] 	= (uint16_t)PrimitiveStates.Teto.histerese 	>>8;
 			Buffer[15] 	= (uint16_t)PrimitiveStates.Teto.histerese 	& 0x00FF;
 
@@ -184,7 +183,6 @@ void txBluetooth(void){
 			// Histerese e limite, assumindo que são 16 bits (2 bytes)
 			Buffer[14] 	= (uint16_t)PrimitiveStates.Lastro.histerese 	>>8;
 			Buffer[15] 	= (uint16_t)PrimitiveStates.Lastro.histerese 	& 0x00FF;
-
 			Buffer[16] 	= (uint16_t)PrimitiveStates.Lastro.limite 		>>8;
 			Buffer[17] 	= (uint16_t)PrimitiveStates.Lastro.limite 		& 0x00FF;
 
@@ -211,12 +209,10 @@ void txBluetooth(void){
 }
 void rxBluetooth(void){
 
-	//todo possivelmente atualizar para sinal
-	//fila nao esta fazendo sentido algum
 	osEvent  evtrx;
 	evtrx = osMessageGet(FilaRXBluetoothHandle, 10);
 	if (evtrx.status == osEventMessage) {
-		switch (bluetooth._RxDataArr[1]) {
+		switch (bluetooth.ComandoAtual._comando) {
 		case RX_SOLICITA_REALTIME:
 			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA, 0);
 			osMessagePut(FilaTXBluetoothHandle, TX_REALTIME_DATA2, 0);
@@ -265,6 +261,7 @@ void rxBluetooth(void){
 
 			verificaLimiteSetpoint(&PrimitiveStates.Teto);
 			bluetooth.aknowladge(&bluetooth,RX_SP_TEMP_TETO);
+
 			break;
 		case RX_SP_TEMP_LASTRO:
 			//---------ENDEREÇO | 0x22 | SP_Lastro.high | SP_Lastro.low | CRC | CRC
@@ -350,7 +347,7 @@ void rxBluetooth(void){
 			PrimitiveStates.RTTimerMinutos = PrimitiveStates.SPTimerMinutos;
 			PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
 
-			contadorOutput(&PrimitiveStates.outPuts);
+			contadorOutput(&outPuts);
 
 			if(PrimitiveStates.Lastro._PWMstate != buscando && PrimitiveStates.Teto._PWMstate != buscando){
 				PrimitiveStates.stateTimer 	= TIMER_decrementando;
@@ -471,7 +468,7 @@ bool sincAutomatico(void){ //1==permite 0==recusa
 
 	//envia sincronia junto do realtime apenas 3 vezes por reconexao
 	if(!FlagSincronia.flag){
-		if(FlagSincronia.cont<3){
+		if(FlagSincronia.cont<ENVIO_DE_SINCRONIAS){
 			FlagSincronia.cont++; //permite 3 envios antes de resetar a flag
 			return 1;
 		}else{
