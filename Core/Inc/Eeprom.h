@@ -14,10 +14,13 @@
 #include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include "cmsis_os.h"
 
+
+/*
+ * classe é capaz de controlar maximos e minimos que forem cadastrados nela atraves de ponteiros
+ *
+ * */
 
 /*
 --------------->>M24C64
@@ -81,6 +84,8 @@
 #define I2C_READ_MEMORY_2B(OFFSET ,VAR) 		HAL_I2C_Mem_Read(&hi2c1	, EEPROM_READ_ADDR	, OFFSET, I2C_MEMADD_SIZE_16BIT,(uint8_t *)  buffer		, 2, 100);\
 		VAR = ( (buffer[0] << 8) | buffer[1]);
 
+typedef struct eepromVarArr eepromVarArr;
+typedef struct Eeprom Eeprom;
 
 /*
  * Erros da classe
@@ -89,6 +94,15 @@ typedef enum {
     EEPROM_SUCCESS 		  = 0x00,
     EEPROM_OBJETO_NULO 			,
     EEPROM_TIPO_ERRADO 			,
+    EEPROM_ERRO_CADASTRO		,
+    EEPROM_LISTA_CHEIA			,
+    EEPROM_ERROR				,
+    EEPROM_ERRO_ESCRITA			,
+    EEPROM_ERRO_LEITURA			,
+    EEPROM_ERRO_ENDERECO_OBJ	,
+    EEPROM_QUEBRA_ENDERECO_OBJ	,
+	EEPROM_TIPO_DESCONHECIDO	,
+	EEPROM_BUSY					,
  } EEPROM_ErrorCode;
 
 //---tamanhos
@@ -104,72 +118,31 @@ typedef enum{
 }	TypeDataFloating;
 
 typedef enum{
-	softReset 	= 0,
-	hardReset 	= 1,
+	SOFT_RESET 	= 0,
+	HARD_RESET 	= 1,
 }	TypeRestauracao;
 
-/*
- * EepromVariaveis Struct
- */
-typedef struct
-{
-	//sinal que bloqueia softreset
-	bool flagResetavel;
+typedef enum{
+	stdMAX 	= 1	,
+	stdDEFAULT 	,
+	stdMIN 		,
+}	TypeStdValue;
 
-	//Variable for storing object name
-	char *objname;
-
-	//endereco na eeprom
-	uint16_t _addrEprom;
-
-	uint32_t valor;
-	uint32_t defaultValue; //valor de default
-	uint32_t minValue;
-	uint32_t maxValue;
-
-	//tamanho_tipo
-	TypeData _sizeType;
-
-	//ponteiros digitalTwins
-	uint8_t  *ptr8;
-	uint16_t *ptr16;
-	uint32_t *ptr32;
-
-}EepromVariaveis;
-typedef struct
-{
-	//sinal que bloqueia softreset
-	bool flagResetavel;
-
-	//Variable for storing object name
-	char *objname;
-
-	//endereco na eeprom
-	uint16_t _addrEprom;
-
-	double  valorDouble;
-	float   valorFloat;
-	double  defaultValue; //valor de default
-	double 	minValue;
-	double  maxValue;
-
-	//tamanho_tipo
-	TypeDataFloating _sizeType;
-
-	//ponteiros digitalTwins
-	float 	 *ptrFloat;
-	double 	 *ptrDouble;
-
-}EepromVarFloating;
+typedef enum {
+    DATA_8BITS,
+    DATA_16BITS,
+    DATA_32BITS,
+    DATA_FLOAT,
+    DATA_DOUBLE
+} DataType;
 
 
 /*
- * Eeprom Struct
+ * Eeprom Struct (cointainer)
  */
-typedef struct
+ struct Eeprom
 {
-	//flag de referencia
-	EepromVariaveis RefFlag;
+	uint8_t flagResetavel;
 
 	//Handle para o i2c consultar a eeprom
 	I2C_HandleTypeDef *i2cHandle;
@@ -177,31 +150,117 @@ typedef struct
 	//Handle da fila de comandos
 	osMessageQId	*filaComandos;
 
-	//Variables for component list
-	EepromVariaveis* _EepromVarArr[EEPROM_MAX_COMP_COUNT];
-	EepromVarFloating* _EepromVarFloatingArr[EEPROM_MAX_COMP_COUNT];
+	eepromVarArr* arrVar[EEPROM_MAX_COMP_COUNT];
+	uint8_t 	  arrCount;
 
-	uint8_t _EepromVarCount;
-	uint8_t _EepromVarFloatingCount;
-
-
+	//todo refazer logica de reset no momento esta ignorado
 	//todo:devo importar a fila de eeprom
 	//todo estudar como importar também a estrutura de comandos possiveis para a fila importada a cima
 
-}Eeprom;
+	/*---METODOS---*/
+	// metodo incluir var na lista.
+	void (*M_AddOnArr)(Eeprom*, eepromVarArr* );
+    // download de todos os valores na memoria para todos os objetos cadastrados.
+    void (*M_downloadAllVar)(Eeprom*);
+    // reseta os valores na eeprom e nos ponteiros
+    void (*M_resetAllVar)(Eeprom*,TypeRestauracao);
 
-//prototipos das funcoes da eeprom
-EEPROM_ErrorCode EepromInit	(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila);
-void EepromUpdateMes(Eeprom *eeprom, uint16_t addMes, uint16_t addItem, uint32_t valor, TypeData _sizeType);
-EEPROM_ErrorCode EepromAddVar(Eeprom *eeprom			, bool resetavel, EepromVariaveis* _var, char* _name, uint16_t addr, TypeData tipo, uint32_t minimo, uint32_t padrao,uint32_t maximo, void *_addrVar);
-uint8_t EepromAddVarFloating(Eeprom *eeprom	, bool resetavel, EepromVarFloating* _eepromvar, char* _name,uint16_t addr,TypeDataFloating tipo,double minimo,double padrao,double maximo, void *_addrVar);
-bool EepromSetVar	(Eeprom *eeprom, EepromVariaveis *_var);
-bool EepromSetVarFloating	(Eeprom *eeprom, EepromVarFloating *_var);
-void EepromDownloadValores	(Eeprom *eeprom);
-void RestauraEeprom			(Eeprom *eeprom ,TypeRestauracao tipo);
-void EepromReadVal			(Eeprom *eeprom, uint16_t addr, uint8_t *_var, uint16_t size);
-void Write_1_byte			(Eeprom *eeprom, uint16_t addr, uint8_t * _ptr);
-void eepromError_Handler(EEPROM_ErrorCode erro);
+};
+
+ /*
+  * eepromVarArr Struct (objetos)
+  */
+ struct eepromVarArr{
+ 	TypeRestauracao typeReset;  // sinal que bloqueia softreset
+     uint16_t _addrEprom;     	// endereco na eeprom
+     DataType typeVar;        	// Tipo de dado (inteiro ou flutuante)
+
+     // Valor atual, valor padrão, mínimo e máximo representados em forma unificada
+     union {
+         uint32_t intValue;   	// Para inteiros (usar quando type for DATA8BITS, DATA16BITS ou DATA32BITS)
+         float    floatValue; 	// Para float (usar quando type for DATAFLOAT)
+         double   doubleValue;	// Para double (usar quando type for DATADOUBLE)
+     } value, defaultValue, minValue, maxValue;
+
+     // Ponteiros para os valores gêmeos digitais
+     union {
+         uint8_t  *ptr8;
+         uint16_t *ptr16;
+         uint32_t *ptr32;
+         float    *ptrFloat;
+         double   *ptrDouble;
+     };
+
+     Eeprom *parentEeprom;  // Ponteiro para o 'pai'
+
+     /*---METODOS---*/
+     // valores limites e padrão fabrica
+     void (*M_setStdValues8bits)(eepromVarArr* , uint8_t , uint8_t , uint8_t );
+     void (*M_setStdValues16bits)(eepromVarArr* , uint16_t , uint16_t , uint16_t );
+     void (*M_setStdValues32bits)(eepromVarArr* , uint32_t , uint32_t , uint32_t );
+     void (*M_setStdValuesFloat)(eepromVarArr* , float, float, float );
+     void (*M_setStdValuesDouble)(eepromVarArr* , double, double, double );
+     // update de valor na eeprom com referencia no ponteiro.
+     void (*M_update_eepromValue)(eepromVarArr*);
+ };
+
+
+
+
+
+
+
+
+void defaultValuesArrVar(eepromVarArr* self, TypeStdValue tipo, void *val) ;
+EEPROM_ErrorCode eepromVarArr_deinit(eepromVarArr *self);
+EEPROM_ErrorCode eeprom_AddVarOnArr(Eeprom* eeprom, eepromVarArr* self) ;
+void addVarOnContainerEeprom(Eeprom* self, eepromVarArr* var);
+EEPROM_ErrorCode eepromVarArr_deinit(eepromVarArr *self);
+
+
+
+
+
+
+
+
+
+EEPROM_ErrorCode 	objArrEeprom_init	(eepromVarArr* self, TypeRestauracao typeReset, uint16_t addr, DataType type, void *_addrVar);
+void 			 	init_objArrEeprom	(eepromVarArr* self, TypeRestauracao typeReset, uint16_t addr, DataType type, void *_addrVar);
+void 				set_StdValues8bits	(eepromVarArr* self, uint8_t min, 	uint8_t def, 	uint8_t max);
+void 				set_StdValues16bits	(eepromVarArr* self, uint16_t min, 	uint16_t def, 	uint16_t max);
+void 				set_StdValues32bits	(eepromVarArr* self, uint32_t min, 	uint32_t def, 	uint32_t max);
+void 				set_StdValuesFloat	(eepromVarArr* self, float min, 	float def, 		float max);
+void 				set_StdValuesDouble (eepromVarArr* self, double min, 	double def, 	double max);
+
+
+
+
+
+
+
+
+EEPROM_ErrorCode 	containerEeprom_init	(Eeprom *self, I2C_HandleTypeDef *i2c, osMessageQId *fila);
+void 				init_containerEeprom	(Eeprom *self, I2C_HandleTypeDef *i2c, osMessageQId *fila);
+
+
+
+
+EEPROM_ErrorCode 	eepromObjArr_update(eepromVarArr* obj);
+void 				update_eepromObjArr(eepromVarArr* obj);
+
+EEPROM_ErrorCode 	containerEeprom_download	(Eeprom *eeprom);
+void 				download_containerEeprom	(Eeprom *eeprom);
+
+EEPROM_ErrorCode containerEeprom_reset(Eeprom *eeprom, TypeRestauracao resetType);
+void			 reset_containerEeprom(Eeprom *eeprom, TypeRestauracao resetType);
+
+
+void 			eepromError_Handler(EEPROM_ErrorCode erro);
+
+//----------------------------design pattern---------
+
+
 
 
 

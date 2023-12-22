@@ -6,7 +6,6 @@
  */
 
 #include "TaskTimer.h"
-//#include "TaskEeprom.h"
 
 
 void funcionamentoTimer(void);
@@ -50,6 +49,7 @@ void funcionamentoTimer(void){
 
 		//chegou ao zero --- ROTINA DE FIM DE CICLO
 		if(PrimitiveStates.RTTimerSegundos==0 && PrimitiveStates.RTTimerMinutos==0 && PrimitiveStates.stateTimer != TIMER_idle){
+			Calendario.TotalCiclos+=1;
 			osMessagePut(FilaEepromHandle, CEepromNewCile, 0);
 			//notifica buzzer
 			osSignalSet(TaskBuzzerHandle, SINAL_PRONTO);

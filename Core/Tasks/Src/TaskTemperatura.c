@@ -148,6 +148,12 @@ void Horimetro(void){
 		segundos++;
 		if(segundos == 60){
 			segundos = 0;
+			if(Calendario.Horimetro_parcial_min<59){
+				Calendario.Horimetro_parcial_min++;
+			}else{
+				Calendario.Horimetro_parcial_min=0;
+				Calendario.Horimetro_horas++;
+			}
 			osMessagePut(FilaEepromHandle, CEepromHorimetro, 0);
 		}
 

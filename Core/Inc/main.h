@@ -47,10 +47,8 @@ extern "C" {
 //---Comandos Eeprom
 typedef enum
 {   CEepromHorimetro,
-	CEepromDataInstalacao,
 	CEepromHardReset,
 	CEepromSoftReset,
-	CEepromAtualizaHora,
 	CEepromLimiteTemp,
 	CEepromLimiteLuz,
 	CEepromNewCile,
@@ -88,7 +86,6 @@ typedef union BIT_TO_BYTE_ERROS
 // estrutura Calendario, salvamento de eventos
 typedef struct TYPE_CALENDARIO{
 
-	RTC_DateTypeDef Data_instalacao;
 	uint16_t		Horimetro_horas;		//total de horas da maquina
 	uint8_t			Horimetro_parcial_min; 	//a cada minuto eu incremento, comparo com o gravado, e hora++ se for o caso
 	uint16_t		TotalCiclos;
@@ -130,7 +127,7 @@ typedef struct
 /* USER CODE BEGIN EC */
 
 //--- defines de fabrica
-#define STD_REF_EEPROM			0x25		// valor aleatorio para referencia e auto-reset.
+#define STD_REF_EEPROM			0x31		// valor aleatorio para referencia e auto-reset.
 #define ON_FAN_TEMPERATURA 		200  		// temperatura de acionamento do cooler.
 #define TIME_INATIVO_SETUP 		1800 		// tempo de inatividade limite.
 #define TIME_MAX_AQUECIMENTO 	600  		// tempo maximo permitido para nao entrar em erro de aquecimento.
@@ -140,6 +137,8 @@ typedef struct
 #define N_REP_SINAL_PRONTO		10			// repeticoes de sinal pronto ao fim receita.
 #define N_REP_SINAL_NEGADO		2			// repeticoes de sinal negado.
 #define STD_BUZZER				1			// configuracao do buzzer (1-on / 0-off).
+#define STD_LIMITE_TEMP			600			// limite maximo aceito para temperatura
+#define STD_LIMITE_HISTERESE	20			// limite aceitavel para clase
 
 //--- defines de PID
 #define STD_KP				30
@@ -212,7 +211,6 @@ extern GlobalPrimitiveIOStates PrimitiveStates;
 extern BIT_TO_BYTE_ERROS		Erro;
 extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro;
 extern TYPE_CALENDARIO Calendario;
-//abaixo daqui é otimizado todo------------------------------------------
 
 
 /* USER CODE END Private defines */

@@ -53,14 +53,8 @@
 
 //Include HAL Library from main header file :/
 #include "main.h"
-
-//Include libraries //todo revisar todas as bibliotecas
-#include "stdlib.h"
-#include "string.h"
-#include "stdio.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include "cmsis_os.h"
+#include "my_queue.h"
 
 #define BLE_DEVICE_NAME NOME_DEVICE // Substitua por um nome apropriado
 #define COMANDO_BUFFER_SIZE (50) // Escolha um tamanho que seja suficiente
@@ -76,6 +70,53 @@
 #define BLUETOOTH_MAX_COMANDOS_COUNT 	30
 
 #define TAMANHO_MENSAGEM_CONECTOU 		7
+
+// editar conforme seus comandos
+//---Comandos Ble
+typedef enum
+{
+	RX_RESTAURA_HARD		= 0x09,
+	RX_RESTAURA 			= 0x10,
+	RX_SOLICITA_REALTIME 	= 0x15,
+	RX_SOLICITA_SINCRONIA 	= 0x17,
+	RX_SP_TEMP_TETO			= 0x21,
+	RX_SP_TEMP_LASTRO		= 0x22,
+	RX_SP_TEMPO				= 0x23,
+	RX_TOGGLE_TEMPO			= 0x24,
+	RX_RECEITA			 	= 0x25,
+	RX_LIMITE_TEMPERATURA 	= 0x26,
+	RX_LIGA_LAMPADA		 	= 0x27,
+	RX_DESLIGA_LAMPADA	 	= 0x28,
+	RX_CANCELA_PROCESSO	 	= 0x29,
+	RX_LIMITE_LAMPADA	 	= 0x30,
+	RX_TUNNING_TETO 		= 0x33,
+	RX_TUNNING_LASTRO	 	= 0x34,
+	RX_TOGGLE_BUZZER	 	= 0x35,
+
+} ComandosBleRX;
+
+//---Comandos Ble
+typedef enum
+{
+	TX_REALTIME_DATA 		= 0x16,
+	TX_REALTIME_DATA2		= 0x17,
+	TX_SINCRONIA 			= 0x18,
+	TX_SINCRONIA2 			= 0x19,
+	TX_SINCRONIA3 			= 0x20,
+	TX_RESETANDO 			= 0x29,
+	TX_RESETADO_OK 			= 0x30,
+
+} ComandosBleTX;
+/*
+ * Comandos conexao TX
+ */
+typedef enum
+{
+	COMANDO_ULTIMO_CODIGO 		= 0x01,
+	COMANDO_COMANDO_NEGADO 		= 0x89,
+	COMANDO_SOLICITACAO_SENHA	,
+	COMANDO_AVALIACAO_CHAVE		,
+} ConexaoBleTX;
 
 //---MACROS---BLUETOOTH----------------------------
 #define MACRO_LE_BT_STATUS	HAL_GPIO_ReadPin 	(BLE_STATUS_GPIO_Port,	BLE_STATUS_Pin)
@@ -108,6 +149,7 @@ typedef enum {
     BLE_NEW_DEVICE_NEGADO 		,
     BLE_SENHA_ERRADA			,
     BLE_HARDWARE_NOINIT			,
+    BLE_FILA_CHEIA				,
 } BLE_ErrorCode;
 /*
  * Sequencia hardware inicializacao
@@ -143,16 +185,7 @@ typedef enum
 	RX_RECEBEU_SENHA		= 0x40,
 	RX_PEDE_SENHA			= 0x42,
 } ConexaoBleRX;
-/*
- * Comandos conexao TX
- */
-typedef enum
-{
-	COMANDO_ULTIMO_CODIGO 		= 0x01,
-	COMANDO_COMANDO_NEGADO 		= 0x89,
-	COMANDO_SOLICITACAO_SENHA	,
-	COMANDO_AVALIACAO_CHAVE		,
-} ConexaoBleTX;
+
 /*
  * BleComando Struct
  */
@@ -171,33 +204,23 @@ struct Bluetooth
 	UART_HandleTypeDef 	*UARTHandle;
 	DMA_HandleTypeDef 	*UARTDMAHandle;
 
-	//bufer's
-	unsigned char	TXBuffer	[BLUETOOTH_MAX_BUFF_LEN]		;	//BUFFER AUXILIAR DO "DMA_CIRCULAR.C" de uint8 -> uchar
-
 	//Handle da filas
-	osMessageQId	*filaComandosRX;//Handle da fila de comandos
-	osMessageQId	*filaComandosTX;
-	osMessageQId	*filaComandoInternoTX;
+	Queue 			* myQ_bleCom;
+	Queue 			* myQ_dataRx;
+	Queue 			* myQ_dataTx;
 
 	//Variables for parsing the received data
-	uint8_t _RxDataArr[BLUETOOTH_MAX_BUFF_LEN], _RxData,RxSize;
+	uint8_t _RxDataArr[BLUETOOTH_MAX_BUFF_LEN],bufferDataArr[BLUETOOTH_MAX_BUFF_LEN], _RxData,RxSize;
 
-	//maquina de estados para conexap
+	//maquina de estados para conexao.
 	TypeMaquinaConexao MaquinaConexao;
 
 	//contadores
-	uint8_t 	JanelaConexao		;	//contador decrescente de janela de conexao
-	uint8_t     msDesconectado    	;    //Contador crescente de tempo de desconectado em milisegundos
+	uint8_t 	JanelaConexao		;	 //contador decrescente de janela de conexao
 	uint16_t	msIdle    			;    //Contador crescente sem troca mensagens em milisegundos
-
-	//flags
-	bool 		StatusSenha			;	//FLAG QUE ARMAZENA VALIDACAO DE CHAVE DE ACESSO
 
 	//endereco ja codificado em chave
 	CRC_short 	chave;
-
-	//maquina de inicializacao
-	sequenciaBle sequenciaBLE;
 
 	//Comandos classe
 	BleComando ComandoAtual;
@@ -209,27 +232,29 @@ struct Bluetooth
 
 	//envio de aknowladge
 	void (*aknowladge)(Bluetooth* ble,uint8_t cmd);
-
 };
 
 
-BLE_ErrorCode 	bleConstrutora(Bluetooth *ble,  UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle, osMessageQId *_filaRX, osMessageQId *_filaTX, osMessageQId *_filaComandoInternoTX);
-BLE_ErrorCode 	bleAddComp(Bluetooth* ble, BleComando* _blecomm, uint8_t __comando);
-BLE_ErrorCode 	bleAddCompConexao(Bluetooth* ble, BleComando* _blecomm, uint8_t __comando);
-BLE_ErrorCode 	readComando(Bluetooth* ble, TypeComandoBle tipo);
-BLE_ErrorCode 	bluetoothPutFila(Bluetooth* ble, TypeComandoBle tipo);
+void		 	bleConstrutora(Bluetooth *ble,  UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle);
+void		 	bleAddComp(Bluetooth* ble, BleComando* _blecomm, ComandosBleRX __comando);
+BleComando* 	createBleComp(Bluetooth* ble, ComandosBleRX __comando);
+void		 	bleAddCompConexao(Bluetooth* ble, BleComando* _blecomm, ConexaoBleTX __comando);
+void		 	readComando(Bluetooth* ble, TypeComandoBle tipo);
 void 			BLEUSART_IrqHandler(Bluetooth *ble);
-BLE_ErrorCode 	txBleComando(Bluetooth *ble);
+void		 	txBleComando(Bluetooth *ble);
 void 			BLEDMA_IrqHandler (Bluetooth *ble);
 HAL_StatusTypeDef bluetoothEnviaComando(Bluetooth *ble, unsigned char _out[], int size);
 void 			comandHM10(Bluetooth *ble, char _out[], uint16_t delay);
-BLE_ErrorCode 	iniciaBleHm10(Bluetooth* ble);
+void		 	iniciaBleHm10(Bluetooth* ble);
 void 			redefineBluetooth(Bluetooth* ble);
-BLE_ErrorCode 	bluetoothErroCRC(Bluetooth* ble);
+void		 	bluetoothErroCRC(Bluetooth* ble);
 void 			bluetoothDescon(Bluetooth* ble);
 void 			bluetooth10ms(Bluetooth* ble);
 void 			bluetooth1000ms(Bluetooth* ble);
 void 			sendAknowladge(Bluetooth* ble,uint8_t Cmd);
+void 			putQueueComando(Bluetooth *ble, ConexaoBleRX comando);
+void 			putQueueDataRx(Bluetooth *ble, ComandosBleRX comando);
+void 			putQueueDataTx(Bluetooth *ble, ComandosBleTX comando);
 void 			bleError_Handler(BLE_ErrorCode erro);
 
 #endif /* INC_BLUETOOTH_H_ */

@@ -1,8 +1,8 @@
 ../Core/Tasks/Src/TaskTemperatura.c:44:6:initPID	64	static
 ../Core/Tasks/Src/TaskTemperatura.c:58:6:computaPID	8	static
 ../Core/Tasks/Src/TaskTemperatura.c:27:6:StartTemperatura	16	static
-../Core/Tasks/Src/TaskTemperatura.c:82:6:WatchDogLimitesTemperatura	24	static
+../Core/Tasks/Src/TaskTemperatura.c:82:6:WatchDogLimitesTemperatura	16	static
 ../Core/Tasks/Src/TaskTemperatura.c:121:6:SaidasLeds	8	static
-../Core/Tasks/Src/TaskTemperatura.c:144:6:Horimetro	0	static
-../Core/Tasks/Src/TaskTemperatura.c:158:6:sinalizacaoReachTemp	16	static
+../Core/Tasks/Src/TaskTemperatura.c:144:6:Horimetro	8	static
+../Core/Tasks/Src/TaskTemperatura.c:164:6:sinalizacaoReachTemp	8	static
 ../Core/Tasks/Src/TaskTemperatura.c:68:6:taskTemperatura1sec	8	static

@@ -15,367 +15,398 @@
 #ifndef INC_EEPROM_C_
 #define INC_EEPROM_C_
 
-EEPROM_ErrorCode EepromInit	(Eeprom *eeprom, I2C_HandleTypeDef *i2c, osMessageQId *fila){
 
-	eeprom->i2cHandle 				= i2c;	// handler de I2C.
-	eeprom->filaComandos 			= fila; // fila de salvamento.
-	eeprom->_EepromVarCount  		= 0; 	// contador de elementos unsigned.
-	eeprom->_EepromVarFloatingCount = 0; 	// contador de elementos flutuantes.
+EEPROM_ErrorCode 	containerEeprom_init(Eeprom *self, I2C_HandleTypeDef *i2c, osMessageQId *fila){
 
-	// variavel de referencia para autoreset na primeira vez ao ligar.
-	EepromAddVar(eeprom, 0, &eeprom->RefFlag,	"addrREF_MEM_FLAG",	addrREF_MEM_FLAG,	DATA8BITS,	0,	STD_REF_MEM	,254	,0);
+	if (self == NULL || i2c == NULL || fila == NULL)
+		return EEPROM_OBJETO_NULO;
+
+	// limpe a memória da estrutura.
+	memset(self, 0, sizeof(*self));
+
+	// popula objeto.
+	self->i2cHandle 			= i2c;	// handler de I2C.
+	self->filaComandos 			= fila; // fila de salvamento.
+
+	/*---METODOS---*/
+	// metodo incluir var na lista.
+	self->M_AddOnArr = addVarOnContainerEeprom;
+	// download de todos os valores na memoria para todos os objetos cadastrados.
+	self->M_downloadAllVar = download_containerEeprom;
+	// reseta os valores na eeprom e nos ponteiros
+	self->M_resetAllVar = reset_containerEeprom;
 
 	return EEPROM_SUCCESS;
 }
-EEPROM_ErrorCode EepromAddVar(Eeprom *eeprom, bool resetavel, EepromVariaveis* _var, char* _name, uint16_t addr, TypeData tipo, uint32_t minimo, uint32_t padrao,uint32_t maximo, void *_addrVar){
+void 				init_containerEeprom(Eeprom *self, I2C_HandleTypeDef *i2c, osMessageQId *fila) {
+	//funcao que implementa selfContainer_init
+	EEPROM_ErrorCode errCode = containerEeprom_init(self, i2c, fila);
+	if (errCode != EEPROM_SUCCESS) {
+		eepromError_Handler(errCode);
+	}
+}
 
-	_var->objname = (char *) malloc((strlen(_name)*sizeof(char)) + 1);
-	strcpy(_var->objname, _name);		// nome do objeto.
-	_var->_addrEprom 	= addr;			// endereço eemprom.
-	_var->_sizeType 	= tipo;			// tipo da variavel.
-	_var->flagResetavel = resetavel;	// softreset ou hardreset.
+EEPROM_ErrorCode 	objArrEeprom_init(eepromVarArr* 	self, TypeRestauracao typeReset, uint16_t addr, DataType type, void *_addrVar){
 
-	//definindo minimos maximos e default.
-	switch (tipo) {
-	case DATA8BITS:
-		_var->minValue 		= (uint8_t)minimo;
-		_var->defaultValue 	= (uint8_t)padrao;
-		_var->maxValue 		= (uint8_t)maximo;
-		_var->ptr8			= (uint8_t *)_addrVar;
+	if (self == NULL || _addrVar == NULL)
+		return EEPROM_OBJETO_NULO;
+	if (addr == 0)
+		return EEPROM_ERRO_ENDERECO_OBJ;
+
+	// Limpe a memória da estrutura.
+	memset(self, 0, sizeof(*self));
+
+	// popula objeto.
+	self->typeVar 		= type;
+	self->typeReset 	= typeReset;
+	self->_addrEprom 	= addr;
+
+	switch (self->typeVar) {
+	case DATA_8BITS:	self->ptr8 		= (uint8_t *)_addrVar;	break;
+	case DATA_16BITS:	self->ptr16 	= (uint16_t *)_addrVar;	break;
+	case DATA_32BITS:	self->ptr32 	= (uint32_t *)_addrVar;	break;
+	case DATA_FLOAT:	self->ptrFloat 	= (float *)_addrVar;	break;
+	case DATA_DOUBLE:	self->ptrDouble	= (double *)_addrVar;	break;
+	default:
+		return EEPROM_TIPO_ERRADO;
+	}
+
+	/*---cadastro de metodos---*/
+	// metodos valores standart e limites.
+	self->M_setStdValues8bits		= set_StdValues8bits;
+	self->M_setStdValues16bits		= set_StdValues16bits;
+	self->M_setStdValues32bits		= set_StdValues32bits;
+	self->M_setStdValuesFloat		= set_StdValuesFloat;
+	self->M_setStdValuesDouble		= set_StdValuesDouble;
+	// metodo de update de eeprom vindo do ponteiro.
+	self->M_update_eepromValue 		= update_eepromObjArr;
+
+	return EEPROM_SUCCESS;
+}
+void 				init_objArrEeprom(eepromVarArr* 	self, TypeRestauracao typeReset, uint16_t addr, DataType type, void *_addrVar) {
+	EEPROM_ErrorCode errCode = objArrEeprom_init(self, typeReset, addr, type,_addrVar);
+	if (errCode != EEPROM_SUCCESS)
+		eepromError_Handler(errCode);
+}
+void 				set_StdValues8bits(eepromVarArr* 	self, uint8_t 	min, uint8_t 	def, uint8_t 	max) {
+	self->minValue.intValue 	= min;
+	self->defaultValue.intValue = def;
+	self->maxValue.intValue 	= max;
+}
+void 				set_StdValues16bits(eepromVarArr* 	self, uint16_t 	min, uint16_t 	def, uint16_t 	max) {
+	self->minValue.intValue = min;
+	self->defaultValue.intValue = def;
+	self->maxValue.intValue = max;
+}
+void 				set_StdValues32bits(eepromVarArr* 	self, uint32_t 	min, uint32_t 	def, uint32_t 	max) {
+	self->minValue.intValue = min;
+	self->defaultValue.intValue = def;
+	self->maxValue.intValue = max;
+}
+void 				set_StdValuesFloat(eepromVarArr* 	self, float 	min, float 		def, float 		max) {
+	self->minValue.floatValue = min;
+	self->defaultValue.floatValue = def;
+	self->maxValue.floatValue = max;
+}
+void 				set_StdValuesDouble(eepromVarArr* 	self, double 	min, double 	def, double 	max) {
+	self->minValue.doubleValue = min;
+	self->defaultValue.doubleValue = def;
+	self->maxValue.doubleValue = max;
+}
+EEPROM_ErrorCode 	eepromVarArr_deinit(eepromVarArr*	self){
+	__NOP();
+	return EEPROM_SUCCESS;
+}
+
+EEPROM_ErrorCode 	eeprom_AddVarOnArr(Eeprom* eeprom, eepromVarArr* self) {
+
+	if (eeprom->arrCount >= EEPROM_MAX_COMP_COUNT)
+		return EEPROM_LISTA_CHEIA;
+	if (self->_addrEprom == 0)
+		return EEPROM_ERRO_ENDERECO_OBJ;
+
+	// Calcula o início da próxima página
+	uint16_t inicioProximaPagina = ((self->_addrEprom / PAGE_SIZE) + 1) * PAGE_SIZE;
+
+	// Verifica se o endereço inicial + tamanho da variável ultrapassa o início da próxima página
+	uint16_t fimVar;
+
+	switch (self->typeVar) {
+	case DATA_8BITS:
+		fimVar = self->_addrEprom + sizeof(uint8_t);
 		break;
-	case DATA16BITS:
-		_var->minValue 		= (uint16_t)minimo;
-		_var->defaultValue 	= (uint16_t)padrao;
-		_var->maxValue 		= (uint16_t)maximo;
-		_var->ptr16			= (uint16_t *)_addrVar;
+	case DATA_16BITS:
+		fimVar = self->_addrEprom + sizeof(uint16_t);
 		break;
-	case DATA32BITS:
-		_var->minValue 		= (uint32_t)minimo;
-		_var->defaultValue 	= (uint32_t)padrao;
-		_var->maxValue 		= (uint32_t)maximo;
-		_var->ptr32			= (uint32_t *)_addrVar;
+	case DATA_32BITS:
+		fimVar = self->_addrEprom + sizeof(uint32_t);
+		break;
+	case DATA_FLOAT:
+		fimVar = self->_addrEprom + sizeof(float);
+		break;
+	case DATA_DOUBLE:
+		fimVar = self->_addrEprom + sizeof(double);
 		break;
 	default:
-		eepromError_Handler(EEPROM_TIPO_ERRADO);
-		return EEPROM_TIPO_ERRADO;
-		break;
+		return EEPROM_TIPO_DESCONHECIDO;
 	}
 
-	//Adiciona o componente na lista unsigned.
-	eeprom->_EepromVarArr[eeprom->_EepromVarCount] = _var;
-	eeprom->_EepromVarCount++;
+	// Se a próxima varável começa no início de uma nova página, então essa variável cruzou a fronteira de uma página
+	if (fimVar > inicioProximaPagina)
+		return EEPROM_QUEBRA_ENDERECO_OBJ;
+
+	// Configuração do ponteiro parent
+	self->parentEeprom = eeprom;
+	// Adicionar a variável ao próximo slot livre
+	eeprom->arrVar[eeprom->arrCount] = self;
+	eeprom->arrCount++;
 
 	return EEPROM_SUCCESS;
 }
-uint8_t EepromAddVarFloating(Eeprom *eeprom, bool resetavel, EepromVarFloating* _var, char* _name,uint16_t addr,TypeDataFloating tipo,double minimo,double padrao,double maximo, void *_addrVar){
+void 				addVarOnContainerEeprom(Eeprom* self, eepromVarArr* var){
+	EEPROM_ErrorCode errCode = eeprom_AddVarOnArr(self, var);
+	if (errCode != EEPROM_SUCCESS) {
+		eepromError_Handler(errCode);
+	}
+}
 
-	_var->objname = (char *) malloc((strlen(_name)*sizeof(char)) + 1);
-	strcpy(_var->objname, _name);		// nome do objeto.
-	_var->_addrEprom 	= addr;         // endereço eemprom.
-	_var->_sizeType 	= tipo;         // tipo da variavel.
-	_var->flagResetavel = resetavel;    // softreset ou hardreset.
+EEPROM_ErrorCode 	eepromObjArr_update(eepromVarArr* obj) {
 
-	//definindo minimos maximos e default.
-	switch (tipo) {
-	case DATAFLOAT:
-		_var->minValue 		= (float)minimo;
-		_var->defaultValue 	= (float)padrao;
-		_var->maxValue 		= (float)maximo;
-		_var->ptrFloat		= (float *)_addrVar;
+	HAL_StatusTypeDef result;
+	uint8_t buffer[sizeof(double)] __attribute__((aligned(sizeof(double)))); // Buffer pode conter até 64 bits (para DATADOUBLE)
+
+	LIBERA_EEPROM
+
+	result = HAL_I2C_IsDeviceReady(obj->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, 50, HAL_MAX_DELAY);
+	if (result != HAL_OK)
+			return EEPROM_ERROR;
+
+	switch (obj->typeVar) {
+	case DATA_8BITS:
+		obj->value.intValue 	= *obj->ptr8;
+		buffer[0] 				= *obj->ptr8;
+		HAL_I2C_Mem_Write(obj->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, obj->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 1, 200);
 		break;
-	case DATADOUBLE:
-		_var->minValue 		= (double)minimo;
-		_var->defaultValue 	= (double)padrao;
-		_var->maxValue 		= (double)maximo;
-		_var->ptrDouble		= (double *)_addrVar;
+	case DATA_16BITS:
+		obj->value.intValue 	= *obj->ptr16;
+		*((uint16_t*)&buffer) 	= *obj->ptr16;
+		HAL_I2C_Mem_Write(obj->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, obj->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 2, 200);
 		break;
-	default:
-		eepromError_Handler(EEPROM_TIPO_ERRADO);
-		return EEPROM_TIPO_ERRADO;
+	case DATA_32BITS:
+		obj->value.intValue 	= *obj->ptr32;
+		*((uint32_t*)&buffer) 	= *obj->ptr32;
+		HAL_I2C_Mem_Write(obj->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, obj->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 4, 200);
+		break;
+	case DATA_FLOAT:
+		obj->value.floatValue 	= *obj->ptrFloat;
+		*((float*)&buffer) 		= *obj->ptrFloat;
+		HAL_I2C_Mem_Write(obj->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, obj->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 4, 200);
+		break;
+	case DATA_DOUBLE:
+		obj->value.doubleValue 	= *obj->ptrDouble;
+		*((double*)&buffer) 	= (double)obj->value.doubleValue;
+		HAL_I2C_Mem_Write(obj->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, obj->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 8, 200);
 		break;
 	}
+	osDelay(40);
+	TRAVA_EEPROM
+	return EEPROM_SUCCESS;
+}
+void 				update_eepromObjArr(eepromVarArr* obj) {
+	EEPROM_ErrorCode errCode = eepromObjArr_update(obj);
+	if (errCode != EEPROM_SUCCESS) {
+		eepromError_Handler(errCode);
+	}
+}
 
-	//Adiciona o componente na lista float.
-	eeprom->_EepromVarFloatingArr[eeprom->_EepromVarFloatingCount] = _var;
-	eeprom->_EepromVarFloatingCount++;
+EEPROM_ErrorCode 	containerEeprom_download	(Eeprom *eeprom){
+	HAL_StatusTypeDef 	result;
+	uint8_t 			buffer[sizeof(double)] __attribute__((aligned(sizeof(double)))); // Buffer pode conter até 64 bits (para DATADOUBLE)
+	eepromVarArr		*var;
+
+	//verifica disponibilidade da eeprom
+	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR, 50, HAL_MAX_DELAY);
+	if (result != HAL_OK) {
+		return EEPROM_ERROR;
+	}
+
+	// Varredura por todos os elementos
+	for (uint8_t i = 0; i < eeprom->arrCount; i++) {
+		// Pega a variável atual para facilitar o acesso
+		var = eeprom->arrVar[i];
+
+		//testa se o endereco da eeprom esta ok
+		if (var->_addrEprom == 0) {
+			return EEPROM_ERRO_ENDERECO_OBJ;
+		}
+
+		// Determine o tamanho do dado a ser lido com base no tipo.
+		uint8_t dataSize = 0;
+		switch (var->typeVar) {
+		case DATA_8BITS: 	dataSize = 1; break;
+		case DATA_16BITS: 	dataSize = 2; break;
+		case DATA_32BITS: 	dataSize = 4; break;
+		case DATA_FLOAT: 	dataSize = 4; break;
+		case DATA_DOUBLE: 	dataSize = 8; break;
+		}
+
+		// limpe o buffer,
+		memset(&buffer, 0, sizeof(uint8_t[8]));
+
+		// Realiza leitura da EEPROM.
+		result = HAL_I2C_Mem_Read(eeprom->i2cHandle, EEPROM_READ_ADDR, var->_addrEprom, I2C_MEMADD_SIZE_16BIT,buffer, dataSize, 200);
+		if (result != HAL_OK)
+			return EEPROM_ERRO_LEITURA;
+
+		// verifica e atribui o valor baseado no tipo.
+		// certifica de que o valor está dentro dos limites.
+		// envia para o ponteiro.
+		switch (var->typeVar) {
+		case DATA_8BITS:
+			var->value.intValue = buffer[0];
+			if (var->value.intValue > var->maxValue.intValue || var->value.intValue < var->minValue.intValue) {
+				var->value.intValue = var->defaultValue.intValue;
+			}
+			*var->ptr8 = var->value.intValue; 	// envio para ponteiro.
+			break;
+		case DATA_16BITS:
+			var->value.intValue = *((uint16_t*)&buffer);
+			if (var->value.intValue > var->maxValue.intValue || var->value.intValue < var->minValue.intValue) {
+				var->value.intValue = var->defaultValue.intValue;
+			}
+			*var->ptr16 = var->value.intValue; 	// envio para ponteiro
+			break;
+		case DATA_32BITS:
+			var->value.intValue = *((uint32_t*)&buffer);
+			if (var->value.intValue > var->maxValue.intValue || var->value.intValue < var->minValue.intValue) {
+				var->value.intValue = var->defaultValue.intValue;
+			}
+			*var->ptr32 = var->value.intValue;
+			break;
+		case DATA_FLOAT:
+			var->value.floatValue = *((float*)&buffer);
+			if (var->value.floatValue > var->maxValue.floatValue || var->value.floatValue < var->minValue.floatValue) {
+				var->value.floatValue = var->defaultValue.floatValue;
+			}
+			*var->ptrFloat = var->value.floatValue;
+			break;
+		case DATA_DOUBLE:
+			var->value.doubleValue = *((double*)&buffer);
+			if (var->value.doubleValue > var->maxValue.doubleValue || var->value.doubleValue < var->minValue.doubleValue) {
+				var->value.doubleValue = var->defaultValue.doubleValue;
+			}
+			*var->ptrDouble = var->value.doubleValue;
+			break;
+		}
+	}
+
+	// Todo: Criar rotina de reset de EEPROM se necessário
 
 	return EEPROM_SUCCESS;
 }
-bool EepromSetVar	(Eeprom *eeprom, EepromVariaveis *_var){
-	//retomar leitura direto da variavel interna no objeto
-	HAL_StatusTypeDef result;
-	uint8_t 		buffer1b[1];
-	shortAsBytes 	buffer2b;
-	uint32AsBytes	buffer4b;
+void 				download_containerEeprom	(Eeprom *eeprom){
+
+	//funcao que implementa containerEeprom_download
+	EEPROM_ErrorCode errCode = containerEeprom_download(eeprom);
+	if (errCode != EEPROM_SUCCESS) {
+		eepromError_Handler(errCode);
+	}
+}
+
+EEPROM_ErrorCode 	containerEeprom_reset(Eeprom *eeprom, TypeRestauracao resetType) {
+
+	HAL_StatusTypeDef 	result;
+	uint8_t 			buffer[sizeof(double)] __attribute__((aligned(sizeof(double)))); // Buffer pode conter até 64 bits (para DATADOUBLE)
+	eepromVarArr		*var;
+	if (!eeprom) {
+		return EEPROM_OBJETO_NULO;
+	}
 
 	LIBERA_EEPROM
-	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,50,HAL_MAX_DELAY);//todo tratar se nao tiver disponivel?
-	if (result==HAL_OK)	{
-		switch (_var->_sizeType) {
-		case DATA8BITS:
-			_var->valor 		= *_var->ptr8; 				// valor apontado.
-			buffer1b[0] 		= (uint8_t)_var->valor;		// vetoriza.
-			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,_var->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer1b, 1, 200);// grava na eeprom.
-			break;
-		case DATA16BITS:
-			_var->valor 		= *_var->ptr16;				// valor apontado.
-			buffer2b.value 		= (uint16_t)_var->valor;	// vetoriza.
-			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,_var->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer2b.bytes, 2, 200);// grava na eeprom.
-			break;
-		case DATA32BITS:
-			_var->valor 		= *_var->ptr32;				// valor apontado.
-			buffer4b.value 		= (uint32_t)_var->valor;	// vetoriza.
-			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,_var->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer4b.bytes, 4, 200);// grava na eeprom.
-			break;
-		}
-	}
-	osDelay(20);
-	TRAVA_EEPROM
-	return 1;
-}
-bool EepromSetVarFloating	(Eeprom *eeprom, EepromVarFloating *_var){
-	//retomar leitura direto da variavel interna no objeto
-	HAL_StatusTypeDef result;
-	floatAsBytes	floatBuff;
-	doubleAsBytes 	doubleBuff;
+	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR, 50, HAL_MAX_DELAY);
+	if (result != HAL_OK)
+		return EEPROM_ERROR;
 
-	LIBERA_EEPROM
-	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,50,HAL_MAX_DELAY);//todo tratar se nao tiver disponivel?
-	if (result==HAL_OK)	{
-		switch (_var->_sizeType) {
-		case DATAFLOAT:
-			_var->valorFloat 	= *_var->ptrFloat;         	// valor apontado.
-			floatBuff.value 	= (float)_var->valorFloat;  // vetoriza.
-			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,_var->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)floatBuff.bytes, 4, 200); // grava na eeprom.
-			break;
-		case DATADOUBLE:
-			_var->valorDouble 	= *_var->ptrDouble;         // valor apontado.
-			doubleBuff.value 	= (double)_var->valorDouble;// vetoriza.
-			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,_var->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)doubleBuff.bytes, 8, 200); // grava na eeprom
-			break;
-		}
-	}
-	osDelay(30);
-	TRAVA_EEPROM
-	return 1;
-}
-void EepromDownloadValores	(Eeprom *eeprom){
+	for (uint8_t i = 0; i < eeprom->arrCount; i++) {
+		// Pega a variável atual para facilitar o acesso.
+		var = eeprom->arrVar[i];
 
-	/*--- leitura da lista unsigned ---*/
-	// buffers auxiliares na leitura
-	bytetAsBytes 	buffer1b; 	//leitura de 1 byte (uint8_t).
-	shortAsBytes 	buffer2b; 	//leitura de 2 bytes (uint16_t).
-	uint32AsBytes	buffer4b; 	//leitura de 4 bytes (uint32_t).
-	EepromVariaveis *Var; 		//Ponteiro auxiliar direto para a variavela ser manipulada.
+		// limpe o buffer
+		memset(&buffer, 0, sizeof(uint8_t[8]));
 
-	// varredura por todos os elementos unsigned.
-	for(uint8_t i = 0; i < eeprom->_EepromVarCount; i++){
-		// leitura de buffers para facilitar leitura.
-		Var = eeprom->_EepromVarArr[i];
-
-		if (HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_READ_ADDR,50,HAL_MAX_DELAY)==HAL_OK){
-
-			switch (Var->_sizeType) {
-			case DATA8BITS:
-				HAL_I2C_Mem_Read(eeprom->i2cHandle, EEPROM_READ_ADDR,Var->_addrEprom,I2C_MEMADD_SIZE_16BIT,buffer1b.bytes, 1, 200);
-				Var->valor = buffer1b.value;	// digital twin
-				if(Var->ptr8 !=0){
-					*Var->ptr8 = Var->valor; 	// envio para ponteiro
-				}
+		// Se for um soft reset, verifique se a variável pode ser resetada
+		if (resetType == HARD_RESET || var->typeReset == SOFT_RESET) {
+			// Reseta a variável para o defaultValue ou zero se não estiver definido
+			// atualiza o ponteiro e o digital twin para esse valor.
+			// escreve na eeprom.
+			switch (var->typeVar) {
+			case DATA_8BITS:
+				*var->ptr8 = var->defaultValue.intValue ? var->defaultValue.intValue : 0;
+				var->value.intValue		= *var->ptr8;
+				*((uint8_t*)&buffer) 	= var->value.intValue;
+				HAL_I2C_Mem_Write(var->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, var->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 1, 200);
 				break;
-			case DATA16BITS:
-				HAL_I2C_Mem_Read(eeprom->i2cHandle, EEPROM_READ_ADDR,Var->_addrEprom,I2C_MEMADD_SIZE_16BIT,buffer2b.bytes, 2, 200);
-				Var->valor = buffer2b.value;	// digital twin
-				if(Var->ptr16 !=0){
-					*Var->ptr16 = Var->valor; 	// envio para ponteiro
-				}
+			case DATA_16BITS:
+				*var->ptr16 = (var->defaultValue.intValue ? var->defaultValue.intValue : 0);
+				var->value.intValue 	= *var->ptr16;
+				*((uint16_t*)&buffer) 	= var->value.intValue;
+				HAL_I2C_Mem_Write(var->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, var->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 2, 200);
 				break;
-			case DATA32BITS:
-				HAL_I2C_Mem_Read(eeprom->i2cHandle, EEPROM_READ_ADDR,Var->_addrEprom,I2C_MEMADD_SIZE_16BIT,buffer4b.bytes, 4, 200);
-				Var->valor =  buffer4b.value;	// digital twin
-				if(Var->ptr32 !=0){
-					*Var->ptr32 = Var->valor; 	// envio para ponteiro
-				}
+			case DATA_32BITS:
+				*var->ptr32 = var->defaultValue.intValue ? var->defaultValue.intValue : 0;
+				var->value.intValue 	= *var->ptr32;
+				*((uint32_t*)&buffer) 	= var->value.intValue;
+				HAL_I2C_Mem_Write(var->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, var->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 4, 200);
 				break;
-			}
-			//caso a variavel esteja zerada, atribui o valor padrao todo revisar pois nao esta puxando valor padrao
-			if(Var->defaultValue > 0 && (Var->valor == 0 || Var->valor > Var->maxValue || Var->valor < Var->minValue))
-				EepromSetVar(eeprom, Var);
-		}
-	}
-
-	/*--- leitura da lista signed ---*/
-	// buffers auxiliares na leitura
-	floatAsBytes		floatBuff;	//leitura de 4 bytes (float).
-	doubleAsBytes 		doubleBuff;	//leitura de 8 bytes (double).
-	EepromVarFloating 	*VarU; 		//Ponteiro auxiliar direto para a variavela ser manipulada.
-
-	// varredura por todos os elementos signed.
-	for(uint8_t y = 0; y < eeprom->_EepromVarFloatingCount; y++){
-		// leitura de buffers para facilitar leitura.
-		VarU = eeprom->_EepromVarFloatingArr[y];
-
-		if (HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_READ_ADDR,30,HAL_MAX_DELAY)==HAL_OK){
-
-			switch (VarU->_sizeType) {
-
-			case DATAFLOAT:
-				HAL_I2C_Mem_Read(eeprom->i2cHandle, EEPROM_READ_ADDR, VarU->_addrEprom, I2C_MEMADD_SIZE_16BIT, floatBuff.bytes, 4, 200);
-				VarU->valorFloat =  floatBuff.value;
-				if (VarU->ptrFloat != 0) {
-					*VarU->ptrFloat = VarU->valorFloat;
-				}
-
-				//caso a variavel esteja zerada, atribui o valor padrao
-				if(VarU->defaultValue>0 && (VarU->valorFloat == 0 || VarU->valorFloat > VarU->maxValue || VarU->valorFloat < VarU->minValue))
-					EepromSetVarFloating(eeprom, VarU);
+			case DATA_FLOAT:
+				*var->ptrFloat = var->defaultValue.floatValue ? var->defaultValue.floatValue : 0.0;
+				var->value.floatValue 	= *var->ptrFloat;
+				*((float*)&buffer) 		= var->value.floatValue;
+				HAL_I2C_Mem_Write(var->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, var->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 4, 200);
 				break;
-			case DATADOUBLE:
-				HAL_I2C_Mem_Read(eeprom->i2cHandle, EEPROM_READ_ADDR, VarU->_addrEprom, I2C_MEMADD_SIZE_16BIT, doubleBuff.bytes, 8, 200);
-				VarU->valorDouble =  doubleBuff.value;
-				if (VarU->ptrDouble != 0) {
-					*VarU->ptrDouble = VarU->valorDouble;
-				}
-
-				//caso a variavel esteja zerada, atribui o valor padrao todo revisar pois nao esta puxando valor padrao
-				if(VarU->defaultValue > 0 && (VarU->valorDouble == 0 || VarU->valorDouble > VarU->maxValue || VarU->valorDouble < VarU->minValue))
-					EepromSetVarFloating(eeprom, VarU);
+			case DATA_DOUBLE:
+				*var->ptrDouble = var->defaultValue.doubleValue ? var->defaultValue.doubleValue : 0.0;
+				var->value.doubleValue 	= *var->ptrDouble;
+				*((double*)&buffer) 	= (double)*var->ptrDouble;
+				HAL_I2C_Mem_Write(var->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, var->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 8, 200);
+				break;
+			default:
+				return EEPROM_ERROR; // Retorna código de erro apropriado para tipo desconhecido
 				break;
 			}
 		}
-	}// end for para variaveis floatin
-
-	//Leitura referencia
-	if(eeprom->RefFlag.valor != STD_REF_MEM)
-	{
-		//executa reset de eeprom HARDRESET
-		RestauraEeprom(eeprom, hardReset);
-		return;
-	}
-}
-void RestauraEeprom			(Eeprom *eeprom ,TypeRestauracao tipo){
-	HAL_StatusTypeDef result;
-
-	__IO bytetAsBytes	buffer1b;
-	__IO shortAsBytes 	buffer2b;
-	__IO uint32AsBytes	buffer4b;
-	__IO floatAsBytes	floatBuff;
-	__IO doubleAsBytes 	doubleBuff;
-
-	LIBERA_EEPROM
-	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,30,HAL_MAX_DELAY);
-	if (result==HAL_OK){
-		//redefine para default variaveis normais
-		for(uint8_t i = 0; i < eeprom->_EepromVarCount; i++){
-			//verifica se item é resetavel
-			if(!eeprom->_EepromVarArr[i]->flagResetavel || tipo == hardReset){
-				switch (eeprom->_EepromVarArr[i]->_sizeType) {
-				case DATA8BITS:
-					buffer1b.value					=0x00;
-					buffer1b.value 					= (uint8_t)eeprom->_EepromVarArr[i]->defaultValue;
-					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarArr[i]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer1b.bytes, 1, 200);
-					break;
-				case DATA16BITS:
-					buffer2b.value					=0x0000;
-					buffer2b.value 					= (uint16_t)eeprom->_EepromVarArr[i]->defaultValue;
-					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarArr[i]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer2b.bytes, 2, 200);
-					break;
-				case DATA32BITS:
-					buffer4b.value					=0x00000000;
-					buffer4b.value 					= (uint32_t)eeprom->_EepromVarArr[i]->defaultValue;
-					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarArr[i]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer4b.bytes, 4, 200);
-					break;
-				}
-			}
-			osDelay(20);
-		}
-		//redefine para default variaveis floating
-		for(uint8_t k = 0; k < eeprom->_EepromVarFloatingCount; k++){
-			//verifica se item é resetavel
-			if(!eeprom->_EepromVarFloatingArr[k]->flagResetavel || tipo == hardReset){
-				switch (eeprom->_EepromVarFloatingArr[k]->_sizeType) {
-				case DATAFLOAT:
-					floatBuff.value 							= 0x0000;
-					floatBuff.value 							= (float)eeprom->_EepromVarFloatingArr[k]->defaultValue;
-					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarFloatingArr[k]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)floatBuff.bytes, 4, 200);
-					break;
-				case DATADOUBLE:
-					doubleBuff.value 							= 0x00000000;
-					doubleBuff.value 							= (double)eeprom->_EepromVarFloatingArr[k]->defaultValue;
-					HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->_EepromVarFloatingArr[k]->_addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)doubleBuff.bytes, 8, 200);
-					break;
-				}
-			}
-			osDelay(40);
-		}
-
-		//grava valor padrao standart
-		buffer1b.value					= (uint8_t)STD_REF_MEM;
-		eeprom->RefFlag.valor			= buffer1b.value;
-		HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,eeprom->RefFlag._addrEprom, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer1b.bytes, 1, 200);
-		osDelay(40);
+		osDelay(20);
 	}
 	TRAVA_EEPROM
+	return EEPROM_SUCCESS; // Retorna sucesso se todos os valores foram resetados
 }
-void EepromReadVal			(Eeprom *eeprom, uint16_t addr, uint8_t *_var, uint16_t size){
-	//todo condicionar caso nao possivel ler, tomar açao
-	if (HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_READ_ADDR,30,HAL_MAX_DELAY)==HAL_OK){
-		HAL_I2C_Mem_Read(eeprom->i2cHandle, EEPROM_READ_ADDR,addr,I2C_MEMADD_SIZE_16BIT,(uint8_t *)&_var, size, 200);
+void 				reset_containerEeprom(Eeprom *eeprom, TypeRestauracao resetType) {
+
+	//funcao que implementa containerEeprom_reset
+	EEPROM_ErrorCode errCode = containerEeprom_reset(eeprom, resetType);
+	if (errCode != EEPROM_SUCCESS) {
+		eepromError_Handler(errCode);
 	}
 }
-void Write_1_byte			(Eeprom *eeprom, uint16_t addr, uint8_t * _ptr){
-	//todo confirmar uso dessa funcao
-	uint8_t *buffer = 0;
-	buffer = (uint8_t *)(_ptr);
 
-	LIBERA_EEPROM
-	//envio para memoria pagina 1
-	HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,addr, I2C_MEMADD_SIZE_16BIT,(uint8_t *) buffer, 1, 100);
-	TRAVA_EEPROM
-
-}//---END---//
-void EepromUpdateMes(Eeprom *eeprom, uint16_t addMes, uint16_t addItem, uint32_t valor, TypeData _sizeType){
-	HAL_StatusTypeDef result;
-	uint8_t buffer0[1];
-	uint8_t buffer1[2];
-	uint8_t buffer2[4];
-
-	LIBERA_EEPROM
-	result = HAL_I2C_IsDeviceReady(eeprom->i2cHandle, EEPROM_WRITE_ADDR,30,HAL_MAX_DELAY);
-	if (result==HAL_OK)
-	{
-		switch (_sizeType) {
-		case DATA8BITS:
-			buffer0[0] = (uint8_t)valor;
-			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR,addMes+addItem, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer0, 1, 200);
-			break;
-		case DATA16BITS:
-			buffer1[0] = (uint8_t)(valor >> 8);
-			buffer1[1] = (uint8_t)(valor & 0xFF);
-			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR, addMes+addItem, I2C_MEMADD_SIZE_16BIT, (uint8_t *)buffer1, 2, 200);
-			break;
-		case DATA32BITS:
-			buffer2[0] = (uint8_t)(valor >> 24);
-			buffer2[1] = (uint8_t)(valor >> 16);
-			buffer2[2] = (uint8_t)(valor >> 8);
-			buffer2[3] = (uint8_t)(valor & 0xFF);
-			HAL_I2C_Mem_Write(eeprom->i2cHandle, EEPROM_WRITE_ADDR, addMes+addItem, I2C_MEMADD_SIZE_16BIT,(uint8_t *)buffer2, 4, 200);
-			break;
-		default:
-			break;
-		}
-	}
-}
-void 			eepromError_Handler(EEPROM_ErrorCode erro)
-{
+void 			eepromError_Handler(EEPROM_ErrorCode erro){
 	/* USER CODE BEGIN Error_Handler_Debug */
+	//todo dependendo do erro resetar o sistema ou nao
 	/* User can add his own implementation to report the HAL error return state */
-	__disable_irq();
-	while (1)
-	{
-	}
+	__NOP();
+//	__disable_irq();
+//	while (1)
+//	{
+//		__NOP();
+//	}
 	/* USER CODE END Error_Handler_Debug */
 }
+
+//----------------------------design pattern---------
+
+
+
+
 
 #endif /* SRC_EEPROM_H_ */
 

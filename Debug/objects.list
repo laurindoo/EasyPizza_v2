@@ -6,6 +6,7 @@
 "./Core/Src/dwin.o"
 "./Core/Src/freertos.o"
 "./Core/Src/main.o"
+"./Core/Src/my_queue.o"
 "./Core/Src/pid.o"
 "./Core/Src/stm32f1xx_hal_msp.o"
 "./Core/Src/stm32f1xx_hal_timebase_tim.o"

@@ -35,7 +35,7 @@ task.h is included from an application file. */
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "queue.h"
+#include <queue.h>
 
 #if ( configUSE_CO_ROUTINES == 1 )
 	#include "croutine.h"
