@@ -184,7 +184,7 @@ EEPROM_ErrorCode 	eepromObjArr_update(eepromVarArr* obj) {
 	switch (obj->typeVar) {
 	case DATA_8BITS:
 		obj->value.intValue 	= *obj->ptr8;
-		buffer[0] 				= *obj->ptr8;
+		*((uint8_t*)&buffer) 	= *obj->ptr8;
 		HAL_I2C_Mem_Write(obj->parentEeprom->i2cHandle, EEPROM_WRITE_ADDR, obj->_addrEprom, I2C_MEMADD_SIZE_16BIT, buffer, 1, 200);
 		break;
 	case DATA_16BITS:
@@ -263,7 +263,7 @@ EEPROM_ErrorCode 	containerEeprom_download	(Eeprom *eeprom){
 		// envia para o ponteiro.
 		switch (var->typeVar) {
 		case DATA_8BITS:
-			var->value.intValue = buffer[0];
+			var->value.intValue = *((uint8_t*)&buffer);
 			if (var->value.intValue > var->maxValue.intValue || var->value.intValue < var->minValue.intValue) {
 				var->value.intValue = var->defaultValue.intValue;
 			}

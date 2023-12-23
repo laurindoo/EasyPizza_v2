@@ -5,7 +5,6 @@
  *      Author: lucas
  */
 #include "TaskEeprom.h"
-#include "limits.h"
 void initEeprom(void);
 void setupEepromVarArr(void);
 void processaEeprom(void);
@@ -52,7 +51,7 @@ void setupEepromVarArr(void){
 
 	// HORIMETRO, total apenas de HORAS em funcionamento.
 	init_objArrEeprom(&E_horimetroHoras, HARD_RESET, addrHORIMETRO, DATA_16BITS, &Calendario.Horimetro_horas);
-	E_horimetroHoras.M_setStdValues16bits(&E_horimetroHoras, 0,0,sizeof(uint16_t));
+	E_horimetroHoras.M_setStdValues16bits(&E_horimetroHoras, 0,0,60000);
 	eeprom.M_AddOnArr(&eeprom,	&E_horimetroHoras);
 
 	// HORIMETRO, parte em MINUTOS do total.
@@ -62,17 +61,17 @@ void setupEepromVarArr(void){
 
 	// contagem total de ciclos realizados pelo TIMER.
 	init_objArrEeprom(&E_totalCiclos, HARD_RESET, addrTOTAL_GERAL, DATA_16BITS, &Calendario.TotalCiclos);
-	E_totalCiclos.M_setStdValues16bits(&E_totalCiclos, 0,0,sizeof(uint16_t));
+	E_totalCiclos.M_setStdValues16bits(&E_totalCiclos, 0,0,60000);
 	eeprom.M_AddOnArr(&eeprom,	&E_totalCiclos);
 
 	// contagem total de vezes que o sensor de TETO chegou em temperatura maxima.
 	init_objArrEeprom(&E_ContTetoMax, HARD_RESET, addrCONT_MAX_TETO, DATA_16BITS, &Calendario.ContMaxTeto);
-	E_ContTetoMax.M_setStdValues16bits(&E_ContTetoMax, 0,0,sizeof(uint16_t));
+	E_ContTetoMax.M_setStdValues16bits(&E_ContTetoMax, 0,0,60000);
 	eeprom.M_AddOnArr(&eeprom,	&E_ContTetoMax);
 
 	// contagem total de vezes que o sensor de LASTRO chegou em temperatura maxima.
 	init_objArrEeprom(&E_ContLastroMax, HARD_RESET, addrCONT_MAX_LASTRO, DATA_16BITS, &Calendario.ContMaxLastro);
-	E_ContLastroMax.M_setStdValues16bits(&E_ContLastroMax, 0,0,sizeof(uint16_t));
+	E_ContLastroMax.M_setStdValues16bits(&E_ContLastroMax, 0,0,60000);
 	eeprom.M_AddOnArr(&eeprom,	&E_ContLastroMax);
 
 	/*----------------- MEMORIA DE CONTROLE TEMPERATURA DE TETO -----------------*/

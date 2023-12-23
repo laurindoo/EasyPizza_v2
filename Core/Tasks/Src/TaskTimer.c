@@ -16,7 +16,7 @@ void verificaErro(void);
 extern osThreadId TaskTimerHandle;
 extern osThreadId TaskBuzzerHandle;
 //fila de envio TX ble
-extern osMessageQId FilaTXBluetoothHandle,FilaEepromHandle;
+extern osMessageQId FilaEepromHandle;
 
 extern double TempTeto, TempLastro, PIDOutTeto, PIDOutLastro, TempSPTeto, TempSPLastro;
 
@@ -49,7 +49,7 @@ void funcionamentoTimer(void){
 
 		//chegou ao zero --- ROTINA DE FIM DE CICLO
 		if(PrimitiveStates.RTTimerSegundos==0 && PrimitiveStates.RTTimerMinutos==0 && PrimitiveStates.stateTimer != TIMER_idle){
-			Calendario.TotalCiclos+=1;
+			Calendario.TotalCiclos=Calendario.TotalCiclos+1;
 			osMessagePut(FilaEepromHandle, CEepromNewCile, 0);
 			//notifica buzzer
 			osSignalSet(TaskBuzzerHandle, SINAL_PRONTO);

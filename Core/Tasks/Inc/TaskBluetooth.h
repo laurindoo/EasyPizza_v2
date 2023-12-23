@@ -21,12 +21,12 @@
 //#define VERSAO 	2// versao salva no dia 23/11/2023 -
 #define VERSAO 	3// versao salva no dia 22/12/2023 -
 
-
-extern Bluetooth bluetooth;
+extern Bluetooth 		bluetooth;
 extern OutputDigital 	outPuts;
-extern PID_TypeDef TPIDTeto,TPIDLastro;
-extern osThreadId TaskBuzzerHandle;
-extern osMessageQId FilaEepromHandle;
+extern PID_TypeDef 		TPIDTeto,TPIDLastro;
+extern osThreadId 		TaskBuzzerHandle;
+extern osThreadId 		TaskBluetoothHandle;
+extern osMessageQId 	FilaEepromHandle;
 
 //#define MACRO_ANULA_INATIVIDADE PrimitiveStates.intatividadeTime = 0;
 

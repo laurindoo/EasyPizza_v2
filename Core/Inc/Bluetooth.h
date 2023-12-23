@@ -56,6 +56,8 @@
 #include "cmsis_os.h"
 #include "my_queue.h"
 
+
+#define newMessage 0x0a
 #define BLE_DEVICE_NAME NOME_DEVICE // Substitua por um nome apropriado
 #define COMANDO_BUFFER_SIZE (50) // Escolha um tamanho que seja suficiente
 
@@ -210,7 +212,7 @@ struct Bluetooth
 	Queue 			* myQ_dataTx;
 
 	//Variables for parsing the received data
-	uint8_t _RxDataArr[BLUETOOTH_MAX_BUFF_LEN],bufferDataArr[BLUETOOTH_MAX_BUFF_LEN], _RxData,RxSize;
+	uint8_t _RxDataArr[BLUETOOTH_MAX_BUFF_LEN], _RxData,RxSize;
 
 	//maquina de estados para conexao.
 	TypeMaquinaConexao MaquinaConexao;
@@ -226,6 +228,9 @@ struct Bluetooth
 	BleComando ComandoAtual;
 	BleComando BLEPedeSenha,BLERecebeuSenha;
 
+	//Handler da task
+	osThreadId 	Task;
+
 	//Variavel para receber lista de comandos
 	BleComando* _BleCommArr[BLUETOOTH_MAX_COMANDOS_COUNT];
 	uint8_t contComandos;
@@ -235,7 +240,7 @@ struct Bluetooth
 };
 
 
-void		 	bleConstrutora(Bluetooth *ble,  UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle);
+void		 	bleConstrutora(Bluetooth *ble,  UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle, osThreadId Task);
 void		 	bleAddComp(Bluetooth* ble, BleComando* _blecomm, ComandosBleRX __comando);
 BleComando* 	createBleComp(Bluetooth* ble, ComandosBleRX __comando);
 void		 	bleAddCompConexao(Bluetooth* ble, BleComando* _blecomm, ConexaoBleTX __comando);

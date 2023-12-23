@@ -19,7 +19,7 @@
  *         	Retorna OBJETO_NULO caso objeto nao criado.
  *         	Retorna EXTRAPOLOU_TRY_BLE caso tentativas de inicializacao tenham falhado.
  */
-void	 		bleConstrutora(Bluetooth *ble, UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle){
+void	 		bleConstrutora(Bluetooth *ble, UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle, osThreadId Task){
 
 	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
 	if (ble == NULL || UARTHandle == NULL || UARTDMAHandle == NULL) {
@@ -36,6 +36,8 @@ void	 		bleConstrutora(Bluetooth *ble, UART_HandleTypeDef *UARTHandle, DMA_Handl
 	ble->myQ_bleCom = Queue_create();
 	ble->myQ_dataRx = Queue_create();
 	ble->myQ_dataTx = Queue_create();
+	ble->Task 		= Task;
+	osSignalSet(ble->Task, newMessage);
 
 	// Inicialização de objetos de conexão.
 	bleAddCompConexao(ble, &ble->BLEPedeSenha, RX_PEDE_SENHA);
@@ -460,7 +462,7 @@ void 			bluetoothErroCRC(Bluetooth* ble){
 		TXCRC[1] = 0xEE;
 		TXCRC[2] = 0xEE;
 		HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TXCRC, 3,50);
-		bleError_Handler(BLE_CRC_INCORRETO);
+//		bleError_Handler(BLE_CRC_INCORRETO);
 	}else{
 		//certo
 		return;
@@ -576,17 +578,20 @@ void putQueueComando(Bluetooth *ble, ConexaoBleRX comando) {
 	// permitir apenas um item por vez na fila. evitando dessincronia com dado recebida.
 	if (ble->myQ_bleCom->is_empty(ble->myQ_bleCom)) {
 		ble->myQ_bleCom->insert(ble->myQ_bleCom, comando);
+		osSignalSet(ble->Task, newMessage);
 	}
 }
 void putQueueDataRx(Bluetooth *ble, ComandosBleRX comando) {
 	// permitir apenas um item por vez na fila. evitando dessincronia com dado recebida.
 	if (ble->myQ_dataRx->is_empty(ble->myQ_dataRx)) {
 		ble->myQ_dataRx->insert(ble->myQ_dataRx, comando);
+		osSignalSet(ble->Task, newMessage);
 	}
 }
 void putQueueDataTx(Bluetooth *ble, ComandosBleTX comando) {
 	//todo tratar erro de fila cheia //bleError_Handler
 	ble->myQ_dataTx->insert(ble->myQ_dataTx, comando);
+	osSignalSet(ble->Task, newMessage);
 }
 
 /**

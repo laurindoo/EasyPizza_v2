@@ -25,17 +25,28 @@ valuesSincronia FlagSincronia;
 
 void StartBluetooth(void const * argument)
 {
+	osEvent evt;
+
 	initBluetooth();
 
 	for(;;)
 	{
-		//executado internamente no bluetooth
-		txBleComando(&bluetooth);
-		//lista de funcoes RECEBIDAS
-		rxBluetooth();
-		//lista de funcoes a serem ENVIADAS
-		txBluetooth();
-		osThreadYield();
+
+		evt = osSignalWait(newMessage, osWaitForever);
+		if (evt.status == osEventSignal) {
+
+			// executado internamente no bluetooth.
+			txBleComando(&bluetooth);
+			// lista de funcoes RECEBIDAS (1 item por vez).
+			rxBluetooth();
+			// lista de funcoes a serem ENVIADAS (fila de até 10 comandos).
+			txBluetooth();
+
+		}
+		// se ainda tiver item na fila de transmissao, sinaliza a task.
+		if (!bluetooth.myQ_dataTx->is_empty(bluetooth.myQ_dataTx))
+			osSignalSet(bluetooth.Task, newMessage);
+
 		osDelay(40);
 	}
 }
@@ -43,7 +54,7 @@ void initBluetooth(void){
 
 	//inicializacao do bluetooth
 	//todo tratar returns
-	bleConstrutora(&bluetooth, &huart1, &hdma_usart1_rx);
+	bleConstrutora(&bluetooth, &huart1, &hdma_usart1_rx, TaskBluetoothHandle);
 
 	//possiveis comandos a serem recebidos pelo bluetooth
 	createBleComp(&bluetooth, RX_SOLICITA_REALTIME);
