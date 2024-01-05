@@ -170,7 +170,7 @@ int main(void)
 	 * 19 - FEITO -Revisar Ki do lastro que esta vindo zerado ?????
 	 * 20 - FEITO - revisar restruturacao automatico
 	 * 21 - FEITO - on/off de beep
-	 * 22 - pulsar leds ao conectar
+	 * 22 - FEITO - pulsar leds ao conectar e buzzer(breve)
 	 * 23 - FEITO - habilitar soft e hard reset, deixando de fora ciclos e contagem de tetoTempMax e lastroTempMax
 	 * 24 - FEITO - Desflagear o cont teto ao fim das receitas
 	 * 25 - FEITO - Ler referencia de eeprom, nao foi feito
@@ -183,8 +183,12 @@ int main(void)
 	 * 32 - FEITO - reestruturacao completa de sequencia de senhas e primeiras conexoes
 	 * 33 - FEITO - testar leitura eeprom do buzzer
 	 * 34 - MUITA MAO - criar uma funcao de log para minhas classes
-	 * 35 - revisar logica de restauracao de valores padrao
-	 * 36 - cancelei o buzzer pra nao enlouquecer
+	 * 35 - FEITO - revisar logica de restauracao de valores padrao
+	 * 36 - FEITO - cancelei o buzzer pra nao enlouquecer
+	 * 37 - centralizar erros em um só lugar
+	 * 38 - FEITO - dependendo do erro resetar o sistema ou nao (menor que zero necessitam nvic_reset())
+	 * 39 - FEITO - retirado execucao automatica.
+	 * 40 - revisar comentarios da classe bluetooth e incluir comentarios para classe eeprom.
 	 *
 	 *
 	 *
@@ -857,13 +861,20 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 }
 
 void timeoutAquecimento (void){
+	//callback apontada no OutPut dos canais de aquecimento
+	//essa funcao é chamada no momento que a contagem atinge seu limite
+
 	//verifica erro temperatura lastro
-	if(PrimitiveStates.Lastro.realtime < PrimitiveStates.Lastro.setPoint-5)
+	if(PrimitiveStates.Lastro.realtime < PrimitiveStates.Lastro.setPoint-5){
+		//todo incluir no buffer erros
 		PrimitiveStates.Erro.bit.IdleLastro=1;
+	}
 
 	//verifica erro temperatura teto
-	if(PrimitiveStates.Teto.realtime < PrimitiveStates.Teto.setPoint-5)
+	if(PrimitiveStates.Teto.realtime < PrimitiveStates.Teto.setPoint-5){
+		//todo incluir no buffer erros
 		PrimitiveStates.Erro.bit.IdleTeto=1;
+	}
 }
 
 void timeoutDesligaLampada(void){
@@ -968,7 +979,17 @@ void CBTimer10ms(void const * argument)
 {
 	/* USER CODE BEGIN CBTimer10ms */
 
+	static TypeMaquinaConexao LocalMaquinaConexao;
 	bluetooth10ms(&bluetooth);
+
+
+	if (LocalMaquinaConexao != bluetooth.MaquinaConexao) {
+		LocalMaquinaConexao = bluetooth.MaquinaConexao;
+		if(LocalMaquinaConexao == RX_VALIDADO){
+			osSignalSet(TaskBuzzerHandle, SINAL_CONECTOU);
+		}
+	}
+
 
 	/* USER CODE END CBTimer10ms */
 }
@@ -977,8 +998,6 @@ void CBTimer10ms(void const * argument)
 void CBTimer1000ms(void const * argument)
 {
 	/* USER CODE BEGIN CBTimer1000ms */
-
-	printf("passou 1 segundo \n");
 
 	bluetooth1000ms(&bluetooth);
 	taskTemperatura1sec();
@@ -1027,6 +1046,7 @@ void Error_Handler(void)
 	__disable_irq();
 	while (1)
 	{
+		NVIC_SystemReset();
 	}
 	/* USER CODE END Error_Handler_Debug */
 }

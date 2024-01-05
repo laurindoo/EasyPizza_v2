@@ -16,6 +16,9 @@
 #include "stdio.h"
 #include "cmsis_os.h"
 
+//lista de erros
+#include "error_codes.h"
+
 
 /*
  * classe é capaz de controlar maximos e minimos que forem cadastrados nela atraves de ponteiros
@@ -69,7 +72,12 @@
 #define addrLASTRO_HIST			73	// 16-bits
 #define addrLASTRO_LIMIT		75	// 16-bits
 
-#define addrREF_MEM_FLAG		77 // 8-bits
+#define addrREF_MEM_FLAG		77 	// 8-bits
+
+//PAGINA PARA SALVAR ERROS pagina 10.
+#define addrINIT_ERR			320
+//maximo numero de erros admitidos.
+#define MAX_ERRORS 10
 
 
 
@@ -86,24 +94,6 @@
 
 typedef struct eepromVarArr eepromVarArr;
 typedef struct Eeprom Eeprom;
-
-/*
- * Erros da classe
- */
-typedef enum {
-    EEPROM_SUCCESS 		  = 0x00,
-    EEPROM_OBJETO_NULO 			,
-    EEPROM_TIPO_ERRADO 			,
-    EEPROM_ERRO_CADASTRO		,
-    EEPROM_LISTA_CHEIA			,
-    EEPROM_ERROR				,
-    EEPROM_ERRO_ESCRITA			,
-    EEPROM_ERRO_LEITURA			,
-    EEPROM_ERRO_ENDERECO_OBJ	,
-    EEPROM_QUEBRA_ENDERECO_OBJ	,
-	EEPROM_TIPO_DESCONHECIDO	,
-	EEPROM_BUSY					,
- } EEPROM_ErrorCode;
 
 //---tamanhos
 typedef enum{
@@ -136,6 +126,10 @@ typedef enum {
     DATA_DOUBLE
 } DataType;
 
+typedef struct {
+	ErrorCode errors[MAX_ERRORS];
+    uint8_t errorCount;
+} ErrorBuffer;
 
 /*
  * Eeprom Struct (cointainer)
@@ -153,9 +147,8 @@ typedef enum {
 	eepromVarArr* arrVar[EEPROM_MAX_COMP_COUNT];
 	uint8_t 	  arrCount;
 
-	//todo refazer logica de reset no momento esta ignorado
-	//todo:devo importar a fila de eeprom
-	//todo estudar como importar também a estrutura de comandos possiveis para a fila importada a cima
+	//buffer de erros
+	ErrorBuffer errorBuffer;
 
 	/*---METODOS---*/
 	// metodo incluir var na lista.
@@ -164,6 +157,10 @@ typedef enum {
     void (*M_downloadAllVar)(Eeprom*);
     // reseta os valores na eeprom e nos ponteiros
     void (*M_resetAllVar)(Eeprom*,TypeRestauracao);
+    // escreve uint8_t direto em endereco
+    void (*write)(Eeprom*, uint16_t, uint16_t, uint8_t*);
+    // read uint8_t direto em endereco
+    void (*read)(Eeprom*,uint16_t, uint16_t, uint8_t*);
 
 };
 
@@ -212,20 +209,13 @@ typedef enum {
 
 
 void defaultValuesArrVar(eepromVarArr* self, TypeStdValue tipo, void *val) ;
-EEPROM_ErrorCode eepromVarArr_deinit(eepromVarArr *self);
-EEPROM_ErrorCode eeprom_AddVarOnArr(Eeprom* eeprom, eepromVarArr* self) ;
+ErrorCode eepromVarArr_deinit(eepromVarArr *self);
+ErrorCode eeprom_AddVarOnArr(Eeprom* eeprom, eepromVarArr* self) ;
+
 void addVarOnContainerEeprom(Eeprom* self, eepromVarArr* var);
-EEPROM_ErrorCode eepromVarArr_deinit(eepromVarArr *self);
+ErrorCode eepromVarArr_deinit(eepromVarArr *self);
 
-
-
-
-
-
-
-
-
-EEPROM_ErrorCode 	objArrEeprom_init	(eepromVarArr* self, TypeRestauracao typeReset, uint16_t addr, DataType type, void *_addrVar);
+ErrorCode 	objArrEeprom_init	(eepromVarArr* self, TypeRestauracao typeReset, uint16_t addr, DataType type, void *_addrVar);
 void 			 	init_objArrEeprom	(eepromVarArr* self, TypeRestauracao typeReset, uint16_t addr, DataType type, void *_addrVar);
 void 				set_StdValues8bits	(eepromVarArr* self, uint8_t min, 	uint8_t def, 	uint8_t max);
 void 				set_StdValues16bits	(eepromVarArr* self, uint16_t min, 	uint16_t def, 	uint16_t max);
@@ -233,32 +223,30 @@ void 				set_StdValues32bits	(eepromVarArr* self, uint32_t min, 	uint32_t def, 	
 void 				set_StdValuesFloat	(eepromVarArr* self, float min, 	float def, 		float max);
 void 				set_StdValuesDouble (eepromVarArr* self, double min, 	double def, 	double max);
 
-
-
-
-
-
-
-
-EEPROM_ErrorCode 	containerEeprom_init	(Eeprom *self, I2C_HandleTypeDef *i2c, osMessageQId *fila);
+ErrorCode 	containerEeprom_init	(Eeprom *self, I2C_HandleTypeDef *i2c, osMessageQId *fila);
 void 				init_containerEeprom	(Eeprom *self, I2C_HandleTypeDef *i2c, osMessageQId *fila);
 
-
-
-
-EEPROM_ErrorCode 	eepromObjArr_update(eepromVarArr* obj);
+ErrorCode 	eepromObjArr_update(eepromVarArr* obj);
 void 				update_eepromObjArr(eepromVarArr* obj);
 
-EEPROM_ErrorCode 	containerEeprom_download	(Eeprom *eeprom);
+ErrorCode 	containerEeprom_download	(Eeprom *eeprom);
 void 				download_containerEeprom	(Eeprom *eeprom);
 
-EEPROM_ErrorCode containerEeprom_reset(Eeprom *eeprom, TypeRestauracao resetType);
-void			 reset_containerEeprom(Eeprom *eeprom, TypeRestauracao resetType);
+ErrorCode 	containerEeprom_reset(Eeprom *eeprom, TypeRestauracao resetType);
+void			 	reset_containerEeprom(Eeprom *eeprom, TypeRestauracao resetType);
 
+ErrorCode 	eepromAddr_write(Eeprom *eeprom, uint16_t addr, uint16_t size, uint8_t *data);
+void 				write_eepromAddr(Eeprom *eeprom, uint16_t addr, uint16_t size, uint8_t *data);
 
-void 			eepromError_Handler(EEPROM_ErrorCode erro);
+ErrorCode 	eepromAddr_read(Eeprom *eeprom, uint16_t _addrEprom, uint16_t size, uint8_t *value);
+void 				read_eepromAddr(Eeprom *eeprom, uint16_t _addrEprom, uint16_t size, uint8_t *value);
 
-//----------------------------design pattern---------
+// gerenciamento de erro
+void 				eepromError_Handler(Eeprom *eeprom, ErrorCode erro);
+void 				ErrorBuffer_init(ErrorBuffer* ebuffer);
+ErrorCode 	ErrorBuffer_add(Eeprom* eeprom, uint8_t errorCode);
+ErrorCode 	ErrorBuffer_read(Eeprom *eeprom);
+void			 	ErrorBuffer_clear(Eeprom* eeprom);
 
 
 

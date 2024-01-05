@@ -16,11 +16,14 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "bluetooth.h"
+#include "eeprom.h"
 
 //#define VERSAO 	1// versao salva no dia 31/05/2023 -
 //#define VERSAO 	2// versao salva no dia 23/11/2023 -
 #define VERSAO 	3// versao salva no dia 22/12/2023 -
 
+
+extern Eeprom 			eeprom;
 extern Bluetooth 		bluetooth;
 extern OutputDigital 	outPuts;
 extern PID_TypeDef 		TPIDTeto,TPIDLastro;

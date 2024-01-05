@@ -74,6 +74,7 @@ void initBluetooth(void){
 	createBleComp(&bluetooth, RX_TUNNING_TETO);
 	createBleComp(&bluetooth, RX_TUNNING_LASTRO);
 	createBleComp(&bluetooth, RX_TOGGLE_BUZZER);
+	createBleComp(&bluetooth, RX_APAGA_ERROS);
 
 }
 void taskBluetooth1sec(void){
@@ -212,6 +213,21 @@ void txBluetooth(void){
 				bluetoothEnviaComando(&bluetooth,Buffer, 2);
 
 				break;
+			case TX_ERROS:
+				Buffer[0] 	= 0x01;									// ENDEREÇO
+				Buffer[1] 	= 0x70;									// FUNÇÃO -
+				Buffer[2] 	= eeprom.errorBuffer.errors[0];
+				Buffer[3] 	= eeprom.errorBuffer.errors[1];
+				Buffer[4] 	= eeprom.errorBuffer.errors[2];
+				Buffer[5] 	= eeprom.errorBuffer.errors[3];
+				Buffer[6] 	= eeprom.errorBuffer.errors[4];
+				Buffer[7] 	= eeprom.errorBuffer.errors[5];
+				Buffer[8] 	= eeprom.errorBuffer.errors[6];
+				Buffer[9] 	= eeprom.errorBuffer.errors[7];
+				Buffer[10] 	= eeprom.errorBuffer.errors[8];
+				Buffer[11] 	= eeprom.errorBuffer.errors[9];
+				bluetoothEnviaComando(&bluetooth,Buffer, 11);
+				break;
 			}
 		}
 	}
@@ -231,6 +247,7 @@ void rxBluetooth(void){
 					putQueueDataTx(&bluetooth, TX_SINCRONIA);
 					putQueueDataTx(&bluetooth, TX_SINCRONIA2);
 					putQueueDataTx(&bluetooth, TX_SINCRONIA3);
+					putQueueDataTx(&bluetooth, TX_ERROS);
 				}
 
 				break;
@@ -281,12 +298,13 @@ void rxBluetooth(void){
 				PrimitiveStates.RTTimerMinutos = PrimitiveStates.SPTimerMinutos;
 				PrimitiveStates.RTTimerSegundos = PrimitiveStates.SPTimerSegundos;
 
-				if(PrimitiveStates.Lastro._PWMstate != buscando && PrimitiveStates.Teto._PWMstate != buscando){
-					PrimitiveStates.stateTimer 	= TIMER_decrementando;
-					osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
-				}else{
-					osSignalSet(TaskBuzzerHandle, SINAL_NEGADO);
-				}
+//				if(PrimitiveStates.Lastro._PWMstate != buscando && PrimitiveStates.Teto._PWMstate != buscando){
+//					PrimitiveStates.stateTimer 	= TIMER_decrementando;
+//					osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
+//				}else{
+//					osSignalSet(TaskBuzzerHandle, SINAL_NEGADO);
+//				}
+
 				bluetooth.aknowladge(&bluetooth,RX_SP_TEMPO);
 			}
 			break;
@@ -458,6 +476,15 @@ void rxBluetooth(void){
 				//grava
 				osMessagePut(FilaEepromHandle, CEepromToogleBuzzer, 0);
 				bluetooth.aknowladge(&bluetooth,RX_TOGGLE_BUZZER);
+				break;
+			case RX_APAGA_ERROS:
+				//---------ENDEREÇO | 0x75 | 0x75 | CRC | CRC
+				MACRO_ANULA_INATIVIDADE
+				osSignalSet(TaskBuzzerHandle, SINAL_COMFIRMA);
+
+				// limpa erros.
+				osMessagePut(FilaEepromHandle, CEepromClearErrors, 0);
+				bluetooth.aknowladge(&bluetooth,RX_APAGA_ERROS);
 				break;
 			}
 		}

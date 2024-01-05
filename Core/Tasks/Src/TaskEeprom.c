@@ -133,7 +133,6 @@ void setupEepromVarArr(void){
 
 }
 
-
 void processaEeprom(void){
 	osEvent  evt;
 
@@ -187,6 +186,9 @@ void processaEeprom(void){
 			break;
 		case CEepromToogleBuzzer:
 			E_FlagBuzzer.M_update_eepromValue(&E_FlagBuzzer);
+			break;
+		case CEepromClearErrors:
+			ErrorBuffer_clear(&eeprom);
 			break;
 		default:
 			break;

@@ -55,6 +55,8 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "my_queue.h"
+//lista de erros
+#include "error_codes.h"
 
 
 #define newMessage 0x0a
@@ -94,6 +96,7 @@ typedef enum
 	RX_TUNNING_TETO 		= 0x33,
 	RX_TUNNING_LASTRO	 	= 0x34,
 	RX_TOGGLE_BUZZER	 	= 0x35,
+	RX_APAGA_ERROS		 	= 0x75,
 
 } ComandosBleRX;
 
@@ -107,6 +110,7 @@ typedef enum
 	TX_SINCRONIA3 			= 0x20,
 	TX_RESETANDO 			= 0x29,
 	TX_RESETADO_OK 			= 0x30,
+	TX_ERROS	 			= 0x70,
 
 } ComandosBleTX;
 /*
@@ -135,24 +139,6 @@ typedef enum
 // Declaracao estrutura Bluetooth antecipadamente
 typedef struct Bluetooth Bluetooth;
 
-/*
- * Erros da classe
- */
-typedef enum {
-    BLE_SUCCESS 		  = 0x00,
-    BLE_OBJETO_NULO 			,
-    BLE_EXTRAPOLOU_TRY 			,
-    BLE_CRC_INCORRETO 			,
-    BLE_COMANDO_NAO_ENCONTRADO 	,
-    BLE_COMANDO_NAO_PERMITIDO 	,
-    BLE_OBJETO_NAO_CRIADO 		,
-    BLE_COMANDO_NAO_CRIADO 		,
-    BLE_COMANDOCON_NAO_CRIADO 	,
-    BLE_NEW_DEVICE_NEGADO 		,
-    BLE_SENHA_ERRADA			,
-    BLE_HARDWARE_NOINIT			,
-    BLE_FILA_CHEIA				,
-} BLE_ErrorCode;
 /*
  * Sequencia hardware inicializacao
  */
@@ -248,7 +234,7 @@ void		 	readComando(Bluetooth* ble, TypeComandoBle tipo);
 void 			BLEUSART_IrqHandler(Bluetooth *ble);
 void		 	txBleComando(Bluetooth *ble);
 void 			BLEDMA_IrqHandler (Bluetooth *ble);
-HAL_StatusTypeDef bluetoothEnviaComando(Bluetooth *ble, unsigned char _out[], int size);
+void			bluetoothEnviaComando(Bluetooth *ble, unsigned char _out[], int size);
 void 			comandHM10(Bluetooth *ble, char _out[], uint16_t delay);
 void		 	iniciaBleHm10(Bluetooth* ble);
 void 			redefineBluetooth(Bluetooth* ble);
@@ -260,6 +246,6 @@ void 			sendAknowladge(Bluetooth* ble,uint8_t Cmd);
 void 			putQueueComando(Bluetooth *ble, ConexaoBleRX comando);
 void 			putQueueDataRx(Bluetooth *ble, ComandosBleRX comando);
 void 			putQueueDataTx(Bluetooth *ble, ComandosBleTX comando);
-void 			bleError_Handler(BLE_ErrorCode erro);
+void 			bleError_Handler(ErrorCode erro);
 
 #endif /* INC_BLUETOOTH_H_ */

@@ -6,6 +6,12 @@
  */
 
 #include "Bluetooth.h"
+#include "Eeprom.h"
+
+extern Eeprom eeprom;
+
+//todo implementar na classe my_queue um padrao de flags para sinalizar eventos
+//todo revisar se usar flag ou fila para envio de comandos internos
 
 /**
  * \brief 	Contrutor do objeto bluetooth.
@@ -431,7 +437,6 @@ void		 	iniciaBleHm10(Bluetooth* ble){
 			break;
 		case erro:
 			bleError_Handler(BLE_EXTRAPOLOU_TRY);
-			NVIC_SystemReset();
 			break;
 		}
 	}
@@ -462,7 +467,7 @@ void 			bluetoothErroCRC(Bluetooth* ble){
 		TXCRC[1] = 0xEE;
 		TXCRC[2] = 0xEE;
 		HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TXCRC, 3,50);
-//		bleError_Handler(BLE_CRC_INCORRETO);
+		//		bleError_Handler(BLE_CRC_INCORRETO);
 	}else{
 		//certo
 		return;
@@ -475,9 +480,11 @@ void 			bluetoothErroCRC(Bluetooth* ble){
  * \param 	size - Tamanho da mensagem original.
  * \return 	Retorna HAL status.
  */
-HAL_StatusTypeDef bluetoothEnviaComando(Bluetooth *ble,unsigned char _out[], int size)
+void		 	bluetoothEnviaComando(Bluetooth *ble,unsigned char _out[], int size)
 {
 	uint8_t	TX_Buffer		[size+3];
+	HAL_StatusTypeDef result;
+	uint8_t tries = 0, MAX_TRIES = 10;
 	CRC_short CRCVar;
 
 	//varredura para local.
@@ -490,7 +497,12 @@ HAL_StatusTypeDef bluetoothEnviaComando(Bluetooth *ble,unsigned char _out[], int
 	TX_Buffer[size+2] = (unsigned char) CRCVar.byte.lo;
 	TX_Buffer[size+1] = (unsigned char) CRCVar.byte.hi;
 
-	return HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TX_Buffer, size+3,50);
+	while (tries++ < MAX_TRIES) {
+		result = HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TX_Buffer, size+3,50);
+		if (result == HAL_OK)	break;
+		if (tries == MAX_TRIES)	bleError_Handler(BLE_ENVIO_COMANDO);
+//		osDelay(20);
+	}
 }
 /**
  * \brief 	Processa contadores internos a passo de 10 milisegundos
@@ -527,14 +539,13 @@ void 			bluetooth1000ms(Bluetooth* ble){
  * \brief 	Processa interrupcoes internas
  * \param 	*ble - Ponteiro para o objeto pai.
  */
-void 			BLEUSART_IrqHandler(Bluetooth *ble)
-{ //todo comentar melhor
-	if (ble->UARTHandle->Instance->SR & UART_FLAG_IDLE) {    /* if Idle flag is set */
-		__IO uint32_t __attribute__((unused))tmp;      	/* Must be volatile to prevent optimizations */
+void 			BLEUSART_IrqHandler(Bluetooth *ble){
+	if (ble->UARTHandle->Instance->SR & UART_FLAG_IDLE) {    	/* if Idle flag is set */
+		__IO uint32_t __attribute__((unused))tmp;      			/* Must be volatile to prevent optimizations */
 
-		tmp = ble->UARTHandle->Instance->SR;                 /* Read status register */
-		tmp = ble->UARTHandle->Instance->DR;                 /* Read data register */
-		__HAL_DMA_DISABLE (ble->UARTDMAHandle);       		/* Disabling DMA will force transfer complete interrupt if enabled */
+		tmp = ble->UARTHandle->Instance->SR;                 	/* Read status register */
+		tmp = ble->UARTHandle->Instance->DR;                 	/* Read data register */
+		__HAL_DMA_DISABLE (ble->UARTDMAHandle);       			/* Disabling DMA will force transfer complete interrupt if enabled */
 
 		__HAL_UART_ENABLE_IT 	(ble->UARTHandle, UART_IT_IDLE);		// HABILITA idle line INTERRUPT
 		__HAL_DMA_ENABLE_IT 	(ble->UARTDMAHandle, DMA_IT_TC);		// HABILITA O DMA Tx cplt INTERRUPT
@@ -549,7 +560,16 @@ void 			BLEUSART_IrqHandler(Bluetooth *ble)
  * \param 	delay - Delay requirido via datasheet.
  */
 void 			comandHM10(Bluetooth *ble, char _out[], uint16_t delay){
-	HAL_UART_Transmit(ble->UARTHandle, (uint8_t *) _out, strlen(_out),100);
+	HAL_StatusTypeDef result;
+	uint8_t tries = 0, MAX_TRIES = 5;
+
+	while (tries++ < MAX_TRIES) {
+		result = HAL_UART_Transmit(ble->UARTHandle, (uint8_t *) _out, strlen(_out),100);
+		if (result == HAL_OK)	break;
+		if (tries == MAX_TRIES)	bleError_Handler(BLE_ENVIO_COMANDO);
+//		osDelay(20);
+	}
+
 	if(delay != 0){
 		osDelay(delay);
 	}
@@ -568,11 +588,19 @@ void 			bluetoothDescon(Bluetooth* ble){
  * \param 	Cmd - comando que esta enviando o Aknowladge.
  */
 void 			sendAknowladge(Bluetooth* ble,uint8_t Cmd){
+	HAL_StatusTypeDef result;
+	uint8_t tries = 0, MAX_TRIES = 5;
 	unsigned char	TXCRC[3];
 	TXCRC[0] = 0x01;
 	TXCRC[1] = 0xFF;
 	TXCRC[2] = Cmd;
-	HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TXCRC, 3,50);
+
+	while (tries++ < MAX_TRIES) {
+		result = HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TXCRC, 3,50);
+		if (result == HAL_OK)	break;
+		if (tries == MAX_TRIES)	bleError_Handler(BLE_ENVIO_COMANDO);
+//		osDelay(20);
+	}
 }
 void putQueueComando(Bluetooth *ble, ConexaoBleRX comando) {
 	// permitir apenas um item por vez na fila. evitando dessincronia com dado recebida.
@@ -598,18 +626,14 @@ void putQueueDataTx(Bluetooth *ble, ComandosBleTX comando) {
  * @brief  This function is executed in case of error occurrence.
  * @retval None
  */
-void 			bleError_Handler(BLE_ErrorCode erro)
+void 			bleError_Handler(ErrorCode erro)
 {
-	/* USER CODE BEGIN Error_Handler_Debug */
-	//todo dependendo do erro resetar o sistema ou nao
-	/* User can add his own implementation to report the HAL error return state */
-	__NOP();
-	//	__disable_irq();
-	//	while (1)
-	//	{
-	//		__NOP();
-	//	}
-	/* USER CODE END Error_Handler_Debug */
+//	__disable_irq();
+	while (1)
+	{
+		ErrorBuffer_add(&eeprom, erro);
+		NVIC_SystemReset();
+	}
 }
 
 

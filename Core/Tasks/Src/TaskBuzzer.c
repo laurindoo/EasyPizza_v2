@@ -47,7 +47,7 @@ void sequencia2Buzzer(void){
 	offDigital(&PrimitiveStates.Lampada);
 }
 void waitBuzzerSignal(void){
-	const int32_t signals = SINAL_TEMP_REACH | SINAL_COMFIRMA | SINAL_NEGADO | SINAL_PRONTO;
+	const int32_t signals = SINAL_TEMP_REACH | SINAL_COMFIRMA | SINAL_NEGADO | SINAL_PRONTO | SINAL_CONECTOU;
 	osEvent evt;
 
 	// Aguarde até que qualquer um dos sinais seja recebido
@@ -108,6 +108,36 @@ void waitBuzzerSignal(void){
 				osDelay(100);
 			}
 			onDigital(&PrimitiveStates.Lampada);//DEIXA LAMPADA LIGADA
+		}
+
+		if (evt.value.signals & SINAL_CONECTOU) {
+			//retorna caso buzzer desabilitado
+			if(!PrimitiveStates.Buzzer){
+				M_BUZZER_OFF
+			}else{
+				M_BUZZER_ON
+				osDelay(30);
+				M_BUZZER_OFF
+				osDelay(20);
+				M_BUZZER_ON
+				osDelay(30);
+				M_BUZZER_OFF
+				osDelay(20);
+			}
+
+			onDigital(&PrimitiveStates.LedTeto);
+			osDelay(150);
+			onDigital(&PrimitiveStates.LedLastro);
+			osDelay(150);
+			onDigital(&PrimitiveStates.LedVerde);
+			osDelay(150);
+			offDigital(&PrimitiveStates.LedTeto);
+			osDelay(150);
+			offDigital(&PrimitiveStates.LedLastro);
+			osDelay(150);
+			offDigital(&PrimitiveStates.LedVerde);
+			osDelay(150);
+
 		}
 	}
 }

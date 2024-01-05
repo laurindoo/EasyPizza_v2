@@ -16,8 +16,8 @@
 #include "task.h"
 #include "cmsis_os.h"
 
-//#define M_BUZZER_ON HAL_TIM_PWM_Start	(&htim2,TIM_CHANNEL_4);
-#define M_BUZZER_ON HAL_TIM_PWM_Stop	(&htim2,TIM_CHANNEL_4);
+#define M_BUZZER_ON HAL_TIM_PWM_Start	(&htim2,TIM_CHANNEL_4);
+//#define M_BUZZER_ON HAL_TIM_PWM_Stop	(&htim2,TIM_CHANNEL_4);
 #define M_BUZZER_OFF HAL_TIM_PWM_Stop	(&htim2,TIM_CHANNEL_4);
 
 #endif /* SRC_TASKS_TASKBUZZER_H_ */

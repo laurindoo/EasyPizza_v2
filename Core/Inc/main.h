@@ -56,6 +56,7 @@ typedef enum
 	CEepromTempMaxLastroAgain,
 	CEepromTunning,
 	CEepromToogleBuzzer,
+	CEepromClearErrors,
 } ComandosEeprom;
 
 //---Estados maquina
@@ -127,7 +128,7 @@ typedef struct
 /* USER CODE BEGIN EC */
 
 //--- defines de fabrica
-#define STD_REF_EEPROM			0x31		// valor aleatorio para referencia e auto-reset.
+#define STD_REF_EEPROM			0xb1		// valor aleatorio para referencia e auto-reset.
 #define ON_FAN_TEMPERATURA 		200  		// temperatura de acionamento do cooler.
 #define TIME_INATIVO_SETUP 		1800 		// tempo de inatividade limite.
 #define TIME_MAX_AQUECIMENTO 	600  		// tempo maximo permitido para nao entrar em erro de aquecimento.
@@ -155,6 +156,7 @@ typedef struct
 #define SINAL_NEGADO		0b00000010
 #define SINAL_COMFIRMA		0b00000100
 #define SINAL_PRONTO		0b00001000
+#define SINAL_CONECTOU		0b00010000
 
 //--- sinal de erro.
 #define ERRO_CRITICO 			0x0f
