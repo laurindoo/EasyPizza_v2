@@ -9,10 +9,6 @@
 #include "Eeprom.h"
 
 extern Eeprom eeprom;
-
-//todo implementar na classe my_queue um padrao de flags para sinalizar eventos
-//todo revisar se usar flag ou fila para envio de comandos internos
-
 /**
  * \brief 	Contrutor do objeto bluetooth.
  * \param 	*ble - Ponteiro para o proprio objeto pre-criado.
@@ -25,14 +21,13 @@ extern Eeprom eeprom;
  *         	Retorna OBJETO_NULO caso objeto nao criado.
  *         	Retorna EXTRAPOLOU_TRY_BLE caso tentativas de inicializacao tenham falhado.
  */
-void	 		bleConstrutora(Bluetooth *ble, UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle, osThreadId Task){
+void	 		bleConstrutora(volatile Bluetooth *ble, UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle, osThreadId Task){
 
 	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
-	if (ble == NULL || UARTHandle == NULL || UARTDMAHandle == NULL) {
+	if (ble == NULL || UARTHandle == NULL || UARTDMAHandle == NULL)
 		bleError_Handler(BLE_OBJETO_NULO);
-	}
 
-	// Inicialização das variáveis do objeto Bluetooth.
+	// Inicialização das variáveis do objeto volatile Bluetooth.
 	ble->UARTHandle 	= UARTHandle;
 	ble->UARTDMAHandle 	= UARTDMAHandle;
 	ble->contComandos 	= 0; 	// Renomeado para ter um nome mais explícito e sem _ inicial.
@@ -55,6 +50,7 @@ void	 		bleConstrutora(Bluetooth *ble, UART_HandleTypeDef *UARTHandle, DMA_Handl
 	//metodo de respostas.
 	ble->aknowladge	= sendAknowladge;
 }
+
 /**
  * \brief 	Adiciona componentes do tipo ComandoBasico no objeto
  * \param 	*ble - Ponteiro para o objeto pai
@@ -62,18 +58,18 @@ void	 		bleConstrutora(Bluetooth *ble, UART_HandleTypeDef *UARTHandle, DMA_Handl
  * \param 	__comando - Comando definido em typedef geralmente no header da tarefa que usará
  * \return 	Retorna BLE_SUCCESS em caso de contrucao bem sucedida
  *         	Retorna OBJETO_NULO caso objeto nao criado.
- *         	Retorna BLE_OBJETO_NAO_CRIADO caso array esteja fora do range definido.
+ *         	Retorna BLE_EXCEDEU_LIMITE caso array esteja fora do range definido.
  */
-void 			bleAddComp(Bluetooth* ble, BleComando* _blecomm, ComandosBleRX __comando){
+void 			bleAddComp(volatile Bluetooth* ble, BleComando* _blecomm, ComandosBleRX __comando){
 
 	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
-	if (ble == NULL || _blecomm == NULL) {
+	if (ble == NULL || _blecomm == NULL || __comando == 0) {
 		bleError_Handler(BLE_OBJETO_NULO);
 	}
 
 	// Verifica tamanho.
 	if(ble->contComandos>=BLUETOOTH_MAX_COMANDOS_COUNT){
-		bleError_Handler(BLE_COMANDO_NAO_CRIADO);
+		bleError_Handler(BLE_EXCEDEU_LIMITE);
 	}
 
 	// Pass the corresponding data from component to component struct.
@@ -84,7 +80,7 @@ void 			bleAddComp(Bluetooth* ble, BleComando* _blecomm, ComandosBleRX __comando
 	ble->_BleCommArr[ble->contComandos] = _blecomm;
 	ble->contComandos++;
 }
-BleComando* 	createBleComp(Bluetooth* ble, ComandosBleRX __comando) {
+BleComando* 	createBleComp(volatile Bluetooth* ble, ComandosBleRX __comando) {
 	BleComando *me = (BleComando*)malloc(sizeof(BleComando));
 	if (me == NULL) {
 		return NULL;
@@ -101,16 +97,16 @@ BleComando* 	createBleComp(Bluetooth* ble, ComandosBleRX __comando) {
  *         	Retorna OBJETO_NULO caso objeto nao criado.
  *         	Retorna BLE_OBJETO_NAO_CRIADO caso array esteja fora do range definido.
  */
-void 			bleAddCompConexao(Bluetooth* ble, BleComando* _blecomm, ConexaoBleTX __comando){
+void 			bleAddCompConexao(volatile Bluetooth* ble, volatile BleComando* _blecomm, ConexaoBleTX __comando){
 
 	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
-	if (ble == NULL || _blecomm == NULL) {
+	if (ble == NULL || _blecomm == NULL || __comando == 0) {
 		bleError_Handler(BLE_OBJETO_NULO);
 	}
 
 	// Verifica tamanho.
 	if(ble->contComandos>=BLUETOOTH_MAX_COMANDOS_COUNT){
-		bleError_Handler(BLE_COMANDOCON_NAO_CRIADO);
+		bleError_Handler(BLE_COM_EXCEDEU_LIMITE);
 	}
 
 	// Pass the corresponding data from component to component struct.
@@ -121,13 +117,13 @@ void 			bleAddCompConexao(Bluetooth* ble, BleComando* _blecomm, ConexaoBleTX __c
 	ble->_BleCommArr[ble->contComandos] = _blecomm;
 	ble->contComandos++;
 }
+
 /**
- * \brief 	Função para manipular interrupções do DMA no módulo Bluetooth.
+ * \brief 	Função para manipular interrupções do DMA no módulo volatile Bluetooth.
  * 			Esta função é chamada quando um novo conjunto de dados é recebido via DMA.
- * \param 	*ble - Ponteiro para o objeto pai
- * \return 	todo tratar retorno
+ * \param 	*ble - Ponteiro para o objeto pai.
  */
-void 			BLEDMA_IrqHandler (Bluetooth *ble){
+void 			BLEDMA_IrqHandler (volatile Bluetooth *ble){
 	// Armazenda endereco MAC do HM-10.
 	uint8_t 	addr8Bits	[12];
 
@@ -141,6 +137,7 @@ void 			BLEDMA_IrqHandler (Bluetooth *ble){
 
 		/* Clear the transfer complete flag */
 		__HAL_DMA_CLEAR_FLAG(ble->UARTDMAHandle, __HAL_DMA_GET_TC_FLAG_INDEX(ble->UARTDMAHandle));
+		__HAL_DMA_CLEAR_FLAG(ble->UARTDMAHandle, __HAL_DMA_GET_GI_FLAG_INDEX(ble->UARTDMAHandle));
 
 		// Calculo do tamanho da string recebida.
 		ble->RxSize 		= DMA_RX_BUFFER_SIZE - ble->UARTDMAHandle->Instance->CNDTR;
@@ -189,8 +186,6 @@ void 			BLEDMA_IrqHandler (Bluetooth *ble){
 			readComando(ble,ComandoConexao);
 			break;
 		case RX_VALIDADO:
-			ble->msIdle=0;
-
 			// desconectou?
 			ss = NULL;
 			ss = strstr(StringRecebida, "LOST");
@@ -203,28 +198,35 @@ void 			BLEDMA_IrqHandler (Bluetooth *ble){
 			readComando(ble,ComandoBasico);
 			break;
 		}
-
 		// Prepara o DMA para a próxima transferência.
 		/* Important! DMA stream won't start if all flags are not cleared first */
-		ble->UARTDMAHandle->Instance->CMAR = (uint32_t)ble->_RxDataArr; /* Set memory address for DMA again */
-		ble->UARTDMAHandle->Instance->CNDTR = DMA_RX_BUFFER_SIZE;    	/* Set number of bytes to receive */
-		ble->UARTDMAHandle->Instance->CCR |= DMA_CCR_EN;            	/* Start DMA transfer */
+		ble->UARTDMAHandle->Instance->CMAR 	= (uint32_t)ble->_RxDataArr; 	/* Set memory address for DMA again */
+		ble->UARTDMAHandle->Instance->CNDTR = DMA_RX_BUFFER_SIZE;    		/* Set number of bytes to receive */
+		ble->UARTDMAHandle->Instance->CCR |= DMA_CCR_EN;            		/* Start DMA transfer */
+
 	}
 }
+
 /**
  * \brief 	Realiza a extracao do comando do array RxDataArr e vincula ao ComandoAtual
  * 				de acordo com o tipo de comando aceitavel: ComandoBasico OU ComandoConexao.
  * \param 	*ble - Ponteiro para o objeto pai.
  * \param 	tipo - tipo de comando aceitavel: ComandoBasico OU ComandoConexao.
- * \return 	Retorna BLE_SUCCESS em caso de leitura de comando com sucesso.
- *         	Retorna BLE_CRC_INCORRETO caso crc errado. Envia automaticamente na uart o comando de erro de CRC.
- *         	Retorna BLE_COMANDO_NAO_ENCONTRADO caso comando nao encontrado na lista.
- *         	Retorna BLE_COMANDO_NAO_PERMITIDO caso comando nao coerente com o parametro -tipo.
+ * \note: 	Se o comando for encontrado, o mesmo é vinculado ao ComandoAtual.
+ *             Caso contrário, é enviado um erro de CRC.
  */
-void		 	readComando(Bluetooth* ble, TypeComandoBle tipo){
+void		 	readComando(volatile Bluetooth* ble, TypeComandoBle tipo){
 	BleComando localComandoRX;
+
+	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
+	if (ble == NULL) {
+		bleError_Handler(BLE_OBJETO_NULO);
+	}
+
 	// Validação de CRC.
-	bluetoothErroCRC(ble);
+	if(bluetoothErroCRC(ble)) {
+		return;
+	}
 
 	// Varredura pelo array de comandos.
 	for(uint8_t i = 0; i < ble->contComandos; i++)	{
@@ -238,32 +240,37 @@ void		 	readComando(Bluetooth* ble, TypeComandoBle tipo){
 			switch (tipo) {
 			case ComandoBasico:
 				putQueueDataRx(ble, ble->ComandoAtual._comando);
+				ble->msIdle=0;
 				break;
 			case ComandoConexao:
 				putQueueComando(ble, ble->ComandoAtual._comando);
+				ble->msIdle=0;
 				break;
 			}
 			return;
 		}
 	}
-	bleError_Handler( BLE_COMANDO_NAO_ENCONTRADO);
+	//se chegou aqui é porque comando nao foi encontrado. envia erro de CRC nao encontrado.
+	putQueueComando(ble, TX_ERRO_CRC);
 }
+
 /**
  * \brief 	Processa solicitacoes de senha e entradas ao sistema
  * \param 	*ble - Ponteiro para o objeto pai.
- * \return 	Retorna BLE_SUCCESS em caso de leitura de comando com sucesso.
- *         	Retorna BLE_CRC_INCORRETO caso crc errado. Envia automaticamente na uart o comando de erro de CRC.
- *         	Retorna BLE_COMANDO_NAO_ENCONTRADO caso comando nao encontrado na lista.
- *         	Retorna BLE_COMANDO_NAO_PERMITIDO caso comando nao coerente com o parametro -tipo
+ * \note:     Se o comando for encontrado, o mesmo é vinculado ao ComandoAtual.
+ *            Caso contrário, é enviado um erro de CRC.
  */
-void 			txBleComando(Bluetooth *ble){
+void 			txBleComando(volatile Bluetooth *ble){
 	unsigned char	Buffer		[10];
+	int 			buffQueue;
+
+	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
+	if (ble == NULL)
+		bleError_Handler(BLE_OBJETO_NULO);
 
 	// Verifica se a fila está vazia.
-	int buffQueue;
-	if (ble->myQ_bleCom->is_empty(ble->myQ_bleCom)) {
+	if (ble->myQ_bleCom->is_empty(ble->myQ_bleCom))
 		return;
-	}
 
 	// Remove o primeiro elemento da fila.
 	buffQueue = ble->myQ_bleCom->remove(ble->myQ_bleCom);
@@ -271,7 +278,6 @@ void 			txBleComando(Bluetooth *ble){
 		switch ((uint8_t)buffQueue) {
 		case RX_PEDE_SENHA:
 			if(ble->JanelaConexao > 0){
-
 				/*----DENTRO DO TEMPO, ENTAO RESPONDE----*/
 				Buffer[0] 	= 0x01;
 				Buffer[1] 	= 0x51;
@@ -281,7 +287,6 @@ void 			txBleComando(Bluetooth *ble){
 				Buffer[5] 	= ble->chave.byte.lo	;
 				bluetoothEnviaComando(ble,Buffer, 5);
 				return;
-
 			}else{
 				/*----FORA DO TEMPO DE RESPOSTA ----*/
 				Buffer[0] 	= 0x01;
@@ -291,10 +296,6 @@ void 			txBleComando(Bluetooth *ble){
 				Buffer[4] 	= 0x00;
 				Buffer[5] 	= 0x00;
 				bluetoothEnviaComando(ble,Buffer, 5);
-				bleError_Handler(BLE_NEW_DEVICE_NEGADO);
-
-				//o Aplicativo esta se encarregando dessa desconxao pós senha errada.
-				//				bluetoothDescon(ble);
 			}
 			break;
 		case RX_RECEBEU_SENHA:
@@ -308,10 +309,6 @@ void 			txBleComando(Bluetooth *ble){
 				Buffer[2] 	= 0x52;
 				Buffer[3] 	= 0x00;
 				bluetoothEnviaComando(ble,Buffer, 3);
-				bleError_Handler(BLE_SENHA_ERRADA);
-
-				//o Aplicativo esta se encarregando dessa desconxao pós senha errada.
-				//				bluetoothDescon(ble);
 			}else{
 				//--->	CHAVE CORRETA
 				ble->MaquinaConexao	= RX_VALIDADO;
@@ -323,13 +320,28 @@ void 			txBleComando(Bluetooth *ble){
 				return;
 			}
 			break;
+		case TX_DESCONECTA:
+			comandHM10(ble,"AT",50);//DESCONECTA
+			comandHM10(ble,"AT",50);//DESCONECTA
+			break;
+		case TX_AKNOWLADGE:
+			Buffer[0] = 0x01;
+			Buffer[1] = 0xFF;
+			Buffer[2] = ble->ComandoAtual._comando;
+			bluetoothEnviaComandoSCRC(ble,Buffer, 2);
+			break;
+		case TX_ERRO_CRC:
 		default:
-			bleError_Handler(BLE_COMANDO_NAO_ENCONTRADO);
+			Buffer[0] = 0x01;
+			Buffer[1] = 0xEE;
+			Buffer[2] = 0xEE;
+			bluetoothEnviaComandoSCRC(ble,Buffer, 2);
 			break;
 		}
 	}
 	return;
 }
+
 /**
  * \brief 	Inicializa o hardware com sequencia de comandos
  * \param 	*ble - Ponteiro para o objeto pai.
@@ -337,80 +349,60 @@ void 			txBleComando(Bluetooth *ble){
  *         	Retorna BLE_EXTRAPOLOU_TRY caso excedido tentativas de capturar MAC addres.
  * \info*  	Prestar atencao nas configuracoes do header bluetooth.h
  */
-void		 	iniciaBleHm10(Bluetooth* ble){
-#define M_BLE_RESET comandHM10(ble,"AT+RESET",400);//RESETA
-#define SETUP_UART(baud_rate) \
-		HAL_UART_Abort_IT(ble->UARTHandle);\
-		HAL_UART_DeInit(ble->UARTHandle);\
-		osDelay(50);\
-		ble->UARTHandle->Init.BaudRate = baud_rate;\
-		HAL_UART_Init(ble->UARTHandle);\
-		osDelay(50);
-
-	const uint8_t 	max_attempts = 15; //todo transformar em define
+void		 	iniciaBleHm10(volatile Bluetooth* ble){
+	const uint8_t 		max_attempts = 15;
 	static sequenciaBle sequenciaBLE = inicio;
+	static uint8_t 		tryingAddr=0;
+
+	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
+	if (ble == NULL)
+		bleError_Handler(BLE_OBJETO_NULO);
 
 	while(sequenciaBLE !=final || sequenciaBLE!=erro){
 		switch (sequenciaBLE) {
 		case inicio:
-
-			MACRO_RESET_BLE		//HARDRESET NO BLE_HM10
-			comandHM10(ble,"AT+ADTY3",100);	//BLOQUEIA CONEXAO
-			comandHM10(ble,"AT+ADTY3",100);	//BLOQUEIA CONEXAO
-			SETUP_UART(115200)
-			bluetoothDescon(ble);
-			MACRO_DEFINE_INTERRUPT
-
-			sequenciaBLE = redefineBle;
-
+			MACRO_RESET_BLE						// hm10 reset via hardware.
+			comandHM10(ble,"AT+ADTY3"	,100);	// hm10 bloqueia conexao.
+			comandHM10(ble,"AT+ADTY3"	,100);	// hm10 bloqueia conexao.
+			SETUP_UART(115200)					// stm32 baudrate em 115200.
+			bluetoothDescon(ble);				// stm32 desconecta hm10.
+			sequenciaBLE = redefineBle;			// proxima sequencia.
 			break;
 		case redefineBle:
-
-			//seta em 115200
-			SETUP_UART(115200)
-			comandHM10(ble,"AT",100);	//
-			comandHM10(ble,"AT",100);	//
-			comandHM10(ble,"AT+RENEW",1000);	//RESTAURA PADRAO FABRICA
-
-			//seta em 9600
-			SETUP_UART(9600)
-			comandHM10(ble,"AT+RENEW",1000);	//RESTAURA PADRAO FABRICA
-
-			comandHM10(ble,"AT",100);	//
-			comandHM10(ble,"AT",100);	//
-			comandHM10(ble,"AT+ADTY3",300);	//BLOQUEIA CONEXAO
-			comandHM10(ble,"AT+BAUD4",300);	//COLOCA BAUD EM 115200
-			//seta em 115200
-			SETUP_UART(115200)
-			MACRO_RESET_BLE
-
-			//CONFIGURA CENTRAL
-			comandHM10(ble,"AT",100);	//
-			comandHM10(ble,"AT",100);	//
-			comandHM10(ble,"AT+POWE3",300);	//POTENCIA MAXIMA
-			comandHM10(ble,"AT+SHOW3",300);	//MOSTRA O NOME e rssi
-			comandHM10(ble,"AT+GAIN1",300);	//INSERE GANHO
-			comandHM10(ble,"AT+NOTI1",300);	//NOTIFICA QUE CONECTOU
-			comandHM10(ble,"AT+PIO11",300);	//1 - CONECT = 1  \  DISC = 0
-			char comando[COMANDO_BUFFER_SIZE]; 		// Buffer para o comando AT
+			SETUP_UART(115200)					// stm32 seta baudrate em 115200.
+			comandHM10(ble,"AT"			,100);	// hm10 envia comando AT.
+			comandHM10(ble,"AT"			,100);	// hm10 envia comando AT.
+			comandHM10(ble,"AT+RENEW"	,1000); // hm10 restaura padroes de fabrica.
+			SETUP_UART(9600)					// stm32 seta baudrate em 9600
+			comandHM10(ble,"AT+RENEW"	,1000); // hm10 restaura padroes de fabrica.
+			comandHM10(ble,"AT"			,100);	// hm10 envia comando AT.
+			comandHM10(ble,"AT"			,100);	// hm10 envia comando AT.
+			comandHM10(ble,"AT+ADTY3"	,300);	// hm10 bloqueia conexao.
+			comandHM10(ble,"AT+BAUD4"	,300);	// hm10 define baudrate 115200.
+			SETUP_UART(115200)					// stm32 baudrate em 115200.
+			MACRO_RESET_BLE						// hm10 reset via hardware.
+			//-------------------configuracao final----------------------------
+			comandHM10(ble,"AT"			,100);	// hm10 envia comando AT.
+			comandHM10(ble,"AT"			,100);	// hm10 envia comando AT.
+			comandHM10(ble,"AT+POWE3"	,300);	// hm10 em potencia maxima.
+			comandHM10(ble,"AT+SHOW3"	,300);	// hm10 mostra nome e rssi.
+			comandHM10(ble,"AT+GAIN1"	,300);	// hm10 ganho de antena maximo.
+			comandHM10(ble,"AT+NOTI1"	,300);	// hm10 notifica quando conectado.
+			comandHM10(ble,"AT+PIO11"	,300);	// 1 - CONECT = 1  \  DISC = 0.
+			char comando[COMANDO_BUFFER_SIZE]; 	// buffer para o comando AT.
 			snprintf(comando, sizeof(comando), "AT+NAME%s", BLE_DEVICE_NAME);
-			comandHM10(ble,comando, 400); 	// Configura o nome no dispositivo
-
-			M_BLE_RESET
-
-			sequenciaBLE = capturaAddr;
-
+			comandHM10(ble,comando, 400); 		// stm32 seta nome do hm10.
+			M_BLE_RESET							// hm10 reset via software.
+			sequenciaBLE = capturaAddr;			// proxima sequencia.
 			break;
 		case capturaAddr:
-			static uint8_t tryingAddr=0;
+			MACRO_DEFINE_INTERRUPT
 			while (tryingAddr < max_attempts) {
 
-				comandHM10(ble,"AT+ADDR?",300);//pede addr
+				comandHM10(ble,"AT+ADDR?",300); // stm32 pede addr do hm10.
 				MACRO_DEFINE_INTERRUPT
-
 				if (ble->chave.hilo != 0){
-					sequenciaBLE = final;
-					MACRO_DEFINE_INTERRUPT
+					sequenciaBLE = final;	// capturou o addr e vai para a proxima sequencia.
 					tryingAddr=0;
 					break;
 				} else {
@@ -418,22 +410,16 @@ void		 	iniciaBleHm10(Bluetooth* ble){
 					break;
 				}
 			}
-
 			if(tryingAddr >= max_attempts){
-				sequenciaBLE = erro;//extrapolou as tentativas
+				sequenciaBLE = erro;	// extrapolou as tentativas.
 			}
 			break;
 		case final:
-			comandHM10(ble,"AT+ADTY0",300);	//DESBLOQUEIA CONEXA
+			comandHM10(ble,"AT+ADTY0",300);	// hm10 desbloqueia conexao.
 			MACRO_RESET_BLE
-
-			/*---HABILITA INTERRUPÇÃO---*/
-			__HAL_UART_ENABLE_IT 	(ble->UARTHandle, UART_IT_IDLE);						// HABILITA idle line INTERRUPT
-			__HAL_DMA_ENABLE_IT 	(ble->UARTDMAHandle, DMA_IT_TC);					// HABILITA O DMA Tx cplt INTERRUPT
-			HAL_UART_Receive_DMA 	(ble->UARTHandle, ble->_RxDataArr, DMA_RX_BUFFER_SIZE);	// STARTA O UART1 EM DMA MODE
+			MACRO_DEFINE_INTERRUPT
 			ble->MaquinaConexao = RX_DESCONECTADO;
-
-			return ;
+			return;
 			break;
 		case erro:
 			bleError_Handler(BLE_EXTRAPOLOU_TRY);
@@ -441,51 +427,58 @@ void		 	iniciaBleHm10(Bluetooth* ble){
 		}
 	}
 }
+
 /**
  * \brief 	Processa informacao recebida com chave apropriada
  * \param 	*ble - Ponteiro para o objeto pai.
- * \return 	Retorna BLE_SUCCESS em caso de hardware inicializado com sucesso.
- *         	Retorna BLE_CRC_INCORRETO no caso de erro de mensagem ou crc incorreto.
  */
-void 			bluetoothErroCRC(Bluetooth* ble){
-	//buffer de envio de msg
-	unsigned char	TXCRC[3];
-
-	//buffer calculo de crc
+bool 			bluetoothErroCRC(volatile Bluetooth* ble){
 	CRC_short 		CRCReceive,CRCKey;
 
-	//captura chave recebida pelo App
+	// Caso algum ponteiro seja nulo, retorne código de erro correspondente.
+	if (ble == NULL){
+		bleError_Handler(BLE_OBJETO_NULO);
+		return 1;
+	}
+
+	// garante que o tamanho da mensagem seja coerente.
+	if (ble->RxSize < 4) {
+		putQueueComando(ble, TX_ERRO_CRC);
+		return 1;
+	}
+
+	// captura chave recebida pelo App.
 	CRCKey.byte.hi	= ble->_RxDataArr[ble->RxSize-2];
 	CRCKey.byte.lo 	= ble->_RxDataArr[ble->RxSize-1];
 
-	//recalcula chave em funcao da msg
+	// recalcula chave em funcao da msg.
 	CRCReceive = CRC16(ble->_RxDataArr,ble->RxSize-2);
 
+	// compara os crc.
 	if(validaCRC(CRCKey,CRCReceive)){
-		//erro
-		TXCRC[0] = 0x01;
-		TXCRC[1] = 0xEE;
-		TXCRC[2] = 0xEE;
-		HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TXCRC, 3,50);
-		//		bleError_Handler(BLE_CRC_INCORRETO);
-	}else{
-		//certo
-		return;
+		putQueueComando(ble, TX_ERRO_CRC); // erro de crc.
+		return 1;
 	}
+
+	return 0;
 }
+
 /**
  * \brief 	Envia mensagens em buffer via HM-10 com CRC implementado ao fim da string.
  * \param 	*ble - Ponteiro para o objeto pai.
  * \param 	_out[] - Buffer com mensagem a ser enviada.
  * \param 	size - Tamanho da mensagem original.
- * \return 	Retorna HAL status.
  */
-void		 	bluetoothEnviaComando(Bluetooth *ble,unsigned char _out[], int size)
+void		 	bluetoothEnviaComando(volatile Bluetooth *ble,unsigned char _out[], int size)
 {
-	uint8_t	TX_Buffer		[size+3];
+	uint8_t	TX_Buffer[size+3];
 	HAL_StatusTypeDef result;
 	uint8_t tries = 0, MAX_TRIES = 10;
 	CRC_short CRCVar;
+
+	// caso algum ponteiro seja nulo, retorne codigo de erro correspondente.
+	if (ble == NULL)
+		bleError_Handler(BLE_OBJETO_NULO);
 
 	//varredura para local.
 	for (int i = 0; i <= size; ++i) {
@@ -500,124 +493,131 @@ void		 	bluetoothEnviaComando(Bluetooth *ble,unsigned char _out[], int size)
 	while (tries++ < MAX_TRIES) {
 		result = HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TX_Buffer, size+3,50);
 		if (result == HAL_OK)	break;
-		if (tries == MAX_TRIES)	bleError_Handler(BLE_ENVIO_COMANDO);
-//		osDelay(20);
 	}
 }
+
 /**
- * \brief 	Processa contadores internos a passo de 10 milisegundos
+ * \brief 	Envia mensagens em buffer via HM-10 .
+ * \param 	*ble - Ponteiro para o objeto pai.
+ * \param 	_out[] - Buffer com mensagem a ser enviada.
+ * \param 	size - Tamanho da mensagem original.
+ */
+void		 	bluetoothEnviaComandoSCRC(volatile Bluetooth *ble,unsigned char _out[], int size){
+	HAL_StatusTypeDef result;
+	uint8_t tries = 0, MAX_TRIES = 10;
+
+	// caso algum ponteiro seja nulo, retorne codigo de erro correspondente.
+	if (ble == NULL)
+		bleError_Handler(BLE_OBJETO_NULO);
+
+	while (tries++ < MAX_TRIES) {
+		result = HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)_out, size,50);
+		if (result == HAL_OK)	break;
+	}
+}
+
+/**
+ * \brief 	Processa contadores internos a passo de 100 milisegundos
  * \param 	*ble - Ponteiro para o objeto pai.
  */
-void 			bluetooth10ms(Bluetooth* ble){
+void 			bluetoothActivitymonitor(volatile Bluetooth* ble){
 
 	/*INCREMENTO DE INATIVIDADE-------------------*/
-	(ble->msIdle<=DEF_TEMPO_MAX_S_MSG_LOW)?ble->msIdle++:0;
+	(ble->msIdle<=DEF_TEMPO_MAX_S_MSG_HIGH)?ble->msIdle++:0;
 
 	/*MONITOR INATIVIDADE-------------------------*/
-	if(ble->JanelaConexao>0){
-		if(ble->msIdle > DEF_TEMPO_MAX_S_MSG_HIGH)	{
-			bluetoothDescon(ble);
-		}
+	if(ble->JanelaConexao>0 && (ble->MaquinaConexao == RX_CONECTADO || ble->MaquinaConexao == RX_VALIDADO)){
+		if(ble->msIdle > DEF_TEMPO_MAX_S_MSG_HIGH)
+			putQueueComando(ble, TX_DESCONECTA);
 	}
-	else{
-		__NOP();
-	}
-
-	if(ble->msIdle > DEF_TEMPO_MAX_S_MSG_LOW)	{
-		bluetoothDescon(ble);
+	else if(ble->MaquinaConexao == RX_CONECTADO || ble->MaquinaConexao == RX_VALIDADO){
+		if(ble->msIdle > DEF_TEMPO_MAX_S_MSG_LOW)
+			putQueueComando(ble, TX_DESCONECTA);
 	}
 }
+
 /**
  * \brief 	Processa contadores internos a passo de 1000 milisegundos
  * \param 	*ble - Ponteiro para o objeto pai.
  */
-void 			bluetooth1000ms(Bluetooth* ble){
+void 			bluetooth1000ms(volatile Bluetooth* ble){
+
+	// caso algum ponteiro seja nulo, retorna.
+	if (ble == NULL)
+		return;
+
+	// decrementa janela de conexao.
 	if(ble->JanelaConexao>0)
 		ble->JanelaConexao--;
 }
+
 /**
  * \brief 	Processa interrupcoes internas
  * \param 	*ble - Ponteiro para o objeto pai.
  */
-void 			BLEUSART_IrqHandler(Bluetooth *ble){
+void 			BLEUSART_IrqHandler(volatile Bluetooth *ble){
 	if (ble->UARTHandle->Instance->SR & UART_FLAG_IDLE) {    	/* if Idle flag is set */
 		__IO uint32_t __attribute__((unused))tmp;      			/* Must be volatile to prevent optimizations */
-
 		tmp = ble->UARTHandle->Instance->SR;                 	/* Read status register */
 		tmp = ble->UARTHandle->Instance->DR;                 	/* Read data register */
 		__HAL_DMA_DISABLE (ble->UARTDMAHandle);       			/* Disabling DMA will force transfer complete interrupt if enabled */
-
-		__HAL_UART_ENABLE_IT 	(ble->UARTHandle, UART_IT_IDLE);		// HABILITA idle line INTERRUPT
-		__HAL_DMA_ENABLE_IT 	(ble->UARTDMAHandle, DMA_IT_TC);		// HABILITA O DMA Tx cplt INTERRUPT
-
 		BLEDMA_IrqHandler (ble);
 	}
 }
+
 /**
  * \brief 	Funcao exclusiva para envio de comandos ao HM10.
  * \param 	*ble - Ponteiro para o objeto pai.
  * \param 	_out[] - Buffer com mensagem a ser enviada.
  * \param 	delay - Delay requirido via datasheet.
  */
-void 			comandHM10(Bluetooth *ble, char _out[], uint16_t delay){
+void 			comandHM10(volatile Bluetooth *ble, char _out[], uint16_t delay){
 	HAL_StatusTypeDef result;
 	uint8_t tries = 0, MAX_TRIES = 5;
+
+	// caso algum ponteiro seja nulo, retorne codigo de erro correspondente.
+	if (ble == NULL)
+		bleError_Handler(BLE_OBJETO_NULO);
 
 	while (tries++ < MAX_TRIES) {
 		result = HAL_UART_Transmit(ble->UARTHandle, (uint8_t *) _out, strlen(_out),100);
 		if (result == HAL_OK)	break;
-		if (tries == MAX_TRIES)	bleError_Handler(BLE_ENVIO_COMANDO);
-//		osDelay(20);
 	}
 
 	if(delay != 0){
 		osDelay(delay);
 	}
 }
+
 /**
  * \brief 	Desconecta qualquer dispositivo conectado de forma apropriada
  * \param 	*ble - Ponteiro para o objeto pai.
  */
-void 			bluetoothDescon(Bluetooth* ble){
+void 			bluetoothDescon(volatile Bluetooth* ble){
 	comandHM10(ble,"AT",50);//DESCONECTA
 	comandHM10(ble,"AT",50);//DESCONECTA
 }
+
 /**
  * \brief 	Simples envio de aknowladge indexado a comando
  * \param 	*ble - Ponteiro para o objeto pai.
  * \param 	Cmd - comando que esta enviando o Aknowladge.
  */
-void 			sendAknowladge(Bluetooth* ble,uint8_t Cmd){
-	HAL_StatusTypeDef result;
-	uint8_t tries = 0, MAX_TRIES = 5;
-	unsigned char	TXCRC[3];
-	TXCRC[0] = 0x01;
-	TXCRC[1] = 0xFF;
-	TXCRC[2] = Cmd;
-
-	while (tries++ < MAX_TRIES) {
-		result = HAL_UART_Transmit(ble->UARTHandle, (uint8_t *)TXCRC, 3,50);
-		if (result == HAL_OK)	break;
-		if (tries == MAX_TRIES)	bleError_Handler(BLE_ENVIO_COMANDO);
-//		osDelay(20);
-	}
+void 			sendAknowladge(volatile Bluetooth* ble,uint8_t Cmd){
+	putQueueComando(ble, TX_AKNOWLADGE);
 }
-void putQueueComando(Bluetooth *ble, ConexaoBleRX comando) {
-	// permitir apenas um item por vez na fila. evitando dessincronia com dado recebida.
-	if (ble->myQ_bleCom->is_empty(ble->myQ_bleCom)) {
-		ble->myQ_bleCom->insert(ble->myQ_bleCom, comando);
-		osSignalSet(ble->Task, newMessage);
-	}
+void putQueueComando(volatile Bluetooth *ble, ConexaoBleRX comando) {
+	ble->myQ_bleCom->insert(ble->myQ_bleCom, comando);
+	osSignalSet(ble->Task, newMessage);
 }
-void putQueueDataRx(Bluetooth *ble, ComandosBleRX comando) {
+void putQueueDataRx(volatile Bluetooth *ble, ComandosBleRX comando) {
 	// permitir apenas um item por vez na fila. evitando dessincronia com dado recebida.
 	if (ble->myQ_dataRx->is_empty(ble->myQ_dataRx)) {
 		ble->myQ_dataRx->insert(ble->myQ_dataRx, comando);
 		osSignalSet(ble->Task, newMessage);
 	}
 }
-void putQueueDataTx(Bluetooth *ble, ComandosBleTX comando) {
-	//todo tratar erro de fila cheia //bleError_Handler
+void putQueueDataTx(volatile Bluetooth *ble, ComandosBleTX comando) {
 	ble->myQ_dataTx->insert(ble->myQ_dataTx, comando);
 	osSignalSet(ble->Task, newMessage);
 }
@@ -628,7 +628,7 @@ void putQueueDataTx(Bluetooth *ble, ComandosBleTX comando) {
  */
 void 			bleError_Handler(ErrorCode erro)
 {
-//	__disable_irq();
+	//	__disable_irq();
 	while (1)
 	{
 		ErrorBuffer_add(&eeprom, erro);

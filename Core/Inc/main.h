@@ -128,7 +128,7 @@ typedef struct
 /* USER CODE BEGIN EC */
 
 //--- defines de fabrica
-#define STD_REF_EEPROM			0xb1		// valor aleatorio para referencia e auto-reset.
+#define STD_REF_EEPROM			0xb2		// valor aleatorio para referencia e auto-reset.
 #define ON_FAN_TEMPERATURA 		200  		// temperatura de acionamento do cooler.
 #define TIME_INATIVO_SETUP 		1800 		// tempo de inatividade limite.
 #define TIME_MAX_AQUECIMENTO 	600  		// tempo maximo permitido para nao entrar em erro de aquecimento.

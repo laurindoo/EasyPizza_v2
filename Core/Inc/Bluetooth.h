@@ -43,11 +43,6 @@
  *
  * */
 
-//todo subistituir envio de ALNOLADGE por função
-
-
-
-
 #ifndef INC_BLUETOOTH_H_
 #define INC_BLUETOOTH_H_
 
@@ -61,11 +56,11 @@
 
 #define newMessage 0x0a
 #define BLE_DEVICE_NAME NOME_DEVICE // Substitua por um nome apropriado
-#define COMANDO_BUFFER_SIZE (50) // Escolha um tamanho que seja suficiente
+#define COMANDO_BUFFER_SIZE (30) // Escolha um tamanho que seja suficiente
 
 //---DEFINICOES---TEMPOS DE CONEXAO
-#define DEF_TEMPO_MAX_S_MSG_LOW			120	//x*10ms
-#define DEF_TEMPO_MAX_S_MSG_HIGH		300	//x*10ms
+#define DEF_TEMPO_MAX_S_MSG_LOW			22	//x*100ms
+#define DEF_TEMPO_MAX_S_MSG_HIGH		30	//x*100ms
 
 
 #define DMA_RX_BUFFER_SIZE      		24
@@ -97,7 +92,6 @@ typedef enum
 	RX_TUNNING_LASTRO	 	= 0x34,
 	RX_TOGGLE_BUZZER	 	= 0x35,
 	RX_APAGA_ERROS		 	= 0x75,
-
 } ComandosBleRX;
 
 //---Comandos Ble
@@ -111,7 +105,6 @@ typedef enum
 	TX_RESETANDO 			= 0x29,
 	TX_RESETADO_OK 			= 0x30,
 	TX_ERROS	 			= 0x70,
-
 } ComandosBleTX;
 /*
  * Comandos conexao TX
@@ -132,9 +125,24 @@ typedef enum
 
 
 #define MACRO_DEFINE_INTERRUPT \
-		__HAL_UART_ENABLE_IT 	(ble->UARTHandle, UART_IT_IDLE);\
-		__HAL_DMA_ENABLE_IT 	(ble->UARTDMAHandle, DMA_IT_TC);	\
-		HAL_UART_Receive_DMA 	(ble->UARTHandle, ble->_RxDataArr, DMA_RX_BUFFER_SIZE);	// STARTA O UART1 EM DMA MODE
+    do { \
+    	uint8_t tmp_RxDataArr[DMA_RX_BUFFER_SIZE];\
+    	for (int i = 0; i < DMA_RX_BUFFER_SIZE; i++) {\
+    	    tmp_RxDataArr[i] = ble->_RxDataArr[i]; /*copia manual de cada byte*/ \
+    	}__HAL_UART_ENABLE_IT(ble->UARTHandle, UART_IT_IDLE); \
+        __HAL_DMA_ENABLE_IT(ble->UARTDMAHandle, DMA_IT_TC); \
+        HAL_UART_Receive_DMA(ble->UARTHandle, tmp_RxDataArr, DMA_RX_BUFFER_SIZE); /* Passe a cópia temporária */ \
+    } while(0);
+
+#define M_BLE_RESET comandHM10(ble,"AT+RESET",400);//RESETA
+#define SETUP_UART(baud_rate) \
+		HAL_UART_Abort_IT(ble->UARTHandle);\
+		HAL_UART_DeInit(ble->UARTHandle);\
+		osDelay(50);\
+		ble->UARTHandle->Init.BaudRate = baud_rate;\
+		HAL_UART_Init(ble->UARTHandle);\
+		osDelay(50);
+
 
 // Declaracao estrutura Bluetooth antecipadamente
 typedef struct Bluetooth Bluetooth;
@@ -172,6 +180,9 @@ typedef enum
 {
 	RX_RECEBEU_SENHA		= 0x40,
 	RX_PEDE_SENHA			= 0x42,
+	TX_ERRO_CRC				= 0xEE,
+	TX_DESCONECTA			= 0xEF,
+	TX_AKNOWLADGE			= 0xFF,
 } ConexaoBleRX;
 
 /*
@@ -193,19 +204,21 @@ struct Bluetooth
 	DMA_HandleTypeDef 	*UARTDMAHandle;
 
 	//Handle da filas
-	Queue 			* myQ_bleCom;
-	Queue 			* myQ_dataRx;
-	Queue 			* myQ_dataTx;
+	 Queue 			* myQ_bleCom;
+	 Queue 			* myQ_dataRx;
+	 Queue 			* myQ_dataTx;
 
 	//Variables for parsing the received data
-	uint8_t _RxDataArr[BLUETOOTH_MAX_BUFF_LEN], _RxData,RxSize;
+	volatile uint8_t 	_RxDataArr[BLUETOOTH_MAX_BUFF_LEN];
+	size_t				RxSize;
+	uint8_t				_RxData;
 
 	//maquina de estados para conexao.
-	TypeMaquinaConexao MaquinaConexao;
+	volatile TypeMaquinaConexao MaquinaConexao;
 
 	//contadores
-	uint8_t 	JanelaConexao		;	 //contador decrescente de janela de conexao
-	uint16_t	msIdle    			;    //Contador crescente sem troca mensagens em milisegundos
+	volatile uint8_t 	JanelaConexao		;	 //contador decrescente de janela de conexao
+	volatile uint8_t	msIdle    			;    //Contador crescente sem troca mensagens em milisegundos
 
 	//endereco ja codificado em chave
 	CRC_short 	chave;
@@ -218,34 +231,35 @@ struct Bluetooth
 	osThreadId 	Task;
 
 	//Variavel para receber lista de comandos
-	BleComando* _BleCommArr[BLUETOOTH_MAX_COMANDOS_COUNT];
+	volatile BleComando* _BleCommArr[BLUETOOTH_MAX_COMANDOS_COUNT];
 	uint8_t contComandos;
 
 	//envio de aknowladge
-	void (*aknowladge)(Bluetooth* ble,uint8_t cmd);
+	void (*aknowladge)(volatile Bluetooth* ble,uint8_t cmd);
 };
 
 
-void		 	bleConstrutora(Bluetooth *ble,  UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle, osThreadId Task);
-void		 	bleAddComp(Bluetooth* ble, BleComando* _blecomm, ComandosBleRX __comando);
-BleComando* 	createBleComp(Bluetooth* ble, ComandosBleRX __comando);
-void		 	bleAddCompConexao(Bluetooth* ble, BleComando* _blecomm, ConexaoBleTX __comando);
-void		 	readComando(Bluetooth* ble, TypeComandoBle tipo);
-void 			BLEUSART_IrqHandler(Bluetooth *ble);
-void		 	txBleComando(Bluetooth *ble);
-void 			BLEDMA_IrqHandler (Bluetooth *ble);
-void			bluetoothEnviaComando(Bluetooth *ble, unsigned char _out[], int size);
-void 			comandHM10(Bluetooth *ble, char _out[], uint16_t delay);
-void		 	iniciaBleHm10(Bluetooth* ble);
-void 			redefineBluetooth(Bluetooth* ble);
-void		 	bluetoothErroCRC(Bluetooth* ble);
-void 			bluetoothDescon(Bluetooth* ble);
-void 			bluetooth10ms(Bluetooth* ble);
-void 			bluetooth1000ms(Bluetooth* ble);
-void 			sendAknowladge(Bluetooth* ble,uint8_t Cmd);
-void 			putQueueComando(Bluetooth *ble, ConexaoBleRX comando);
-void 			putQueueDataRx(Bluetooth *ble, ComandosBleRX comando);
-void 			putQueueDataTx(Bluetooth *ble, ComandosBleTX comando);
+void		 	bleConstrutora(volatile Bluetooth *ble,  UART_HandleTypeDef *UARTHandle, DMA_HandleTypeDef *UARTDMAHandle, osThreadId Task);
+void		 	bleAddComp(volatile Bluetooth* ble, BleComando* _blecomm, ComandosBleRX __comando);
+BleComando* 	createBleComp(volatile Bluetooth* ble, ComandosBleRX __comando);
+void		 	bleAddCompConexao(volatile Bluetooth* ble, volatile BleComando* _blecomm, ConexaoBleTX __comando);
+void		 	readComando(volatile Bluetooth* ble, TypeComandoBle tipo);
+void 			BLEUSART_IrqHandler(volatile Bluetooth *ble);
+void		 	txBleComando(volatile Bluetooth *ble);
+void 			BLEDMA_IrqHandler (volatile Bluetooth *ble);
+void			bluetoothEnviaComando(volatile Bluetooth *ble, unsigned char _out[], int size);
+void		 	bluetoothEnviaComandoSCRC(volatile Bluetooth *ble,unsigned char _out[], int size);
+void 			comandHM10(volatile Bluetooth *ble, char _out[], uint16_t delay);
+void		 	iniciaBleHm10(volatile Bluetooth* ble);
+void 			redefineBluetooth(volatile Bluetooth* ble);
+bool		 	bluetoothErroCRC(volatile Bluetooth* ble);
+void 			bluetoothDescon(volatile Bluetooth* ble);
+void 			bluetoothActivitymonitor(volatile Bluetooth* ble);
+void 			bluetooth1000ms(volatile Bluetooth* ble);
+void 			sendAknowladge(volatile Bluetooth* ble,uint8_t Cmd);
+void 			putQueueComando(volatile Bluetooth *ble, ConexaoBleRX comando);
+void 			putQueueDataRx(volatile Bluetooth *ble, ComandosBleRX comando);
+void 			putQueueDataTx(volatile Bluetooth *ble, ComandosBleTX comando);
 void 			bleError_Handler(ErrorCode erro);
 
 #endif /* INC_BLUETOOTH_H_ */

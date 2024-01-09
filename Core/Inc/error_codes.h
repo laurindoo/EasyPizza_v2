@@ -14,6 +14,9 @@
 typedef enum {
 	NONE_ERROR 			  = 0x00,
     EEPROM_SUCCESS 		  = 0x00, 	// deu tudo certo (no reseting).
+    ERRO_HARDFAULT 		  = 1	, 	// erro nao rastreado de hardfault.
+    ERRO_BUS_HARDFAULT 	  = 2	, 	// erro nao rastreado de hardfault.
+    ERRO_USAGE_FAULT 	  = 3	, 	// erro nao rastreado de hardfault.
 	SEQUENCIA_EEPROM	  = 40	,	// ** reinicia contagem da sequencia do typedef enum.
     EEPROM_OBJETO_NULO 			,	// recebeu um handler nulo para o objeto q deveria ter sido precriado.
     EEPROM_TIPO_ERRADO 			,	// tipo de manipulacao nao autorizado.
@@ -29,15 +32,15 @@ typedef enum {
 	EEPROM_ERROR_FULL			,	// limite de variaveis atingido, consulte header.
 	EEPROM_ERROR_EXISTS			,	//
     BLE_SUCCESS 		  = 0x00,	// deu tudo certo (no reseting).
-	SEQUENCIA_BLE		  = 2	,	// ** reinicia sequencia dei typedef enum.
+	SEQUENCIA_BLE		  = 4	,	// ** reinicia sequencia dei typedef enum.
     BLE_OBJETO_NULO 			,	// recebeu um handler nulo para o objeto q deveria ter sido precriado.
     BLE_EXTRAPOLOU_TRY 			,	// extrapolou o numero de tentativas de obter MAC addres do hm-10.
     BLE_CRC_INCORRETO 			,	// CRC incorreto (no reseting).
     BLE_COMANDO_NAO_ENCONTRADO 	,	// comando nao encontrado na lista (no reseting).
     BLE_COMANDO_NAO_PERMITIDO 	,	// comando nao pertmitido no meu momento (no reseting).
     BLE_OBJETO_NAO_CRIADO 		,	// objeto bluetooth nao criado.
-    BLE_COMANDO_NAO_CRIADO 		,	// comando nao criado.
-    BLE_COMANDOCON_NAO_CRIADO 	,	// comando de conexao do HM10 nao criado (no reseting).
+    BLE_EXCEDEU_LIMITE			,	// excedeu quantidade de objetos.
+    BLE_COM_EXCEDEU_LIMITE	 	,	// excedeu quantidade de objetos de comando.
     BLE_NEW_DEVICE_NEGADO 		,	// novo dispositivo negado (no reseting).
     BLE_SENHA_ERRADA			,	// senha enviada por app errada (no reseting).
     BLE_HARDWARE_NOINIT			,	// hardware com erro de inicializacao.

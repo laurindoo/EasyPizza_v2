@@ -84,8 +84,8 @@
 //---MACROS---EEPROM----------------------------
 #define M_EEPROM_SHIFT	Maquina.Maquina_eeprom = EEPROM_SHIFITING;
 #define LIBERA_EEPROM  		HAL_GPIO_WritePin		(EEPROM_EN_GPIO_Port,	EEPROM_EN_Pin	,GPIO_PIN_RESET);\
-		HAL_Delay(5);
-#define TRAVA_EEPROM		HAL_Delay(5);\
+		osDelay(5);
+#define TRAVA_EEPROM		osDelay(5);\
 		HAL_GPIO_WritePin		(EEPROM_EN_GPIO_Port,	EEPROM_EN_Pin	,GPIO_PIN_SET);
 #define I2C_READ_MEMORY_1B(OFFSET,VARIAVEL) 	HAL_I2C_Mem_Read(&hi2c1	, EEPROM_READ_ADDR	, OFFSET, I2C_MEMADD_SIZE_16BIT,(uint8_t *) 	&VARIAVEL	, 1, 100);
 #define I2C_WRITE_MEMORY_1BB(OFFSET,VARIAVEL) 	HAL_I2C_Mem_Write(&hi2c1, EEPROM_WRITE_ADDR	, OFFSET, I2C_MEMADD_SIZE_16BIT,(uint8_t *) 	&VARIAVEL	, 1, 100);

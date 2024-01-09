@@ -33,9 +33,8 @@ void StartTemperatura(void const * argument){
 	for(;;)	{
 
 		computaPID();
-
-		osDelayUntil(&xLastWakeTime,TIME_PID_CALC);
 		osThreadYield();
+		osDelayUntil(&xLastWakeTime,TIME_PID_CALC);
 
 	}
 }

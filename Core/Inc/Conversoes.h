@@ -40,9 +40,9 @@ typedef union {
 } uint32AsBytes;
 
 
-void vetor4b_TO_Double(double *destino, uint8_t *vetor, uint8_t inicio);
-void vetor2b_TO_uint16(uint16_t *destino, uint8_t *vetor, uint8_t inicio);
-void vetor2b_TO_Double(double *destino, uint8_t *vetor, uint8_t inicio);
+void vetor4b_TO_Double(double *destino, volatile uint8_t *vetor, uint8_t inicio);
+void vetor2b_TO_uint16(uint16_t *destino, volatile uint8_t *vetor, uint8_t inicio);
+void vetor2b_TO_Double(double *destino, volatile uint8_t *vetor, uint8_t inicio);
 void vetor8b_TO_Double(double *destino, uint8_t *vetor, uint8_t inicio);
 void float_TO_vetor4b(double valor, uint8_t *vetor, uint8_t inicio);
 void double_TO_vetor8b(double valor, uint8_t *vetor, uint8_t inicio);

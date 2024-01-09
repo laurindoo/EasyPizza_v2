@@ -39,7 +39,7 @@ typedef struct {
 
 
 
-CRC_short CRC16 (unsigned char *puchMsg, unsigned short usDataLen);
+CRC_short CRC16 (volatile unsigned char *puchMsg, unsigned short usDataLen);
 uint8_t validaCRC(CRC_short referencia, CRC_short chave);
 
 

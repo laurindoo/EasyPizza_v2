@@ -10,12 +10,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void Queue_init( Queue* const me,
-                 int  (*pFn_is_full)  (Queue* const me),
-                 int  (*pFn_is_empty) (Queue* const me),
-                 int  (*pFn_get_size) (Queue* const me),
-                 void (*pFn_insert)   (Queue* const me, int k),
-                 int  (*pFn_remove)   (Queue* const me)
+void Queue_init(Queue* volatile const me,
+                 int  (*pFn_is_full)  (Queue* volatile const me),
+                 int  (*pFn_is_empty) (Queue* volatile const me),
+                 int  (*pFn_get_size) (Queue* volatile const me),
+                 void (*pFn_insert)   (Queue* volatile const me, int k),
+                 int  (*pFn_remove)   (Queue* volatile const me)
                ) {
     me->head  = 0;
     me->tail  = 0;
@@ -28,7 +28,7 @@ void Queue_init( Queue* const me,
     me->remove     = pFn_remove;
 }
 
-void Queue_cleanup(Queue* const me) {
+void Queue_cleanup(Queue* volatile const me) {
 }
 
 Queue* Queue_create() {
@@ -45,26 +45,26 @@ Queue* Queue_create() {
     return me;
 }
 
-void Queue_destroy(Queue* const me) {
+void Queue_destroy(Queue* volatile const me) {
     if (me != NULL) {
         Queue_cleanup(me);
         free(me);
     }
 }
 
-int  Queue_is_full  (Queue* const me) {
+int  Queue_is_full  (Queue* volatile const me) {
     return (me->head + 1) % QUEUE_SIZE == me->tail;
 }
 
-int  Queue_is_empty (Queue* const me) {
+int  Queue_is_empty (Queue* volatile const me) {
     return (me->head == me->tail);
 }
 
-int  Queue_get_size (Queue* const me) {
+int  Queue_get_size (Queue* volatile const me) {
     return me->size;
 }
 
-void Queue_insert   (Queue* const me, int k) {
+void Queue_insert   (Queue* volatile const me, int k) {
     if (!me->is_full(me)) {
         me->buffer[me->head] = k;
         me->head = (me->head + 1) % QUEUE_SIZE;
@@ -72,7 +72,7 @@ void Queue_insert   (Queue* const me, int k) {
     }
 }
 
-int  Queue_remove   (Queue* const me) {
+int  Queue_remove   (Queue* volatile const me) {
     int value = -9999; // sentinel value
     if (!me->is_empty(me)) {
         value = me->buffer[me->tail];

@@ -12,6 +12,8 @@ void txBluetooth(void);
 void rxBluetooth(void);
 void taskBluetooth1sec(void);
 
+extern osSemaphoreId BinSemUartTxHandle; //todo corrigir
+
 #define MACRO_ANULA_INATIVIDADE tempoSemAtividade = 0; 	//variaveis do forno
 static uint16_t tempoSemAtividade;						//variaveis do forno
 
@@ -26,12 +28,10 @@ valuesSincronia FlagSincronia;
 void StartBluetooth(void const * argument)
 {
 	osEvent evt;
-
 	initBluetooth();
 
 	for(;;)
 	{
-
 		evt = osSignalWait(newMessage, osWaitForever);
 		if (evt.status == osEventSignal) {
 
@@ -47,13 +47,12 @@ void StartBluetooth(void const * argument)
 		if (!bluetooth.myQ_dataTx->is_empty(bluetooth.myQ_dataTx))
 			osSignalSet(bluetooth.Task, newMessage);
 
+		osThreadYield();
 		osDelay(40);
 	}
 }
 void initBluetooth(void){
 
-	//inicializacao do bluetooth
-	//todo tratar returns
 	bleConstrutora(&bluetooth, &huart1, &hdma_usart1_rx, TaskBluetoothHandle);
 
 	//possiveis comandos a serem recebidos pelo bluetooth
@@ -487,6 +486,7 @@ void rxBluetooth(void){
 				bluetooth.aknowladge(&bluetooth,RX_APAGA_ERROS);
 				break;
 			}
+			osSemaphoreRelease (BinSemUartTxHandle);
 		}
 	}
 }

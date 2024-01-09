@@ -6,7 +6,7 @@
  */
 #include "Conversoes.h"
 
-void vetor4b_TO_Double(double *destino, uint8_t *vetor, uint8_t inicio) {
+void vetor4b_TO_Double(double *destino, volatile uint8_t *vetor, uint8_t inicio) {
 	// Verificar se o destino e o vetor não são nulos
 	floatAsBytes myValue;
 
@@ -18,7 +18,7 @@ void vetor4b_TO_Double(double *destino, uint8_t *vetor, uint8_t inicio) {
 
 	*destino = (double)myValue.value;
 }
-void vetor2b_TO_uint16(uint16_t *destino, uint8_t *vetor, uint8_t inicio) {
+void vetor2b_TO_uint16(uint16_t *destino, volatile uint8_t *vetor, uint8_t inicio) {
 
 	// Verificar se o destino e o vetor não são nulos
 	if (destino == NULL || vetor == NULL) {
@@ -28,7 +28,7 @@ void vetor2b_TO_uint16(uint16_t *destino, uint8_t *vetor, uint8_t inicio) {
 
 	*destino = vetor[inicio] << 8 | vetor[inicio+1];
 }
-void vetor2b_TO_Double(double *destino, uint8_t *vetor, uint8_t inicio) {
+void vetor2b_TO_Double(double *destino, volatile uint8_t *vetor, uint8_t inicio) {
 
 	// Verificar se o destino e o vetor não são nulos
 	if (destino == NULL || vetor == NULL) {
